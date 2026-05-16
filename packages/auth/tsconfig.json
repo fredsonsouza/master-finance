@@ -1,0 +1,7 @@
+{
+  "extends": "@saas/tsconfig/library.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}
