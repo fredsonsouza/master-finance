@@ -1,17 +1,13 @@
 {
-  "name": "master-finance-saas",
+  "name": "master-finance",
   "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "lint": "turbo run lint"
   },
   "devDependencies": {
-    "prettier": "^3.7.4",
-    "turbo": "^2.9.14",
-    "typescript": "5.9.2"
+    "turbo": "^2.9.14"
   },
   "packageManager": "pnpm@9.0.0",
   "engines": {
