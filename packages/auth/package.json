@@ -16,6 +16,7 @@
   },
   "prettier": "@saas/prettier",
   "dependencies": {
-    "@casl/ability": "^6.8.1"
+    "@casl/ability": "^6.8.1",
+    "zod": "^4.4.3"
   }
 }
