@@ -9,9 +9,15 @@ type PermissionsByRole = (
 ) => void
 
 export const permissions: Record<Role, PermissionsByRole> = {
-  ADMIN() {},
+  ADMIN(_, { can }) {
+    can('manage', 'all')
+  },
 
-  MANAGER() {},
+  MANAGER(_, { can }) {
+    can('manage', ['Item', 'Sector', 'Unit', 'User'])
+  },
 
-  EMPLOYEE() {},
+  EMPLOYEE(user, { can }) {
+    can('manage', 'Item', { unitId: { $eq: user.unitId } })
+  },
 }
