@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum TransactionType {
+  ENTRY
+  EXIT
+}
+
+model User {
+  id             String  @id @default(uuid())
+  name           String
+  username       String? @unique
+  password       String?
+  passoword_hash String? @map("_password_hash")
+  avatarUrl      String?
+  role           Role    @default(EMPLOYEE)
+
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Unit {
+  id   String @id @default(uuid())
+  name String
+
+  users        User[]
+  sectors      Sector[]
+  items        Item[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("units")
+}
+
+model Sector {
+  id   String @id @default(uuid())
+  name String
+
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  items Item[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sectors")
+}
+
+model Item {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("items")
+}
+
+model Transaction {
+  id       String          @id @default(uuid())
+  type     TransactionType
+  date     DateTime // Data do registro (ex: quando o item entrou/saiu)
+  month    String // Referência para o relatório mensal (ex: "2026-05")
+  value    Float // Valor monetário
+  quantity Int // Quantidade
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("transactions")
+}

@@ -36,3 +36,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Database
+/generetade
+
+# Docker
+docker-compose.yml
+
