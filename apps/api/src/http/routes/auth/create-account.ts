@@ -18,7 +18,7 @@ export async function createAccount(app: FastifyInstance) {
             .string()
             .min(3)
             .regex(/^[a-zA-Z0-9_]+$/),
-          password: z.string(),
+          password: z.string().min(4),
         }),
       },
     },

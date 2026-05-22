@@ -2,7 +2,11 @@
   "name": "@saas/api",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/http/server.ts"
+    "dev": "tsx watch src/http/server.ts",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:e2e": "vitest run --project e2e",
+    "test:e2e:watch": "vitest --project e2e"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -23,10 +27,15 @@
     "@saas/tsconfig": "workspace:*",
     "@types/node": "^25.8.0",
     "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
     "dotenv": "^17.4.2",
     "dotenv-cli": "^11.0.0",
     "prisma": "^7.8.0",
-    "tsx": "^4.22.0"
+    "supertest": "^7.2.2",
+    "tsx": "^4.22.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.7",
+    "vitest-environment-prisma": "link:./prisma/vitest-environment-prisma"
   },
   "eslintConfig": {
     "extends": [
