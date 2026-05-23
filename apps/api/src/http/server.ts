@@ -16,6 +16,7 @@ import { getProfile } from './routes/auth/get-profile'
 import { resetPassword } from './routes/auth/reset-password'
 import { updatePassword } from './routes/auth/update-password'
 import { errorHandler } from './error-handle'
+import { env } from '@saas/env'
 
 export const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -23,12 +24,22 @@ app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 app.setErrorHandler(errorHandler)
+
 ;(app.register(fastifySwagger, {
   openapi: {
     info: {
       title: 'Master Finance',
       description: 'Full-stack app with multi-tenant & RBAC',
       version: '1.0.0',
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
     },
   },
   transform: jsonSchemaTransform,
@@ -38,7 +49,7 @@ app.setErrorHandler(errorHandler)
   }))
 
 app.register(fastifyJwt, {
-  secret: 'my-jwt-secret',
+  secret: env.JWT_SECRET,
 })
 
 app.register(fastifyCors)
@@ -50,7 +61,7 @@ app.register(resetPassword)
 app.register(updatePassword)
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen({ port: 3131 }).then(() => {
+  app.listen({ port: env.SERVER_PORT }).then(() => {
     console.log('HTTP Server Running✅')
   })
 }

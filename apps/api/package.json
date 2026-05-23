@@ -2,11 +2,16 @@
   "name": "@saas/api",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/http/server.ts",
-    "test": "vitest run --project unit",
-    "test:watch": "vitest --project unit",
-    "test:e2e": "vitest run --project e2e",
-    "test:e2e:watch": "vitest --project e2e"
+    "dev": "pnpm env:load tsx watch src/http/server.ts",
+    "db:migrate": "pnpm env:load prisma migrate dev",
+    "db:studio": "pnpm env:load prisma studio",
+    "env:load": "dotenv -e ../../.env --",
+    "test": "pnpm env:load vitest run --project unit",
+    "test:e2e": "pnpm env:load vitest run --project e2e",
+    "test:watch": "pnpm env:load vitest --project unit",
+    "test:e2e:watch": "pnpm env:load vitest --project e2e",
+    "test:coverage": "pnpm env:load vitest run --coverage",
+    "test:ui": "pnpm env:load vitest --ui"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -15,6 +20,7 @@
     "@fastify/swagger-ui": "^5.2.6",
     "@prisma/client": "^7.8.0",
     "@saas/auth": "workspace:*.",
+    "@saas/env": "workspace:*.",
     "bcryptjs": "^3.0.3",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.1.0",

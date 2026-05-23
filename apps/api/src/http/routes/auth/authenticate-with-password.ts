@@ -13,6 +13,11 @@ export async function authenticateWithPassword(app: FastifyInstance) {
       schema: {
         tags: ['auth'],
         summary: 'Authenticate with e-mail & password',
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
         body: z.object({
           username: z.string(),
           password: z.string(),
