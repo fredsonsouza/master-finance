@@ -3,6 +3,7 @@ import fastify from 'fastify'
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import { createAccount } from './create-account'
 import { prisma } from '@/lib/prisma'
+import { BadRequestError } from '../_errors/bad-request-error'
 
 vi.mock('@/lib/prisma', () => {
   return {
@@ -27,6 +28,14 @@ describe('Create Account Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
+    
+    app.setErrorHandler((error: any, _request: any, reply: any) => {
+      if (error instanceof BadRequestError) {
+        return reply.status(400).send({ message: error.message })
+      }
+      return reply.status(500).send({ message: error.message })
+    })
+
     await app.register(createAccount)
   })
 
@@ -44,7 +53,7 @@ describe('Create Account Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toEqual({ messsage: 'Username already taken!' })
+    expect(response.json()).toEqual({ message: 'Username already taken!' })
     expect(prisma.user.create).not.toHaveBeenCalled()
   })
 
