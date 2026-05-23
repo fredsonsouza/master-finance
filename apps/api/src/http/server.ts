@@ -15,6 +15,15 @@ import { authenticateWithPassword } from './routes/auth/authenticate-with-passwo
 import { getProfile } from './routes/auth/get-profile'
 import { resetPassword } from './routes/auth/reset-password'
 import { updatePassword } from './routes/auth/update-password'
+import { getUsers } from './routes/users/get-users'
+import { getUser } from './routes/users/get-user'
+import { updateUser } from './routes/users/update-user'
+import { deleteUser } from './routes/users/delete-user'
+import { createUnit } from './routes/units/create-unit'
+import { getUnits } from './routes/units/get-units'
+import { getUnit } from './routes/units/get-unit'
+import { updateUnit } from './routes/units/update-unit'
+import { deleteUnit } from './routes/units/delete-unit'
 import { errorHandler } from './error-handle'
 import { env } from '@saas/env'
 
@@ -59,6 +68,17 @@ app.register(authenticateWithPassword)
 app.register(getProfile)
 app.register(resetPassword)
 app.register(updatePassword)
+
+app.register(getUsers)
+app.register(getUser)
+app.register(updateUser)
+app.register(deleteUser)
+
+app.register(createUnit)
+app.register(getUnits)
+app.register(getUnit)
+app.register(updateUnit)
+app.register(deleteUnit)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT }).then(() => {
