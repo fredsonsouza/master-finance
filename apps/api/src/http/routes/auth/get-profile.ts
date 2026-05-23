@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
+import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 
 export async function getProfile(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().get(
@@ -36,7 +37,7 @@ export async function getProfile(app: FastifyInstance) {
           id: sub,
         },
       })
-      if (!user) throw new Error('User not found')
+      if (!user) throw new ResourceNotFoundError('User not found')
 
       return reply.send({
         user: {

@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { BadRequestError } from '../_errors/bad-request-error'
 
 export async function createAccount(app: FastifyInstance) {
   app.withTypeProvider<ZodTypeProvider>().post(
@@ -30,7 +31,7 @@ export async function createAccount(app: FastifyInstance) {
       })
 
       if (userWithSameUsername) {
-        return reply.status(400).send({ messsage: 'Username already taken!' })
+        throw new BadRequestError('Username already taken!')
       }
 
       const password_hash = await hash(password, 6)
