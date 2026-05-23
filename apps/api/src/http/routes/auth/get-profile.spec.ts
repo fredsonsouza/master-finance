@@ -40,6 +40,7 @@ describe('Get Profile Unit Test', () => {
       name: 'John Doe',
       username: 'jhon',
       avatarUrl: 'http://example.com/avatar.png',
+      forcePasswordChange: false,
     } as any)
 
     const response = await app.inject({
@@ -54,6 +55,7 @@ describe('Get Profile Unit Test', () => {
         name: 'John Doe',
         username: 'jhon',
         avatarUrl: 'http://example.com/avatar.png',
+        forcePasswordChange: false,
       },
     })
   })

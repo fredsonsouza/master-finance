@@ -1,6 +1,6 @@
 {
   "extends": "@saas/tsconfig/node.json",
-  "include": ["src/**/*", "generated/**/*", "src/@types/*.d.ts"],
+  "include": ["src/**/*", "generated/**/*", "@types/*.d.ts"],
   "compilerOptions": {
     "types": ["node"],
     "baseUrl": ".",

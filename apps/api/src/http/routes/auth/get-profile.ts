@@ -3,50 +3,57 @@ import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
+import { auth } from '@/http/middlewares/auth'
 
 export async function getProfile(app: FastifyInstance) {
-  app.withTypeProvider<ZodTypeProvider>().get(
-    '/profile',
-    {
-      schema: {
-        tags: ['auth'],
-        summary: 'Get Authenticated with e-mail & password',
-        response: {
-          200: z.object({
-            user: z.object({
-              id: z.uuid(),
-              name: z.string(),
-              username: z.string(),
-              avatarUrl: z.url().nullable(),
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .register(auth)
+    .get(
+      '/profile',
+      {
+        schema: {
+          tags: ['auth'],
+          summary: 'Get Authenticated with e-mail & password',
+          response: {
+            200: z.object({
+              user: z.object({
+                id: z.uuid(),
+                name: z.string(),
+                username: z.string(),
+                avatarUrl: z.url().nullable(),
+                forcePasswordChange: z.boolean(),
+              }),
             }),
-          }),
+          },
         },
       },
-    },
-    async (request, reply) => {
-      const { sub } = await request.jwtVerify<{ sub: string }>()
+      async (request, reply) => {
+        const { sub } = await request.jwtVerify<{ sub: string }>()
 
-      const user = await prisma.user.findUnique({
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          avatarUrl: true,
-        },
-        where: {
-          id: sub,
-        },
-      })
-      if (!user) throw new ResourceNotFoundError('User not found')
+        const user = await prisma.user.findUnique({
+          select: {
+            id: true,
+            name: true,
+            username: true,
+            avatarUrl: true,
+            forcePasswordChange: true,
+          },
+          where: {
+            id: sub,
+          },
+        })
+        if (!user) throw new ResourceNotFoundError('User not found')
 
-      return reply.send({
-        user: {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          avatarUrl: user.avatarUrl,
-        },
-      })
-    }
-  )
+        return reply.send({
+          user: {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+            forcePasswordChange: user.forcePasswordChange,
+          },
+        })
+      }
+    )
 }
