@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import fastifyCors from '@fastify/cors'
+import fastifyJwt from '@fastify/jwt'
 import fastify from 'fastify'
 import {
   jsonSchemaTransform,
@@ -10,6 +11,8 @@ import {
 import { createAccount } from './routes/auth/create-account'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
+import { authenticateWithPassword } from './routes/auth/authenticate-with-password'
+import { getProfile } from './routes/auth/get-profile'
 
 export const app = fastify().withTypeProvider<ZodTypeProvider>()
 
@@ -29,9 +32,15 @@ app.setSerializerCompiler(serializerCompiler)
     routePrefix: '/docs',
   }))
 
+app.register(fastifyJwt, {
+  secret: 'my-jwt-secret',
+})
+
 app.register(fastifyCors)
 
 app.register(createAccount)
+app.register(authenticateWithPassword)
+app.register(getProfile)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: 3131 }).then(() => {
