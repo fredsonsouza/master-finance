@@ -34,6 +34,11 @@ import { getItems } from './routes/items/get-items'
 import { getItem } from './routes/items/get-item'
 import { updateItem } from './routes/items/update-item'
 import { deleteItem } from './routes/items/delete-item'
+import { createTransaction } from './routes/transactions/create-transaction'
+import { getTransactions } from './routes/transactions/get-transactions'
+import { getTransaction } from './routes/transactions/get-transaction'
+import { updateTransaction } from './routes/transactions/update-transaction'
+import { deleteTransaction } from './routes/transactions/delete-transaction'
 import { errorHandler } from './error-handle'
 import { env } from '@saas/env'
 
@@ -101,6 +106,12 @@ app.register(getItems)
 app.register(getItem)
 app.register(updateItem)
 app.register(deleteItem)
+
+app.register(createTransaction)
+app.register(getTransactions)
+app.register(getTransaction)
+app.register(updateTransaction)
+app.register(deleteTransaction)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT }).then(() => {

@@ -14,11 +14,12 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('manage', ['Item', 'Sector', 'Unit', 'User'])
+    can('manage', ['Item', 'Sector', 'Unit', 'User', 'Transaction'])
   },
 
   EMPLOYEE(user, { can }) {
     can('get', 'Sector', { unitId: { $eq: user.unitId } })
     can('manage', 'Item', { unitId: { $eq: user.unitId } })
+    can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
   },
 }
