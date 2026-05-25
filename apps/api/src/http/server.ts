@@ -29,6 +29,11 @@ import { getSectors } from './routes/sectors/get-sectors'
 import { getSector } from './routes/sectors/get-sector'
 import { updateSector } from './routes/sectors/update-sector'
 import { deleteSector } from './routes/sectors/delete-sector'
+import { createItem } from './routes/items/create-item'
+import { getItems } from './routes/items/get-items'
+import { getItem } from './routes/items/get-item'
+import { updateItem } from './routes/items/update-item'
+import { deleteItem } from './routes/items/delete-item'
 import { errorHandler } from './error-handle'
 import { env } from '@saas/env'
 
@@ -90,6 +95,12 @@ app.register(getSectors)
 app.register(getSector)
 app.register(updateSector)
 app.register(deleteSector)
+
+app.register(createItem)
+app.register(getItems)
+app.register(getItem)
+app.register(updateItem)
+app.register(deleteItem)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT }).then(() => {
