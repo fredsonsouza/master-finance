@@ -1,4 +1,5 @@
 import z from 'zod'
+import { sectorSchema } from '../models/sector'
 
 export const sectorSubject = z.tuple([
   z.union([
@@ -8,7 +9,7 @@ export const sectorSubject = z.tuple([
     z.literal('update'),
     z.literal('delete'),
   ]),
-  z.literal('Sector'),
+  z.union([z.literal('Sector'), sectorSchema]),
 ])
 
 export type SectorSubject = z.infer<typeof sectorSubject>

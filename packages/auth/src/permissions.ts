@@ -18,6 +18,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   EMPLOYEE(user, { can }) {
+    can('get', 'Sector', { unitId: { $eq: user.unitId } })
     can('manage', 'Item', { unitId: { $eq: user.unitId } })
   },
 }

@@ -24,6 +24,11 @@ import { getUnits } from './routes/units/get-units'
 import { getUnit } from './routes/units/get-unit'
 import { updateUnit } from './routes/units/update-unit'
 import { deleteUnit } from './routes/units/delete-unit'
+import { createSector } from './routes/sectors/create-sector'
+import { getSectors } from './routes/sectors/get-sectors'
+import { getSector } from './routes/sectors/get-sector'
+import { updateSector } from './routes/sectors/update-sector'
+import { deleteSector } from './routes/sectors/delete-sector'
 import { errorHandler } from './error-handle'
 import { env } from '@saas/env'
 
@@ -79,6 +84,12 @@ app.register(getUnits)
 app.register(getUnit)
 app.register(updateUnit)
 app.register(deleteUnit)
+
+app.register(createSector)
+app.register(getSectors)
+app.register(getSector)
+app.register(updateSector)
+app.register(deleteSector)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT }).then(() => {
