@@ -41,6 +41,9 @@
   --color-error-container: #ffdad6;
   --color-on-error-container: #93000a;
 
+  --color-success: #10b981;
+  --color-on-success: #ffffff;
+
   --color-primary-fixed: #dde1ff;
   --color-primary-fixed-dim: #b7c4ff;
   --color-on-primary-fixed: #001453;

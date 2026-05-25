@@ -20,16 +20,11 @@ export function SignInForm() {
       prevState: { success: boolean; message: string | null },
       formData: FormData
     ) => {
-      // Temporary proxy to the real server action so we can handle errors
-      try {
-        await SignIn(formData)
-        return { success: true, message: null }
-      } catch (err) {
-        if (err instanceof Error) {
-          return { success: false, message: err.message }
-        }
-        return { success: false, message: 'Erro ao realizar login.' }
+      const result = await SignIn(formData)
+      if (result && !result.success) {
+        return result
       }
+      return { success: true, message: null }
     },
     { success: false, message: null }
   )

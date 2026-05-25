@@ -62,9 +62,10 @@ export async function authenticateWithPassword(app: FastifyInstance) {
       }
 
       const token = await reply.jwtSign(
-        {},
+        { sub: userFromUsername.id },
         {
           sign: {
+            sub: userFromUsername.id,
             expiresIn: '7d',
           },
         }
