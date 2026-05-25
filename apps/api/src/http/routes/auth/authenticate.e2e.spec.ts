@@ -31,5 +31,5 @@ test('[E2E] Authenticate User', async () => {
   })
 
   expect(response.statusCode).toBe(201)
-  expect(response.body).toEqual(expect.stringContaining('eyJ'))
+  expect(response.json()).toHaveProperty('token')
 })

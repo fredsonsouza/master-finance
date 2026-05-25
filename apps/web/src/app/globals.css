@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@source "../**/*.{ts,tsx}";
+@source "../../**/*.{ts,tsx}";
+
+@theme {
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #ccdbf3;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e6eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d5e3fc;
+  --color-on-surface: #0d1c2e;
+  --color-on-surface-variant: #444652;
+  --color-inverse-surface: #233144;
+  --color-inverse-on-surface: #eaf1ff;
+  
+  --color-outline: #757683;
+  --color-outline-variant: #c5c5d4;
+  --color-surface-tint: #4158b1;
+
+  --color-primary: #001e6f;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #1a358e;
+  --color-on-primary-container: #8ea3ff;
+  --color-inverse-primary: #b7c4ff;
+
+  --color-secondary: #bb0015;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e32027;
+  --color-on-secondary-container: #fffbff;
+
+  --color-tertiary: #25282a;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #3b3e40;
+  --color-on-tertiary-container: #a6a9ab;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --color-primary-fixed: #dde1ff;
+  --color-primary-fixed-dim: #b7c4ff;
+  --color-on-primary-fixed: #001453;
+  --color-on-primary-fixed-variant: #263f98;
+
+  --color-background: #f8f9ff;
+  --color-on-background: #0d1c2e;
+  --color-surface-variant: #d5e3fc;
+
+  /* Fonts */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;   /* Default in design.md */
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+
+}
+
+:root {
+  --background: var(--color-background);
+  --foreground: var(--color-on-background);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
