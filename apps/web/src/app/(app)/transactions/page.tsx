@@ -1,12 +1,18 @@
 import { auth } from '@/auth/auth'
 import { getTransactions } from '@/http/get-transactions'
+import { getItems } from '@/http/get-items'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { ArrowDownCircle, ArrowUpCircle, Plus } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { CreateTransactionDialog } from './create-transaction-dialog'
 
 export default async function TransactionsPage() {
   const { token } = await auth()
-  const { transactions } = await getTransactions(token)
+  
+  // Fetch paralelamente para velocidade máxima!
+  const [{ transactions }, { items }] = await Promise.all([
+    getTransactions(token),
+    getItems(token),
+  ])
 
   return (
     <div className="space-y-6">
@@ -17,10 +23,7 @@ export default async function TransactionsPage() {
             Gerencie o fluxo financeiro e de itens.
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nova Transação
-        </Button>
+        <CreateTransactionDialog items={items} />
       </div>
 
       <Card>

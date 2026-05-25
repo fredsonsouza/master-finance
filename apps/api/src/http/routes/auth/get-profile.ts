@@ -18,11 +18,13 @@ export async function getProfile(app: FastifyInstance) {
           response: {
             200: z.object({
               user: z.object({
-                id: z.uuid(),
-                name: z.string(),
+                id: z.string().uuid(),
+                name: z.string().nullable(),
                 username: z.string(),
-                avatarUrl: z.url().nullable(),
+                avatarUrl: z.string().url().nullable(),
                 forcePasswordChange: z.boolean(),
+                role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']),
+                unitId: z.string().uuid().nullable(),
               }),
             }),
           },
@@ -38,6 +40,8 @@ export async function getProfile(app: FastifyInstance) {
             username: true,
             avatarUrl: true,
             forcePasswordChange: true,
+            role: true,
+            unitId: true,
           },
           where: {
             id: sub,
@@ -52,6 +56,8 @@ export async function getProfile(app: FastifyInstance) {
             username: user.username,
             avatarUrl: user.avatarUrl,
             forcePasswordChange: user.forcePasswordChange,
+            role: user.role,
+            unitId: user.unitId,
           },
         })
       }
