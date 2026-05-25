@@ -39,6 +39,11 @@ import { getTransactions } from './routes/transactions/get-transactions'
 import { getTransaction } from './routes/transactions/get-transaction'
 import { updateTransaction } from './routes/transactions/update-transaction'
 import { deleteTransaction } from './routes/transactions/delete-transaction'
+
+import { getSummary } from './routes/metrics/get-summary'
+import { getDailyFlow } from './routes/metrics/get-daily-flow'
+import { getTopItems } from './routes/metrics/get-top-items'
+
 import { errorHandler } from './error-handle'
 import { env } from '@saas/env'
 
@@ -112,6 +117,10 @@ app.register(getTransactions)
 app.register(getTransaction)
 app.register(updateTransaction)
 app.register(deleteTransaction)
+
+app.register(getSummary)
+app.register(getDailyFlow)
+app.register(getTopItems)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT }).then(() => {

@@ -14,7 +14,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('manage', ['Item', 'Sector', 'Unit', 'User', 'Transaction'])
+    can('manage', ['Item', 'Sector', 'Unit', 'User', 'Transaction', 'Metric'])
   },
 
   EMPLOYEE(user, { can }) {

@@ -12,6 +12,7 @@ import { sectorSubject } from './subjects/sector'
 import { itemSubject } from './subjects/item'
 import { unitSubject } from './subjects/unit'
 import { transactionSubject } from './subjects/transaction'
+import { metricSubject } from './subjects/metric'
 
 const appAbilitiesSchema = z.union([
   sectorSubject,
@@ -19,6 +20,7 @@ const appAbilitiesSchema = z.union([
   itemSubject,
   unitSubject,
   transactionSubject,
+  metricSubject,
 
   z.tuple([z.literal('manage'), z.literal('all')]),
 ])
