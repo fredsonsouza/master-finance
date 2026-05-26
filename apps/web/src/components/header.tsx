@@ -1,12 +1,27 @@
 import { auth } from '@/auth/auth'
+import { UnitSwitcher } from './unit-switcher'
+import { getUnits } from '@/http/get-units'
+import { getActiveUnit } from './unit-switcher-action'
 
 export async function Header() {
-  const { user } = await auth()
+  const { user, token } = await auth()
+
+  let units: any[] = []
+  if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+    try {
+      const res = await getUnits(token)
+      units = res.units
+    } catch {}
+  }
+
+  const activeUnitId = await getActiveUnit()
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-surface-container bg-surface px-6">
       <div className="flex items-center gap-4">
-        {/* Espaço reservado para Breadcrumbs ou Título da Página atual */}
+        {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
+          <UnitSwitcher units={units} initialActiveUnitId={activeUnitId} />
+        )}
       </div>
 
       <div className="flex items-center gap-4">

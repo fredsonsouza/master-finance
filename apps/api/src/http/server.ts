@@ -19,6 +19,7 @@ import { getUsers } from './routes/users/get-users'
 import { getUser } from './routes/users/get-user'
 import { updateUser } from './routes/users/update-user'
 import { deleteUser } from './routes/users/delete-user'
+import { createUser } from './routes/users/create-user'
 import { createUnit } from './routes/units/create-unit'
 import { getUnits } from './routes/units/get-units'
 import { getUnit } from './routes/units/get-unit'
@@ -93,6 +94,7 @@ app.register(getUsers)
 app.register(getUser)
 app.register(updateUser)
 app.register(deleteUser)
+app.register(createUser)
 
 app.register(createUnit)
 app.register(getUnits)
