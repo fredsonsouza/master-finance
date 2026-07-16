@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function updateUnit(app: FastifyInstance) {
   app
@@ -66,6 +67,14 @@ export async function updateUnit(app: FastifyInstance) {
           data: {
             name,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'UPDATE',
+          resource: 'UNIT',
+          resourceId: targetUnitId,
+          details: `Editou o nome da unidade de "${targetUnit.name}" para "${name}"`,
         })
 
         return reply.status(204).send(null)

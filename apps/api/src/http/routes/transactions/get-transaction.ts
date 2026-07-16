@@ -1,11 +1,11 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getTransaction(app: FastifyInstance) {
   app
@@ -32,7 +32,9 @@ export async function getTransaction(app: FastifyInstance) {
                 quantity: z.number(),
                 itemId: z.uuid(),
                 unitId: z.uuid(),
+                sectorId: z.uuid().nullable().optional(),
                 userId: z.uuid(),
+                batchId: z.uuid().nullable().optional(),
                 createdAt: z.date(),
                 updatedAt: z.date(),
               }),

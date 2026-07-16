@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function updateSector(app: FastifyInstance) {
   app
@@ -23,7 +24,6 @@ export async function updateSector(app: FastifyInstance) {
           }),
           body: z.object({
             name: z.string().min(1).optional(),
-            unitId: z.uuid().optional(),
           }),
           response: {
             204: z.null(),
@@ -60,21 +60,21 @@ export async function updateSector(app: FastifyInstance) {
           throw new BadRequestError('Sector not found.')
         }
 
-        const { name, unitId } = request.body
+        const { name } = request.body
 
-        if (unitId) {
-          const unit = await prisma.unit.findUnique({ where: { id: unitId } })
-          if (!unit) {
-            throw new BadRequestError('Unit not found.')
-          }
-        }
-
-        await prisma.sector.update({
+        const updatedSector = await prisma.sector.update({
           where: { id: targetSectorId },
           data: {
             name: name ?? targetSector.name,
-            unitId: unitId ?? targetSector.unitId,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'UPDATE',
+          resource: 'SECTOR',
+          resourceId: targetSectorId,
+          details: `Editou o setor ${updatedSector.name}`,
         })
 
         return reply.status(204).send(null)

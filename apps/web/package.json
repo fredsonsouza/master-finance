@@ -6,34 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "biome check ."
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-tabs": "^1.1.13",
+    "date-fns": "^4.4.0",
+    "dayjs": "^1.11.20",
     "ky": "^2.0.2",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-day-picker": "^10.0.1",
+    "react-dom": "19.2.4",
+    "react-number-format": "^5.4.5",
+    "react-to-print": "^3.3.0",
+    "recharts": "^3.8.1",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
-    "@saas/eslint-config": "workspace:*",
-    "@saas/prettier": "workspace:*",
     "@saas/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@saas/eslint-config/next"
-    ]
-  },
-  "prettier": "@saas/prettier"
+  }
 }

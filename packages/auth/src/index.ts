@@ -1,18 +1,21 @@
 import {
   AbilityBuilder,
-  CreateAbility,
+  type CreateAbility,
+  type MongoAbility,
   createMongoAbility,
-  MongoAbility,
 } from '@casl/ability'
 import z from 'zod'
 import type { User } from './models/user'
 import { permissions } from './permissions'
-import { userSubject } from './subjects/user'
-import { sectorSubject } from './subjects/sector'
 import { itemSubject } from './subjects/item'
-import { unitSubject } from './subjects/unit'
-import { transactionSubject } from './subjects/transaction'
 import { metricSubject } from './subjects/metric'
+import { sectorSubject } from './subjects/sector'
+import { transactionSubject } from './subjects/transaction'
+import { unitSubject } from './subjects/unit'
+import { userSubject } from './subjects/user'
+
+import { cashClosureSubject } from './subjects/cash-closure'
+import { collectionSubject } from './subjects/collection'
 
 const appAbilitiesSchema = z.union([
   sectorSubject,
@@ -21,6 +24,8 @@ const appAbilitiesSchema = z.union([
   unitSubject,
   transactionSubject,
   metricSubject,
+  cashClosureSubject,
+  collectionSubject,
 
   z.tuple([z.literal('manage'), z.literal('all')]),
 ])

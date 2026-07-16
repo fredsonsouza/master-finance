@@ -1,9 +1,9 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getTopItems(app: FastifyInstance) {

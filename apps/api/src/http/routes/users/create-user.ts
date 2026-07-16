@@ -1,12 +1,13 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
-import { ZodTypeProvider } from 'fastify-type-provider-zod'
+import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function createUser(app: FastifyInstance) {
   app
@@ -21,9 +22,20 @@ export async function createUser(app: FastifyInstance) {
           security: [{ bearerAuth: [] }],
           body: z.object({
             name: z.string(),
-            username: z.string().min(3).regex(/^[a-zA-Z0-9_]+$/),
+            username: z
+              .string()
+              .min(3)
+              .regex(/^[a-zA-Z0-9_]+$/),
             password: z.string().min(4),
-            role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']),
+            role: z.enum([
+              'ADMIN',
+              'MANAGER',
+              'EMPLOYEE',
+              'FINANCIAL',
+              'SELLER',
+              'COLLECTOR',
+              'FISCAL',
+            ]),
             unitId: z.string().uuid().nullable().optional(),
           }),
         },
@@ -50,6 +62,10 @@ export async function createUser(app: FastifyInstance) {
 
         const { name, username, password, role, unitId } = request.body
 
+        if (role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError('Only admins can create other admins.')
+        }
+
         const userWithSameUsername = await prisma.user.findUnique({
           where: { username },
         })
@@ -68,6 +84,14 @@ export async function createUser(app: FastifyInstance) {
             role,
             unitId,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'CREATE',
+          resource: 'USER',
+          resourceId: user.id,
+          details: `Cadastrou o usuário ${name} (${username}) com a permissão ${role}`,
         })
 
         return reply.status(201).send({ userId: user.id })

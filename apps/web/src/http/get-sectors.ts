@@ -3,7 +3,6 @@ import { api } from './api-client'
 export interface Sector {
   id: string
   name: string
-  unitId: string
   createdAt: string
   updatedAt: string
 }

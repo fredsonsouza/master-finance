@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "react-day-picker/dist/style.css";
 @source "../**/*.{ts,tsx}";
 @source "../../**/*.{ts,tsx}";
 
@@ -15,7 +16,7 @@
   --color-on-surface-variant: #444652;
   --color-inverse-surface: #233144;
   --color-inverse-on-surface: #eaf1ff;
-  
+
   --color-outline: #757683;
   --color-outline-variant: #c5c5d4;
   --color-surface-tint: #4158b1;
@@ -55,17 +56,16 @@
 
   /* Fonts */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui,
+    sans-serif;
 
   /* Radius */
   --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;   /* Default in design.md */
+  --radius-md: 0.5rem; /* Default in design.md */
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-full: 9999px;
-  
-
 }
 
 :root {

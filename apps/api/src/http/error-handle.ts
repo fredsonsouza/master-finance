@@ -1,6 +1,6 @@
-import type { FastifyInstance, FastifyError } from 'fastify'
-import { z, ZodError } from 'zod'
 import { BadRequestError } from '@/http/routes/_errors/bad-request-error'
+import type { FastifyError, FastifyInstance } from 'fastify'
+import { ZodError, z } from 'zod'
 import { ResourceNotFoundError } from './routes/_errors/resource-not-found-error'
 import { UnauthorizedError } from './routes/_errors/unauthorized-error'
 
@@ -47,6 +47,14 @@ export const errorHandler: FastifyErrorHandler = (error, request, reply) => {
     })
   }
   console.error(error)
+  import('node:fs').then((fs) =>
+    fs.writeFileSync(
+      '/tmp/api-error.txt',
+      `${String(error.stack || error.message)}\n${JSON.stringify(error, null, 2)}`
+    )
+  )
   // TODO: Send error to an external observability platform (e.g. Sentry, Datadog)
-  reply.status(500).send({ message: 'Internal server error' })
+  reply
+    .status(500)
+    .send({ message: 'Internal server error', error: error.message })
 }

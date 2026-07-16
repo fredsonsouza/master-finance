@@ -8,18 +8,26 @@ export interface Item {
   sectorId: string | null
   createdAt: string
   updatedAt: string
+  sector?: {
+    id: string
+    name: string
+  } | null
+  unit?: {
+    name: string
+  } | null
 }
 
 interface GetItemsResponse {
   items: Item[]
 }
 
-export async function getItems(token: string) {
+export async function getItems(token: string, unitId?: string | null) {
   const result = await api
     .get('items', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      searchParams: unitId ? { unitId } : undefined,
       next: {
         tags: ['items'],
       },

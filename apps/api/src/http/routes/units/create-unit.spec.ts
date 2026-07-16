@@ -1,9 +1,12 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { createUnit } from './create-unit'
 import { prisma } from '@/lib/prisma'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { createUnit } from './create-unit'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -24,9 +27,12 @@ describe('Create Unit Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof UnauthorizedError) {
         return reply.status(401).send({ message: error.message })
@@ -60,7 +66,9 @@ describe('Create Unit Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(201)
-    expect(response.json()).toEqual({ unitId: '223e4567-e89b-12d3-a456-426614174001' })
+    expect(response.json()).toEqual({
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    })
     expect(prisma.unit.create).toHaveBeenCalledWith({
       data: { name: 'Central Clinic' },
     })
@@ -81,7 +89,9 @@ describe('Create Unit Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(401)
-    expect(response.json()).toEqual({ message: 'You are not allowed to create a unit.' })
+    expect(response.json()).toEqual({
+      message: 'You are not allowed to create a unit.',
+    })
     expect(prisma.unit.create).not.toHaveBeenCalled()
   })
 

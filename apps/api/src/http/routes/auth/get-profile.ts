@@ -1,9 +1,9 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
-import { auth } from '@/http/middlewares/auth'
 
 export async function getProfile(app: FastifyInstance) {
   app
@@ -23,8 +23,23 @@ export async function getProfile(app: FastifyInstance) {
                 username: z.string(),
                 avatarUrl: z.string().url().nullable(),
                 forcePasswordChange: z.boolean(),
-                role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']),
+                role: z.enum([
+                  'ADMIN',
+                  'MANAGER',
+                  'EMPLOYEE',
+                  'FINANCIAL',
+                  'SELLER',
+                  'COLLECTOR',
+                  'FISCAL',
+                ]),
                 unitId: z.string().uuid().nullable(),
+                unit: z
+                  .object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                  })
+                  .nullable()
+                  .optional(),
               }),
             }),
           },
@@ -42,6 +57,12 @@ export async function getProfile(app: FastifyInstance) {
             forcePasswordChange: true,
             role: true,
             unitId: true,
+            unit: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
           where: {
             id: sub,
@@ -58,6 +79,7 @@ export async function getProfile(app: FastifyInstance) {
             forcePasswordChange: user.forcePasswordChange,
             role: user.role,
             unitId: user.unitId,
+            unit: user.unit,
           },
         })
       }

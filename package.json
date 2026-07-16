@@ -1,12 +1,14 @@
 {
-  "name": "master-finance",
+  "name": "master-admin",
   "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint"
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.4",
     "turbo": "^2.9.14"
   },
   "packageManager": "pnpm@9.0.0",

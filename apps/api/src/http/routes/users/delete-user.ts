@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function deleteUser(app: FastifyInstance) {
   app
@@ -60,8 +61,20 @@ export async function deleteUser(app: FastifyInstance) {
           throw new BadRequestError('User not found.')
         }
 
+        if (targetUser.role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError('You cannot delete an admin user.')
+        }
+
         await prisma.user.delete({
           where: { id: targetUserId },
+        })
+
+        await logAction({
+          userId,
+          action: 'DELETE',
+          resource: 'USER',
+          resourceId: targetUserId,
+          details: `Removeu o usuário ${targetUser.name} (${targetUser.username}) com cargo ${targetUser.role}`,
         })
 
         return reply.status(204).send(null)

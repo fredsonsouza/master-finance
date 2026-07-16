@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function createItem(app: FastifyInstance) {
   app
@@ -71,11 +72,6 @@ export async function createItem(app: FastifyInstance) {
           if (!sector) {
             throw new BadRequestError('Sector not found.')
           }
-          if (sector.unitId !== unitId) {
-            throw new BadRequestError(
-              'Sector does not belong to the specified unit.'
-            )
-          }
         }
 
         const item = await prisma.item.create({
@@ -85,6 +81,14 @@ export async function createItem(app: FastifyInstance) {
             unitId,
             sectorId,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'CREATE',
+          resource: 'ITEM',
+          resourceId: item.id,
+          details: `Criou o item/procedimento ${name} na unidade ${unit.name}`,
         })
 
         return reply.status(201).send({ itemId: item.id })

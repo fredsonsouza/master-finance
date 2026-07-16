@@ -1,0 +1,27 @@
+[
+  {
+    "label": "Turbo Dev",
+    "command": "pnpm dev",
+    "use_new_terminal": true
+  },
+  {
+    "label": "Biome Check",
+    "command": "pnpm biome check .",
+    "use_new_terminal": false
+  },
+  {
+    "label": "Biome Fix",
+    "command": "pnpm biome check --write .",
+    "use_new_terminal": false
+  },
+  {
+    "label": "Database Migrate",
+    "command": "pnpm --filter @saas/api db:migrate",
+    "use_new_terminal": true
+  },
+  {
+    "label": "Database Seed",
+    "command": "pnpm --filter @saas/api db:seed",
+    "use_new_terminal": true
+  }
+]

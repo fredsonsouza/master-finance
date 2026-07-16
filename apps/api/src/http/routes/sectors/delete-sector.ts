@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function deleteSector(app: FastifyInstance) {
   app
@@ -58,6 +59,14 @@ export async function deleteSector(app: FastifyInstance) {
 
         await prisma.sector.delete({
           where: { id: targetSectorId },
+        })
+
+        await logAction({
+          userId,
+          action: 'DELETE',
+          resource: 'SECTOR',
+          resourceId: targetSectorId,
+          details: `Excluiu o setor ${targetSector.name}`,
         })
 
         return reply.status(204).send(null)

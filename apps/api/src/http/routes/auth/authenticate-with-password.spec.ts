@@ -1,11 +1,14 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { authenticateWithPassword } from './authenticate-with-password'
 import { prisma } from '@/lib/prisma'
 import { compare } from 'bcryptjs'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { BadRequestError } from '../_errors/bad-request-error'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
+import { authenticateWithPassword } from './authenticate-with-password'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -27,9 +30,9 @@ describe('Authenticate with Password Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
+
     app.decorateReply('jwtSign', vi.fn().mockResolvedValue('mocked-jwt-token'))
-    
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof BadRequestError) {
         return reply.status(400).send({ message: error.message })
@@ -61,7 +64,7 @@ describe('Authenticate with Password Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(201)
-    expect(response.body).toBe('mocked-jwt-token')
+    expect(response.json()).toEqual({ token: 'mocked-jwt-token' })
   })
 
   test('should return 400 with invalid username', async () => {
@@ -97,7 +100,9 @@ describe('Authenticate with Password Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(404)
-    expect(response.json()).toEqual({ message: 'User does not have a username' })
+    expect(response.json()).toEqual({
+      message: 'User does not have a username',
+    })
   })
 
   test('should return 400 if user does not have a password', async () => {
@@ -117,7 +122,9 @@ describe('Authenticate with Password Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(400)
-    expect(response.json()).toEqual({ message: 'User does not have a password, use social login' })
+    expect(response.json()).toEqual({
+      message: 'User does not have a password, use social login',
+    })
   })
 
   test('should return 400 with invalid password', async () => {

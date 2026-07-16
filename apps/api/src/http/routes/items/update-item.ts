@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function updateItem(app: FastifyInstance) {
   app
@@ -77,16 +78,11 @@ export async function updateItem(app: FastifyInstance) {
           if (!sector) {
             throw new BadRequestError('Sector not found.')
           }
-          if (sector.unitId !== targetItem.unitId) {
-            throw new BadRequestError(
-              'Sector does not belong to the item unit.'
-            )
-          }
         }
 
         // We explicitly avoid allowing `unitId` modification here to prevent complex transfer edge-cases
         // Transferring items across units might have financial implications if it has transactions
-        await prisma.item.update({
+        const updatedItem = await prisma.item.update({
           where: { id: targetItemId },
           data: {
             name: name ?? targetItem.name,
@@ -94,6 +90,21 @@ export async function updateItem(app: FastifyInstance) {
               description !== undefined ? description : targetItem.description,
             sectorId: sectorId !== undefined ? sectorId : targetItem.sectorId,
           },
+          include: {
+            unit: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+
+        await logAction({
+          userId,
+          action: 'UPDATE',
+          resource: 'ITEM',
+          resourceId: targetItemId,
+          details: `Editou o item/procedimento ${updatedItem.name} na unidade ${updatedItem.unit?.name ?? ''}`,
         })
 
         return reply.status(204).send(null)

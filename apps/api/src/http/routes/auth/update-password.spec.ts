@@ -1,8 +1,11 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { updatePassword } from './update-password'
 import { prisma } from '@/lib/prisma'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { updatePassword } from './update-password'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -24,10 +27,12 @@ describe('Update Password Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: 'user-id-123' }))
-    
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: 'user-id-123' })
+    )
+
     await app.register(updatePassword)
   })
 

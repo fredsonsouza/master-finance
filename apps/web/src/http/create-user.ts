@@ -4,7 +4,14 @@ interface CreateUserRequest {
   name: string
   username: string
   password?: string
-  role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+  role:
+    | 'ADMIN'
+    | 'MANAGER'
+    | 'EMPLOYEE'
+    | 'FINANCIAL'
+    | 'SELLER'
+    | 'COLLECTOR'
+    | 'FISCAL'
   unitId?: string | null
 }
 

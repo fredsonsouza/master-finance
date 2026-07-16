@@ -1,0 +1,65 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": {
+        "noNonNullAssertion": "off",
+        "noCommaOperator": "off",
+        "useSelfClosingElements": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off",
+        "noAssignInExpressions": "off",
+        "noImplicitAnyLet": "off",
+        "noArrayIndexKey": "off",
+        "noShadowRestrictedNames": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off"
+      },
+      "complexity": {
+        "noForEach": "off"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "bracketSpacing": true,
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "quoteStyle": "single",
+      "semicolons": "asNeeded",
+      "trailingCommas": "es5"
+    }
+  },
+  "files": {
+    "ignore": [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/out/**",
+      "**/build/**",
+      "**/.turbo/**",
+      "**/next-env.d.ts",
+      "**/pnpm-lock.yaml",
+      "apps/web/out.css",
+      "apps/api/generated/**"
+    ]
+  }
+}

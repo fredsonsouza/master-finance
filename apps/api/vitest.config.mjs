@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { defineConfig } from 'vitest/config'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -32,7 +32,8 @@ export default defineConfig({
           name: 'e2e',
           dir: 'src',
           include: ['**/*.e2e.spec.ts'],
-          environment: './prisma/vitest-environment-prisma/vitest-environment-prisma.ts',
+          environment:
+            './prisma/vitest-environment-prisma/vitest-environment-prisma.ts',
           setupFiles: ['./src/test/setup-e2e.ts'],
           forks: {
             singleFork: true,

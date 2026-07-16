@@ -1,14 +1,23 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { updateTransaction } from './update-transaction'
 import { prisma } from '@/lib/prisma'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { updateTransaction } from './update-transaction'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
+      findUnique: vi.fn(),
+    },
+    item: {
+      findUnique: vi.fn(),
+    },
+    sector: {
       findUnique: vi.fn(),
     },
     transaction: {
@@ -26,9 +35,12 @@ describe('Update Transaction Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof UnauthorizedError) {
         return reply.status(401).send({ message: error.message })
@@ -74,6 +86,18 @@ describe('Update Transaction Unit Test', () => {
         value: 150,
         month: '2026-05', // Ensures month remains correct
       }),
+      include: {
+        item: {
+          select: {
+            name: true,
+          },
+        },
+        unit: {
+          select: {
+            name: true,
+          },
+        },
+      },
     })
   })
 })

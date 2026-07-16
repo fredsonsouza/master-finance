@@ -1,9 +1,9 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getItems(app: FastifyInstance) {
@@ -32,6 +32,18 @@ export async function getItems(app: FastifyInstance) {
                   sectorId: z.string().uuid().nullable(),
                   createdAt: z.date(),
                   updatedAt: z.date(),
+                  sector: z
+                    .object({
+                      id: z.string().uuid(),
+                      name: z.string(),
+                    })
+                    .nullable()
+                    .optional(),
+                  unit: z
+                    .object({
+                      name: z.string(),
+                    })
+                    .optional(),
                 })
               ),
             }),
@@ -56,15 +68,19 @@ export async function getItems(app: FastifyInstance) {
             return reply.status(200).send({ items: [] }) // Employee with no unit sees no items
           }
           unitId = requestingUser.unitId
-        } else {
-          // For MANAGER/ADMIN, if they didn't provide unitId, we must verify if they can read globally
-          // Actually MANAGER can read globally. We don't need to force unitId.
         }
 
         const items = await prisma.item.findMany({
+          take: 100, // Limita a 100 para não estourar a memória no acesso global
           where: {
             unitId,
             sectorId,
+          },
+          include: {
+            sector: true,
+            unit: {
+              select: { name: true },
+            },
           },
           orderBy: {
             createdAt: 'desc',

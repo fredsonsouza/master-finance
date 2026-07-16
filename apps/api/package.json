@@ -5,13 +5,15 @@
     "dev": "pnpm env:load tsx watch src/http/server.ts",
     "db:migrate": "pnpm env:load prisma migrate dev",
     "db:studio": "pnpm env:load prisma studio",
+    "db:seed": "pnpm env:load tsx prisma/seed.ts ",
     "env:load": "dotenv -e ../../.env --",
     "test": "pnpm env:load vitest run --project unit",
     "test:e2e": "pnpm env:load vitest run --project e2e",
     "test:watch": "pnpm env:load vitest --project unit",
     "test:e2e:watch": "pnpm env:load vitest --project e2e",
     "test:coverage": "pnpm env:load vitest run --coverage",
-    "test:ui": "pnpm env:load vitest --ui"
+    "test:ui": "pnpm env:load vitest --ui",
+    "lint": "biome check ."
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -19,8 +21,8 @@
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.6",
     "@prisma/client": "^7.8.0",
-    "@saas/auth": "workspace:*.",
-    "@saas/env": "workspace:*.",
+    "@saas/auth": "workspace:*",
+    "@saas/env": "workspace:*",
     "bcryptjs": "^3.0.3",
     "fastify": "^5.8.5",
     "fastify-plugin": "^5.1.0",
@@ -30,8 +32,6 @@
   },
   "devDependencies": {
     "@prisma/adapter-pg": "^7.8.0",
-    "@saas/eslint-config": "workspace:*",
-    "@saas/prettier": "workspace:*",
     "@saas/tsconfig": "workspace:*",
     "@types/node": "^25.8.0",
     "@types/pg": "^8.20.0",
@@ -45,11 +45,5 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.7",
     "vitest-environment-prisma": "link:./prisma/vitest-environment-prisma"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@saas/eslint-config/node"
-    ]
-  },
-  "prettier": "@saas/prettier"
+  }
 }

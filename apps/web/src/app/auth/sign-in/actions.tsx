@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server'
 
 import { signIn } from '@/http/sign-in'
@@ -19,12 +20,12 @@ export async function SignIn(data: FormData) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       httpOnly: true,
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     let errorMessage = 'Erro ao realizar login.'
-    if (err.response) {
-      // Caso o Ky retorne erro HTTP, tentar extrair a mensagem do body
+    if (err && typeof err === 'object' && 'response' in err) {
+      const response = (err as any).response
       try {
-        const errorData = await err.response.json()
+        const errorData = await response.json()
         if (errorData.message) errorMessage = errorData.message
       } catch {}
     }

@@ -1,5 +1,5 @@
 ---
-name: Master-Finance
+name: Master-Admin
 colors:
   surface: '#f8f9ff'
   surface-dim: '#ccdbf3'

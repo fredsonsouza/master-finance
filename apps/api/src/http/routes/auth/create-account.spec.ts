@@ -1,9 +1,12 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { createAccount } from './create-account'
 import { prisma } from '@/lib/prisma'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { createAccount } from './create-account'
 
 vi.mock('@/lib/prisma', () => {
   return {
@@ -28,7 +31,7 @@ describe('Create Account Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof BadRequestError) {
         return reply.status(400).send({ message: error.message })

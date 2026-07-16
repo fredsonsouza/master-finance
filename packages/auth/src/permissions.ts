@@ -14,12 +14,49 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('manage', ['Item', 'Sector', 'Unit', 'User', 'Transaction', 'Metric'])
+    can('manage', [
+      'Item',
+      'Sector',
+      'Unit',
+      'User',
+      'Transaction',
+      'Metric',
+      'CashClosure',
+      'Collection',
+    ])
+  },
+
+  FINANCIAL(_, { can }) {
+    can('manage', ['Transaction', 'Metric', 'CashClosure'])
+    can('get', ['Item', 'Sector', 'Unit', 'User'])
   },
 
   EMPLOYEE(user, { can }) {
-    can('get', 'Sector', { unitId: { $eq: user.unitId } })
+    can('get', 'Sector')
     can('manage', 'Item', { unitId: { $eq: user.unitId } })
     can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+  },
+
+  SELLER(user, { can }) {
+    can('get', 'Sector')
+    can('get', 'Item', { unitId: { $eq: user.unitId } })
+    can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+
+    can('create', 'CashClosure')
+    can('get', 'CashClosure', { unitId: { $eq: user.unitId } })
+    can('update', 'CashClosure', ['cashDate', 'value', 'observation'], {
+      userId: { $eq: user.id },
+      status: { $eq: 'OPEN' },
+    })
+  },
+
+  COLLECTOR(user, { can }) {
+    can('get', 'Collection', { unitId: { $eq: user.unitId } })
+  },
+
+  FISCAL(user, { can }) {
+    can('manage', 'Collection')
+    can('get', 'User', { unitId: { $eq: user.unitId } })
+    can('get', 'Unit')
   },
 }

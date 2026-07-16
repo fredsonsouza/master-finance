@@ -1,9 +1,12 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { getProfile } from './get-profile'
 import { prisma } from '@/lib/prisma'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
+import { getProfile } from './get-profile'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -21,9 +24,12 @@ describe('Get Profile Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: 'user-id-123' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: 'user-id-123' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof ResourceNotFoundError) {
         return reply.status(404).send({ message: error.message })
@@ -41,6 +47,8 @@ describe('Get Profile Unit Test', () => {
       username: 'jhon',
       avatarUrl: 'http://example.com/avatar.png',
       forcePasswordChange: false,
+      role: 'ADMIN',
+      unitId: null,
     } as any)
 
     const response = await app.inject({
@@ -56,6 +64,8 @@ describe('Get Profile Unit Test', () => {
         username: 'jhon',
         avatarUrl: 'http://example.com/avatar.png',
         forcePasswordChange: false,
+        role: 'ADMIN',
+        unitId: null,
       },
     })
   })

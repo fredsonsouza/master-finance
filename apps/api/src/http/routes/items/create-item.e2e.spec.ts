@@ -1,7 +1,7 @@
-import { test, expect, beforeAll, afterAll } from 'vitest'
 import { app } from '@/http/server'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
+import { afterAll, beforeAll, expect, test } from 'vitest'
 
 beforeAll(async () => {
   await app.ready()
@@ -31,7 +31,6 @@ test('[E2E] Create Item', async () => {
   const sector = await prisma.sector.create({
     data: {
       name: 'General',
-      unitId: unit.id,
     },
   })
 

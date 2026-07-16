@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function createSector(app: FastifyInstance) {
   app
@@ -20,7 +21,6 @@ export async function createSector(app: FastifyInstance) {
           security: [{ bearerAuth: [] }],
           body: z.object({
             name: z.string().min(1),
-            unitId: z.uuid(),
           }),
           response: {
             201: z.object({
@@ -49,21 +49,20 @@ export async function createSector(app: FastifyInstance) {
           throw new UnauthorizedError('You are not allowed to create a sector.')
         }
 
-        const { name, unitId } = request.body
-
-        const unit = await prisma.unit.findUnique({
-          where: { id: unitId },
-        })
-
-        if (!unit) {
-          throw new BadRequestError('Unit not found.')
-        }
+        const { name } = request.body
 
         const sector = await prisma.sector.create({
           data: {
             name,
-            unitId,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'CREATE',
+          resource: 'SECTOR',
+          resourceId: sector.id,
+          details: `Criou o setor ${name}`,
         })
 
         return reply.status(201).send({ sectorId: sector.id })

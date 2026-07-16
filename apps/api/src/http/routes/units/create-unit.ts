@@ -1,9 +1,10 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function createUnit(app: FastifyInstance) {
@@ -53,6 +54,14 @@ export async function createUnit(app: FastifyInstance) {
           data: {
             name,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'CREATE',
+          resource: 'UNIT',
+          resourceId: unit.id,
+          details: `Criou a unidade: ${name}`,
         })
 
         return reply.status(201).send({ unitId: unit.id })

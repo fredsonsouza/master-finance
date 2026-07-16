@@ -1,10 +1,13 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { createTransaction } from './create-transaction'
 import { prisma } from '@/lib/prisma'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { createTransaction } from './create-transaction'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -14,12 +17,16 @@ vi.mock('@/lib/prisma', () => ({
     unit: {
       findUnique: vi.fn(),
     },
-    item: {
+    sector: {
       findUnique: vi.fn(),
+    },
+    item: {
+      findMany: vi.fn(),
     },
     transaction: {
       create: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }))
 
@@ -31,9 +38,12 @@ describe('Create Transaction Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof UnauthorizedError) {
         return reply.status(401).send({ message: error.message })
@@ -58,14 +68,22 @@ describe('Create Transaction Unit Test', () => {
       id: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
-    vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({
-      id: '323e4567-e89b-12d3-a456-426614174002',
-      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    vi.mocked(prisma.sector.findUnique).mockResolvedValueOnce({
+      id: '523e4567-e89b-12d3-a456-426614174005',
     } as any)
 
-    vi.mocked(prisma.transaction.create).mockResolvedValue({
-      id: '423e4567-e89b-12d3-a456-426614174003',
-    } as any)
+    vi.mocked(prisma.item.findMany).mockResolvedValueOnce([
+      {
+        id: '323e4567-e89b-12d3-a456-426614174002',
+        name: 'Syringe',
+      },
+    ] as any)
+
+    vi.mocked(prisma.$transaction).mockResolvedValueOnce([
+      {
+        id: '423e4567-e89b-12d3-a456-426614174003',
+      },
+    ] as any)
 
     const response = await app.inject({
       method: 'POST',
@@ -73,18 +91,21 @@ describe('Create Transaction Unit Test', () => {
       payload: {
         type: 'ENTRY',
         date: new Date('2026-05-25T12:00:00Z').toISOString(),
-        value: 100.5,
-        quantity: 10,
-        itemId: '323e4567-e89b-12d3-a456-426614174002',
         unitId: '223e4567-e89b-12d3-a456-426614174001',
+        sectorId: '523e4567-e89b-12d3-a456-426614174005',
+        items: [
+          {
+            itemId: '323e4567-e89b-12d3-a456-426614174002',
+            quantity: 10,
+            value: 100.5,
+          },
+        ],
       },
     })
 
     expect(response.statusCode).toBe(201)
-    expect(response.json()).toEqual({ transactionId: '423e4567-e89b-12d3-a456-426614174003' })
-    expect(prisma.transaction.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ month: '2026-05' })
-    }))
+    expect(response.json()).toHaveProperty('batchId')
+    expect(prisma.$transaction).toHaveBeenCalled()
   })
 
   test('should block EMPLOYEE from creating a transaction outside their unit', async () => {
@@ -100,14 +121,19 @@ describe('Create Transaction Unit Test', () => {
       payload: {
         type: 'ENTRY',
         date: new Date().toISOString(),
-        value: 100,
-        quantity: 1,
-        itemId: '323e4567-e89b-12d3-a456-426614174002',
         unitId: '999e4567-e89b-12d3-a456-426614174000', // Mismatch!
+        sectorId: '523e4567-e89b-12d3-a456-426614174005',
+        items: [
+          {
+            itemId: '323e4567-e89b-12d3-a456-426614174002',
+            quantity: 1,
+            value: 100,
+          },
+        ],
       },
     })
 
     expect(response.statusCode).toBe(401)
-    expect(prisma.transaction.create).not.toHaveBeenCalled()
+    expect(prisma.$transaction).not.toHaveBeenCalled()
   })
 })

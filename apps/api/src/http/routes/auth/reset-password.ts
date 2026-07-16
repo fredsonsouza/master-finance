@@ -1,12 +1,13 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
+import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
-import { hash } from 'bcryptjs'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function resetPassword(app: FastifyInstance) {
   app
@@ -64,6 +65,14 @@ export async function resetPassword(app: FastifyInstance) {
             password_hash: defaultPasswordHash,
             forcePasswordChange: true,
           },
+        })
+
+        await logAction({
+          userId: requestingUser.id,
+          action: 'UPDATE',
+          resource: 'AUTH',
+          resourceId: targetUserId,
+          details: `Resetou a senha do usuário: ${targetUser.name} (${targetUser.username})`,
         })
 
         return reply.status(204).send(null)

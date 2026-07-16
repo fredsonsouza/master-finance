@@ -1,39 +1,50 @@
 'use server'
 
-import { createItem } from '@/http/create-item'
 import { auth } from '@/auth/auth'
-import { revalidateTag } from 'next/cache'
+import { createItem } from '@/http/create-item'
+import { revalidatePath } from 'next/cache'
+
+import { getActiveUnit } from '@/components/unit-switcher-action'
 
 export async function createItemAction(data: FormData) {
-  const { token, user } = await auth()
+  const { token } = await auth()
 
   if (!token) {
     return { success: false, message: 'Não autenticado' }
   }
 
-  const name = data.get('name') as string
-  const description = data.get('description') as string | undefined
-  const unitId = user.unitId
+  const unitId = (data.get('unitId') as string) || (await getActiveUnit())
 
   if (!unitId) {
-    return { success: false, message: 'Usuário não vinculado a nenhuma unidade. Ação bloqueada.' }
+    return {
+      success: false,
+      message:
+        'Selecione uma unidade no formulário ou no switcher para registrar itens.',
+    }
   }
+
+  const name = data.get('name') as string
+  const description = data.get('description') as string | undefined
+  const rawSectorId = data.get('sectorId') as string | undefined
+  const sectorId = rawSectorId === '' ? undefined : rawSectorId
 
   try {
     await createItem(token, {
       name,
       description,
       unitId,
+      sectorId,
     })
 
-    revalidateTag('items')
-    
+    revalidatePath('/items')
+
     return { success: true, message: null }
-  } catch (err: any) {
+  } catch (err: unknown) {
     let errorMessage = 'Erro ao criar item no catálogo.'
-    if (err.response) {
+    if (err && typeof err === 'object' && 'response' in err) {
       try {
-        const errorData = await err.response.json()
+        const response = (err as { response: Response }).response
+        const errorData = await response.clone().json()
         if (errorData.message) errorMessage = errorData.message
       } catch {}
     }

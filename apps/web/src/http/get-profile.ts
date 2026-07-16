@@ -5,7 +5,19 @@ interface GetProfileResponse {
     id: string
     name: string | null
     username: string | null
-    role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+    role:
+      | 'ADMIN'
+      | 'MANAGER'
+      | 'EMPLOYEE'
+      | 'FINANCIAL'
+      | 'SELLER'
+      | 'COLLECTOR'
+      | 'FISCAL'
+    unitId: string | null
+    unit?: {
+      id: string
+      name: string
+    } | null
   }
 }
 

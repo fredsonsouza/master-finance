@@ -1,7 +1,7 @@
-import { test, expect, beforeAll, afterAll } from 'vitest'
 import { app } from '@/http/server'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
+import { afterAll, beforeAll, expect, test } from 'vitest'
 
 beforeAll(async () => {
   await app.ready()
@@ -15,6 +15,12 @@ test('[E2E] Transactions Flow', async () => {
   const unit = await prisma.unit.create({
     data: {
       name: 'Finance Unit',
+    },
+  })
+
+  const sector = await prisma.sector.create({
+    data: {
+      name: 'Finance Sector',
     },
   })
 
@@ -44,24 +50,30 @@ test('[E2E] Transactions Flow', async () => {
       Authorization: `Bearer ${token}`,
     },
     payload: {
-      type: 'EXIT',
+      type: 'ENTRY',
       date: new Date('2026-05-25T14:00:00Z').toISOString(),
-      value: 1200.5,
-      quantity: 1,
-      itemId: item.id,
       unitId: unit.id,
+      sectorId: sector.id,
+      items: [
+        {
+          itemId: item.id,
+          quantity: 1,
+          value: 1200.5,
+        },
+      ],
     },
   })
 
   expect(createResponse.statusCode).toBe(201)
-  const { transactionId } = createResponse.json()
-  expect(transactionId).toBeTruthy()
+  const { batchId } = createResponse.json()
+  expect(batchId).toBeTruthy()
 
   // 2. Check Database Record
-  const transactionInDb = await prisma.transaction.findUnique({
-    where: { id: transactionId },
+  const transactionInDb = await prisma.transaction.findFirst({
+    where: { batchId },
   })
   expect(transactionInDb?.month).toBe('2026-05') // Validates auto-computation
+  const transactionId = transactionInDb?.id
 
   // 3. Get Transactions List
   const getResponse = await app.inject({
@@ -75,7 +87,11 @@ test('[E2E] Transactions Flow', async () => {
   expect(getResponse.statusCode).toBe(200)
   expect(getResponse.json().transactions).toEqual(
     expect.arrayContaining([
-      expect.objectContaining({ id: transactionId, value: 1200.5, type: 'EXIT' }),
+      expect.objectContaining({
+        id: transactionId,
+        value: 1200.5,
+        type: 'ENTRY',
+      }),
     ])
   )
 })

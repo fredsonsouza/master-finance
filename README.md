@@ -1,6 +1,6 @@
-# Master-Finance SaaS 🏥💰
+# Master-Admin SaaS 🏥💰
 
-Master-Finance is a SaaS system developed to efficiently manage the flow of items (inventory and finances) within clinic units. The main goal is to track financial and inventory movements, recording input and output values, automatically calculating totals, and ensuring strict access governance via Role-Based Access Control (RBAC).
+Master-Admin is a SaaS system developed to efficiently manage the flow of items (inventory and finances) and clinical procedures within clinic units. The main goal is to track financial movements, collections/recollections, inventory, and ensure strict access governance via Role-Based Access Control (RBAC).
 
 ## 1. Core Entities
 

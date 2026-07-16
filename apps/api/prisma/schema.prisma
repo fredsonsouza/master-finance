@@ -11,6 +11,10 @@ enum Role {
   ADMIN
   MANAGER
   EMPLOYEE
+  FINANCIAL
+  SELLER
+  COLLECTOR
+  FISCAL
 }
 
 enum TransactionType {
@@ -32,6 +36,11 @@ model User {
   unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   transactions Transaction[]
+  cashClosures CashClosure[]
+
+  collectionsAsCollector Collection[] @relation("CollectionCollector")
+  collectionsAsCreator   Collection[] @relation("CollectionCreator")
+  auditLogs              AuditLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -44,9 +53,10 @@ model Unit {
   name String
 
   users        User[]
-  sectors      Sector[]
   items        Item[]
   transactions Transaction[]
+  cashClosures CashClosure[]
+  collections  Collection[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,10 +68,9 @@ model Sector {
   id   String @id @default(uuid())
   name String
 
-  unitId String
-  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
-
   items Item[]
+  cashClosures CashClosure[]
+  transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,11 +111,84 @@ model Transaction {
   unitId String
   unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  batchId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("transactions")
+}
+
+enum CashClosureStatus {
+  OPEN
+  CLOSED
+}
+
+model CashClosure {
+  id          String            @id @default(uuid())
+  cashDate    DateTime // The date the cash register refers to
+  value       Float // Total value of the register closure
+  observation String? // Optional observation text
+  status      CashClosureStatus @default(OPEN)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cash_closures")
+}
+
+model Collection {
+  id              String   @id @default(uuid())
+  requestDate     DateTime
+  patientCode     String
+  patientName     String
+  exams           String[]
+  reason          String   @db.VarChar(120)
+
+  collectorId     String
+  collector       User     @relation("CollectionCollector", fields: [collectorId], references: [id])
+
+  pendingBy       String
+  notifiedBy      String
+
+  unitId          String
+  unit            Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User     @relation("CollectionCreator", fields: [userId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("collections")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String   // e.g., "CREATE", "UPDATE", "DELETE"
+  resource   String   // e.g., "USER", "UNIT", "SECTOR", "ITEM", "TRANSACTION", "CASH_CLOSURE", "COLLECTION", "AUTH"
+  resourceId String?
+  details    String
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
 }

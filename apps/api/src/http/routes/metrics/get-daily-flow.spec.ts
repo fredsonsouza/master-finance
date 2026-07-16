@@ -1,9 +1,12 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { getDailyFlow } from './get-daily-flow'
 import { prisma } from '@/lib/prisma'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { getDailyFlow } from './get-daily-flow'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -24,9 +27,12 @@ describe('Get Daily Flow Metrics Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: '123e4567-e89b-12d3-a456-426614174000' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof UnauthorizedError) {
         return reply.status(401).send({ message: error.message })
@@ -55,16 +61,16 @@ describe('Get Daily Flow Metrics Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    
+
     const flow = response.json().flow
     expect(flow.length).toBe(31) // May has 31 days
-    
+
     const day02 = flow.find((f: any) => f.day === '02')
     expect(day02).toEqual({ day: '02', entries: 150, exits: 50 })
 
     const day15 = flow.find((f: any) => f.day === '15')
     expect(day15).toEqual({ day: '15', entries: 300, exits: 0 })
-    
+
     const day20 = flow.find((f: any) => f.day === '20')
     expect(day20).toEqual({ day: '20', entries: 0, exits: 0 }) // No transactions day
   })

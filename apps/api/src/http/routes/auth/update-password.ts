@@ -1,9 +1,10 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { hash } from 'bcryptjs'
 
 export async function updatePassword(app: FastifyInstance) {
   app
@@ -35,6 +36,14 @@ export async function updatePassword(app: FastifyInstance) {
             password_hash: newPasswordHash,
             forcePasswordChange: false,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'UPDATE',
+          resource: 'AUTH',
+          resourceId: userId,
+          details: 'Alterou a própria senha de acesso.',
         })
 
         return reply.status(204).send(null)

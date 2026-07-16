@@ -2,7 +2,6 @@ import { api } from './api-client'
 
 interface CreateSectorRequest {
   name: string
-  unitId: string
 }
 
 export async function createSector(token: string, data: CreateSectorRequest) {

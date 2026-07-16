@@ -15,9 +15,11 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Master Finance SaaS',
+  title: 'Master Admin SaaS',
   description: 'Sistema Financeiro e Clínico Avançado',
 }
+
+import { Toaster } from 'sonner'
 
 export default function RootLayout({
   children,
@@ -25,9 +27,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${plusJakartaSans.variable} h-full`}>
+    <html
+      lang="pt-BR"
+      className={`${inter.variable} ${plusJakartaSans.variable} h-full`}
+    >
       <body className="font-sans text-on-background bg-background antialiased text-sm">
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

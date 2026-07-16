@@ -1,11 +1,13 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { randomUUID } from 'node:crypto'
 
 export async function createTransaction(app: FastifyInstance) {
   app
@@ -16,19 +18,26 @@ export async function createTransaction(app: FastifyInstance) {
       {
         schema: {
           tags: ['transactions'],
-          summary: 'Create a new transaction',
+          summary: 'Create a new batch transaction',
           security: [{ bearerAuth: [] }],
           body: z.object({
             type: z.enum(['ENTRY', 'EXIT']),
             date: z.coerce.date(),
-            value: z.number().nonnegative(),
-            quantity: z.number().int().positive(),
-            itemId: z.uuid(),
             unitId: z.uuid(),
+            sectorId: z.uuid(),
+            items: z
+              .array(
+                z.object({
+                  itemId: z.uuid(),
+                  quantity: z.number().int().positive(),
+                  value: z.number().nonnegative(),
+                })
+              )
+              .min(1),
           }),
           response: {
             201: z.object({
-              transactionId: z.uuid(),
+              batchId: z.uuid(),
             }),
           },
         },
@@ -49,7 +58,7 @@ export async function createTransaction(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const { type, date, value, quantity, itemId, unitId } = request.body
+        const { type, date, unitId, sectorId, items } = request.body
 
         if (
           ability.cannot('create', { __typename: 'Transaction', unitId } as any)
@@ -65,35 +74,82 @@ export async function createTransaction(app: FastifyInstance) {
           throw new BadRequestError('Unit not found.')
         }
 
-        // Validate item
-        const item = await prisma.item.findUnique({ where: { id: itemId } })
-        if (!item) {
-          throw new BadRequestError('Item not found.')
+        // Validate sector
+        const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
+        if (!sector) {
+          throw new BadRequestError('Sector not found.')
         }
 
-        if (item.unitId !== unitId) {
-          throw new BadRequestError(
-            'Item does not belong to the specified unit.'
-          )
-        }
-
-        // Extract month in YYYY-MM format from the date
-        const monthString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-
-        const transaction = await prisma.transaction.create({
-          data: {
-            type,
-            date,
-            month: monthString,
-            value,
-            quantity,
-            itemId,
-            unitId,
-            userId, // The user performing the action
-          },
+        // Validate items exist
+        const dbItems = await prisma.item.findMany({
+          where: { id: { in: items.map((i) => i.itemId) } },
         })
 
-        return reply.status(201).send({ transactionId: transaction.id })
+        if (dbItems.length !== Array.from(new Set(items.map((i) => i.itemId))).length) {
+          throw new BadRequestError('One or more items not found.')
+        }
+
+        // Validate stock for EXIT transactions
+        if (type === 'EXIT') {
+          for (const itemReq of items) {
+            const pastTransactions = await prisma.transaction.findMany({
+              where: { itemId: itemReq.itemId, unitId },
+              select: { type: true, quantity: true },
+            })
+
+            let currentStock = 0
+            for (const tx of pastTransactions) {
+              if (tx.type === 'ENTRY') currentStock += tx.quantity
+              else if (tx.type === 'EXIT') currentStock -= tx.quantity
+            }
+
+            if (itemReq.quantity > currentStock) {
+              const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
+              throw new BadRequestError(
+                `Estoque insuficiente para o item ${itemDb?.name || itemReq.itemId}.`
+              )
+            }
+          }
+        }
+
+        const batchId = randomUUID()
+        const monthString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+
+        await prisma.$transaction(
+          items.map((itemReq) => {
+            return prisma.transaction.create({
+              data: {
+                type,
+                date,
+                month: monthString,
+                value: itemReq.value,
+                quantity: itemReq.quantity,
+                itemId: itemReq.itemId,
+                unitId,
+                sectorId,
+                userId,
+                batchId,
+              },
+            })
+          })
+        )
+
+        const itemsDetails = items
+          .map((itemReq) => {
+            const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
+            return `${itemReq.quantity}x ${itemDb?.name || ''} (R$ ${itemReq.value.toFixed(2)}/un)`
+          })
+          .join(', ')
+
+        await logAction({
+          userId,
+          action: 'CREATE',
+          resource: 'TRANSACTION',
+          resourceId: batchId,
+          details: `Registrou movimentação de ${type === 'ENTRY' ? 'ENTRADA' : 'SAÍDA'} em lote na unidade ${unit.name} e setor ${sector.name}. Itens: ${itemsDetails}`,
+        })
+
+        return reply.status(201).send({ batchId })
       }
     )
 }

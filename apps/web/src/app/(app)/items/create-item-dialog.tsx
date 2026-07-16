@@ -1,9 +1,6 @@
 'use client'
 
-import { useState, useActionState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -12,10 +9,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Plus } from 'lucide-react'
+import { useActionState, useState } from 'react'
 import { createItemAction } from './actions'
 
-export function CreateItemDialog() {
+import type { Sector } from '@/http/get-sectors'
+import type { Unit } from '@/http/get-units'
+
+interface Props {
+  sectors: Sector[]
+  units: Unit[]
+  activeUnitId?: string | null
+}
+
+export function CreateItemDialog({ sectors, units, activeUnitId }: Props) {
   const [open, setOpen] = useState(false)
 
   const [state, formAction, isPending] = useActionState(
@@ -31,12 +40,6 @@ export function CreateItemDialog() {
     },
     { success: false, message: null }
   )
-
-  useEffect(() => {
-    if (!open && state.message) {
-      state.message = null
-    }
-  }, [open, state])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -63,6 +66,40 @@ export function CreateItemDialog() {
               required
               placeholder="Ex: Luvas de Procedimento (Caixa)"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unitId">Unidade</Label>
+            <select
+              id="unitId"
+              name="unitId"
+              required
+              defaultValue={activeUnitId || ''}
+              className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+            >
+              <option value="">Selecione uma unidade...</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sectorId">Setor (Opcional)</Label>
+            <select
+              id="sectorId"
+              name="sectorId"
+              className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
+            >
+              <option value="">Nenhum / Global</option>
+              {sectors.map((sector) => (
+                <option key={sector.id} value={sector.id}>
+                  {sector.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-2">

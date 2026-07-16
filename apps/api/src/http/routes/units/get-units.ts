@@ -1,9 +1,9 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getUnits(app: FastifyInstance) {
@@ -47,8 +47,7 @@ export async function getUnits(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        // Only ADMIN and MANAGER can manage/read all units unconditionally according to the permissions.ts
-        if (ability.cannot('manage', 'Unit')) {
+        if (ability.cannot('get', 'Unit')) {
           throw new UnauthorizedError('You are not allowed to view all units.')
         }
 

@@ -1,8 +1,6 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -11,8 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { SignIn } from './actions'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useActionState } from 'react'
+import { SignIn } from './actions'
 
 export function SignInForm() {
   const [state, formAction, isPending] = useActionState(
@@ -34,7 +34,7 @@ export function SignInForm() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <h1 className="font-display text-primary text-4xl font-bold tracking-tight">
-            Master Finance
+            Master Admin
           </h1>
           <p className="text-on-surface-variant mt-2 text-sm">
             Sistema Integrado de Gestão Médica e Financeira
@@ -64,12 +64,9 @@ export function SignInForm() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <a
-                    href="#"
-                    className="text-primary hover:text-primary-container text-sm font-medium"
-                  >
+                  <span className="text-on-surface-variant text-sm font-medium">
                     Esqueceu a senha?
-                  </a>
+                  </span>
                 </div>
                 <Input
                   id="password"
@@ -94,9 +91,9 @@ export function SignInForm() {
           <CardFooter className="border-surface-container flex justify-center border-t pt-6">
             <p className="text-on-surface-variant text-sm">
               Precisa de ajuda?{' '}
-              <a href="#" className="text-primary font-medium hover:underline">
+              <span className="text-primary font-medium">
                 Contate o suporte
-              </a>
+              </span>
             </p>
           </CardFooter>
         </Card>

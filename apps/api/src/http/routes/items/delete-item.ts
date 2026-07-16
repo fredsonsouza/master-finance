@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function deleteItem(app: FastifyInstance) {
   app
@@ -46,6 +47,13 @@ export async function deleteItem(app: FastifyInstance) {
 
         const targetItem = await prisma.item.findUnique({
           where: { id: targetItemId },
+          include: {
+            unit: {
+              select: {
+                name: true,
+              },
+            },
+          },
         })
 
         if (!targetItem) {
@@ -65,6 +73,14 @@ export async function deleteItem(app: FastifyInstance) {
 
         await prisma.item.delete({
           where: { id: targetItemId },
+        })
+
+        await logAction({
+          userId,
+          action: 'DELETE',
+          resource: 'ITEM',
+          resourceId: targetItemId,
+          details: `Excluiu o item/procedimento ${targetItem.name} da unidade ${targetItem.unit?.name ?? ''}`,
         })
 
         return reply.status(204).send(null)

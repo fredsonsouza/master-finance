@@ -1,15 +1,23 @@
 import { api } from './api-client'
 
-interface CreateTransactionRequest {
-  type: 'ENTRY' | 'EXIT'
-  date?: string
-  value: number
-  quantity: number
+export interface CreateTransactionItem {
   itemId: string
-  unitId?: string
+  quantity: number
+  value: number
 }
 
-export async function createTransaction(token: string, data: CreateTransactionRequest) {
+export interface CreateTransactionRequest {
+  type: 'ENTRY' | 'EXIT'
+  date: string
+  unitId: string
+  sectorId: string
+  items: CreateTransactionItem[]
+}
+
+export async function createTransaction(
+  token: string,
+  data: CreateTransactionRequest
+) {
   await api.post('transactions', {
     headers: {
       Authorization: `Bearer ${token}`,

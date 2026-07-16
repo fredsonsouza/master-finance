@@ -1,10 +1,13 @@
-import { test, expect, describe, vi, beforeEach } from 'vitest'
-import fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
-import { resetPassword } from './reset-password'
 import { prisma } from '@/lib/prisma'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
+import fastify from 'fastify'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
+import { resetPassword } from './reset-password'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -27,9 +30,12 @@ describe('Reset Password Unit Test', () => {
     app = fastify()
     app.setValidatorCompiler(validatorCompiler)
     app.setSerializerCompiler(serializerCompiler)
-    
-    app.decorateRequest('jwtVerify', vi.fn().mockResolvedValue({ sub: 'admin-id' }))
-    
+
+    app.decorateRequest(
+      'jwtVerify',
+      vi.fn().mockResolvedValue({ sub: 'admin-id' })
+    )
+
     app.setErrorHandler((error: any, _request: any, reply: any) => {
       if (error instanceof UnauthorizedError) {
         return reply.status(401).send({ message: error.message })
@@ -48,7 +54,7 @@ describe('Reset Password Unit Test', () => {
       id: 'admin-id',
       role: 'MANAGER',
     } as any)
-    
+
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '00000000-0000-0000-0000-000000000000',
     } as any)
@@ -82,7 +88,9 @@ describe('Reset Password Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(401)
-    expect(response.json()).toEqual({ message: 'You are not allowed to reset passwords.' })
+    expect(response.json()).toEqual({
+      message: 'You are not allowed to reset passwords.',
+    })
     expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
@@ -91,7 +99,7 @@ describe('Reset Password Unit Test', () => {
       id: 'admin-id',
       role: 'ADMIN',
     } as any)
-    
+
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
 
     const response = await app.inject({

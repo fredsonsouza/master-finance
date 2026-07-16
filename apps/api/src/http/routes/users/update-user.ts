@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function updateUser(app: FastifyInstance) {
   app
@@ -23,7 +24,17 @@ export async function updateUser(app: FastifyInstance) {
           }),
           body: z.object({
             name: z.string().optional(),
-            role: z.enum(['ADMIN', 'MANAGER', 'EMPLOYEE']).optional(),
+            role: z
+              .enum([
+                'ADMIN',
+                'MANAGER',
+                'EMPLOYEE',
+                'FINANCIAL',
+                'SELLER',
+                'COLLECTOR',
+                'FISCAL',
+              ])
+              .optional(),
             unitId: z.string().uuid().nullable().optional(),
           }),
           response: {
@@ -63,13 +74,29 @@ export async function updateUser(app: FastifyInstance) {
 
         const { name, role, unitId } = request.body
 
-        await prisma.user.update({
+        if (role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError('Only admins can assign the admin role.')
+        }
+
+        if (targetUser.role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError('You cannot update an admin user.')
+        }
+
+        const updated = await prisma.user.update({
           where: { id: targetUserId },
           data: {
             name: name !== undefined ? name : targetUser.name,
             role: role !== undefined ? role : targetUser.role,
             unitId: unitId !== undefined ? unitId : targetUser.unitId,
           },
+        })
+
+        await logAction({
+          userId,
+          action: 'UPDATE',
+          resource: 'USER',
+          resourceId: targetUserId,
+          details: `Editou o usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`,
         })
 
         return reply.status(204).send(null)

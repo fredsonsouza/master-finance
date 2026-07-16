@@ -1,11 +1,12 @@
+import { auth } from '@/http/middlewares/auth'
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { BadRequestError } from '../_errors/bad-request-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function deleteUnit(app: FastifyInstance) {
   app
@@ -60,6 +61,14 @@ export async function deleteUnit(app: FastifyInstance) {
         // If a soft-delete (isActive) is implemented in Prisma later, this route should be updated to just toggle the flag.
         await prisma.unit.delete({
           where: { id: targetUnitId },
+        })
+
+        await logAction({
+          userId,
+          action: 'DELETE',
+          resource: 'UNIT',
+          resourceId: targetUnitId,
+          details: `Excluiu a unidade: ${targetUnit.name}`,
         })
 
         return reply.status(204).send(null)

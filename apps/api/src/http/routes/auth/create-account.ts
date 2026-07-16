@@ -1,7 +1,8 @@
+import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
-import { ZodTypeProvider } from 'fastify-type-provider-zod'
+import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { BadRequestError } from '../_errors/bad-request-error'
 
@@ -42,6 +43,14 @@ export async function createAccount(app: FastifyInstance) {
           username,
           password_hash,
         },
+      })
+
+      await logAction({
+        userId: user.id,
+        action: 'CREATE',
+        resource: 'AUTH',
+        resourceId: user.id,
+        details: `Criou a própria conta com nome de usuário: ${username}`,
       })
 
       return reply.status(201).send()

@@ -1,11 +1,11 @@
+import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '@/http/middlewares/auth'
-import { defineAbilityFor } from '@saas/auth'
-import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getSector(app: FastifyInstance) {
   app
@@ -26,7 +26,6 @@ export async function getSector(app: FastifyInstance) {
               sector: z.object({
                 id: z.uuid(),
                 name: z.string(),
-                unitId: z.uuid(),
                 createdAt: z.date(),
                 updatedAt: z.date(),
               }),
@@ -63,7 +62,6 @@ export async function getSector(app: FastifyInstance) {
         if (
           ability.cannot('get', {
             __typename: 'Sector',
-            unitId: sector.unitId,
           } as any)
         ) {
           throw new UnauthorizedError(

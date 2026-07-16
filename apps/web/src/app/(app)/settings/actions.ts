@@ -1,10 +1,10 @@
 'use server'
 
-import { createUnit } from '@/http/create-unit'
-import { createSector } from '@/http/create-sector'
-import { createUser } from '@/http/create-user'
 import { auth } from '@/auth/auth'
-import { revalidateTag } from 'next/cache'
+import { createSector } from '@/http/create-sector'
+import { createUnit } from '@/http/create-unit'
+import { createUser } from '@/http/create-user'
+import { revalidatePath } from 'next/cache'
 
 export async function createUnitAction(data: FormData) {
   const { token } = await auth()
@@ -12,9 +12,9 @@ export async function createUnitAction(data: FormData) {
 
   try {
     await createUnit(token, { name })
-    revalidateTag('units')
+    revalidatePath('/settings')
     return { success: true, message: null }
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { success: false, message: 'Erro ao criar unidade.' }
   }
 }
@@ -22,13 +22,12 @@ export async function createUnitAction(data: FormData) {
 export async function createSectorAction(data: FormData) {
   const { token } = await auth()
   const name = data.get('name') as string
-  const unitId = data.get('unitId') as string
 
   try {
-    await createSector(token, { name, unitId })
-    revalidateTag('sectors')
+    await createSector(token, { name })
+    revalidatePath('/settings')
     return { success: true, message: null }
-  } catch (err: any) {
+  } catch (err: unknown) {
     return { success: false, message: 'Erro ao criar setor.' }
   }
 }
@@ -38,7 +37,14 @@ export async function createUserAction(data: FormData) {
   const name = data.get('name') as string
   const username = data.get('username') as string
   const password = data.get('password') as string
-  const role = data.get('role') as 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+  const role = data.get('role') as
+    | 'ADMIN'
+    | 'MANAGER'
+    | 'EMPLOYEE'
+    | 'FINANCIAL'
+    | 'SELLER'
+    | 'COLLECTOR'
+    | 'FISCAL'
   const unitId = data.get('unitId') as string | null
 
   try {
@@ -49,14 +55,125 @@ export async function createUserAction(data: FormData) {
       role,
       unitId: unitId || null,
     })
-    revalidateTag('users')
+    revalidatePath('/settings')
     return { success: true, message: null }
-  } catch (err: any) {
+  } catch (err: unknown) {
+    console.error('Exception in createUserAction:', err)
     let msg = 'Erro ao criar usuário.'
-    try {
-      const e = await err.response?.json()
-      if (e?.message) msg = e.message
-    } catch {}
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const response = (err as any).response
+        const e = await response.clone().json()
+        if (e?.message) msg = e.message
+      } catch (parseErr) {
+        console.error('Failed to parse error JSON:', parseErr)
+      }
+    }
+    return { success: false, message: msg }
+  }
+}
+
+import { deleteSector } from '@/http/delete-sector'
+import { deleteUnit } from '@/http/delete-unit'
+import { updateSector } from '@/http/update-sector'
+import { updateUnit } from '@/http/update-unit'
+
+export async function deleteUnitAction(id: string) {
+  const { token } = await auth()
+  try {
+    await deleteUnit(token, id)
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err) {
+    return { success: false, message: 'Erro ao excluir unidade.' }
+  }
+}
+
+export async function updateUnitAction(id: string, data: FormData) {
+  const { token } = await auth()
+  const name = data.get('name') as string
+  try {
+    await updateUnit(token, id, { name })
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err) {
+    return { success: false, message: 'Erro ao atualizar unidade.' }
+  }
+}
+
+export async function deleteSectorAction(id: string) {
+  const { token } = await auth()
+  try {
+    await deleteSector(token, id)
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err) {
+    return { success: false, message: 'Erro ao excluir setor.' }
+  }
+}
+
+export async function updateSectorAction(id: string, data: FormData) {
+  const { token } = await auth()
+  const name = data.get('name') as string
+  try {
+    await updateSector(token, id, { name })
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err) {
+    return { success: false, message: 'Erro ao atualizar setor.' }
+  }
+}
+
+import { deleteUser } from '@/http/delete-user'
+import { updateUser } from '@/http/update-user'
+
+export async function deleteUserAction(id: string) {
+  const { token } = await auth()
+  try {
+    await deleteUser(token, id)
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao excluir usuário.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function updateUserAction(id: string, data: FormData) {
+  const { token } = await auth()
+  const name = data.get('name') as string
+  const role = data.get('role') as
+    | 'ADMIN'
+    | 'MANAGER'
+    | 'EMPLOYEE'
+    | 'FINANCIAL'
+    | 'SELLER'
+    | 'COLLECTOR'
+    | 'FISCAL'
+  const unitId = data.get('unitId') as string | null
+
+  try {
+    await updateUser(token, id, {
+      name: name || undefined,
+      role: role || undefined,
+      unitId: unitId || null,
+    })
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao atualizar usuário.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
     return { success: false, message: msg }
   }
 }
