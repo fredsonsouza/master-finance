@@ -158,7 +158,7 @@ app.register(deleteCollection)
 app.register(getLogs)
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen({ port: env.SERVER_PORT }).then(() => {
+  app.listen({ port: env.SERVER_PORT, host: '0.0.0.0' }).then(() => {
     console.log('HTTP Server Running✅')
   })
 }
