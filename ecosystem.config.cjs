@@ -18,6 +18,7 @@ module.exports = {
       args: '--filter web start',
       env: {
         NODE_ENV: 'production',
+        PORT: 3003,
       },
       instances: 1,
       autorestart: true,
