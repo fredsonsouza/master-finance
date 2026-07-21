@@ -12,6 +12,7 @@ interface CreateUserRequest {
     | 'SELLER'
     | 'COLLECTOR'
     | 'FISCAL'
+    | 'INVENTORY'
   unitId?: string | null
 }
 

@@ -27,7 +27,7 @@ export async function getItem(app: FastifyInstance) {
                 id: z.string().uuid(),
                 name: z.string(),
                 description: z.string().nullable(),
-                unitId: z.string().uuid(),
+                quantity: z.number().int(),
                 sectorId: z.string().uuid().nullable(),
                 createdAt: z.date(),
                 updatedAt: z.date(),
@@ -62,12 +62,7 @@ export async function getItem(app: FastifyInstance) {
           throw new ResourceNotFoundError('Item not found.')
         }
 
-        if (
-          ability.cannot('get', {
-            __typename: 'Item',
-            unitId: item.unitId,
-          } as any)
-        ) {
+        if (ability.cannot('get', 'Item')) {
           throw new UnauthorizedError('You are not allowed to view this item.')
         }
 

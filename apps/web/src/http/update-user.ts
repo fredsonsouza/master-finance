@@ -10,6 +10,7 @@ interface UpdateUserRequest {
     | 'SELLER'
     | 'COLLECTOR'
     | 'FISCAL'
+    | 'INVENTORY'
   unitId?: string | null
 }
 

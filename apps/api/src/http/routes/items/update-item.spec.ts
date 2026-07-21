@@ -54,14 +54,13 @@ describe('Update Item Unit Test', () => {
   test('should successfully update an item', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
+      role: 'INVENTORY',
     } as any)
 
     vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({
       id: '423e4567-e89b-12d3-a456-426614174003',
       name: 'Old Desk',
       description: null,
-      unitId: '223e4567-e89b-12d3-a456-426614174001',
       sectorId: null,
     } as any)
 
@@ -83,13 +82,6 @@ describe('Update Item Unit Test', () => {
         name: 'New Desk',
         description: 'A brand new desk',
         sectorId: null,
-      },
-      include: {
-        unit: {
-          select: {
-            name: true,
-          },
-        },
       },
     })
   })

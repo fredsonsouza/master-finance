@@ -15,6 +15,7 @@ enum Role {
   SELLER
   COLLECTOR
   FISCAL
+  INVENTORY
 }
 
 enum TransactionType {
@@ -53,7 +54,6 @@ model Unit {
   name String
 
   users        User[]
-  items        Item[]
   transactions Transaction[]
   cashClosures CashClosure[]
   collections  Collection[]
@@ -82,9 +82,7 @@ model Item {
   id          String  @id @default(uuid())
   name        String
   description String?
-
-  unitId String
-  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  quantity    Int     @default(0)
 
   sectorId String?
   sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)

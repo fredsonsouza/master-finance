@@ -45,6 +45,7 @@ export async function createUserAction(data: FormData) {
     | 'SELLER'
     | 'COLLECTOR'
     | 'FISCAL'
+    | 'INVENTORY'
   const unitId = data.get('unitId') as string | null
 
   try {
@@ -63,11 +64,9 @@ export async function createUserAction(data: FormData) {
     if (err && typeof err === 'object' && 'response' in err) {
       try {
         const response = (err as any).response
-        const e = await response.clone().json()
+        const e = await response.json()
         if (e?.message) msg = e.message
-      } catch (parseErr) {
-        console.error('Failed to parse error JSON:', parseErr)
-      }
+      } catch (parseErr) {}
     }
     return { success: false, message: msg }
   }
@@ -156,6 +155,7 @@ export async function updateUserAction(id: string, data: FormData) {
     | 'SELLER'
     | 'COLLECTOR'
     | 'FISCAL'
+    | 'INVENTORY'
   const unitId = data.get('unitId') as string | null
 
   try {

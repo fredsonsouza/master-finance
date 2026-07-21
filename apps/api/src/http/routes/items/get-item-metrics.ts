@@ -69,7 +69,7 @@ export async function getItemMetrics(app: FastifyInstance) {
           orderBy: { date: 'desc' },
         })
 
-        let currentStock = 0
+        let currentStock = item.quantity || 0
         let lastPrice: number | null = null
 
         for (const tx of transactions) {

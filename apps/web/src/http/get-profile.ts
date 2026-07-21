@@ -13,6 +13,7 @@ interface GetProfileResponse {
       | 'SELLER'
       | 'COLLECTOR'
       | 'FISCAL'
+      | 'INVENTORY'
     unitId: string | null
     unit?: {
       id: string

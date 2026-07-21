@@ -22,8 +22,8 @@ export async function createItem(app: FastifyInstance) {
           body: z.object({
             name: z.string().min(1),
             description: z.string().nullable().optional(),
-            unitId: z.uuid(),
             sectorId: z.uuid().nullable().optional(),
+            quantity: z.number().int().min(0).optional().default(0),
           }),
           response: {
             201: z.object({
@@ -48,21 +48,12 @@ export async function createItem(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const { name, description, unitId, sectorId } = request.body
+        const { name, description, sectorId, quantity } = request.body
 
-        // Check if the user is authorized to create an item in the requested unit
-        if (ability.cannot('create', { __typename: 'Item', unitId } as any)) {
+        if (ability.cannot('create', 'Item')) {
           throw new UnauthorizedError(
-            'You are not allowed to create an item in this unit.'
+            'You are not allowed to create an item.'
           )
-        }
-
-        const unit = await prisma.unit.findUnique({
-          where: { id: unitId },
-        })
-
-        if (!unit) {
-          throw new BadRequestError('Unit not found.')
         }
 
         if (sectorId) {
@@ -78,8 +69,8 @@ export async function createItem(app: FastifyInstance) {
           data: {
             name,
             description,
-            unitId,
             sectorId,
+            quantity,
           },
         })
 
@@ -88,7 +79,7 @@ export async function createItem(app: FastifyInstance) {
           action: 'CREATE',
           resource: 'ITEM',
           resourceId: item.id,
-          details: `Criou o item/procedimento ${name} na unidade ${unit.name}`,
+          details: `Criou o item/procedimento ${name} com quantidade inicial ${quantity}`,
         })
 
         return reply.status(201).send({ itemId: item.id })

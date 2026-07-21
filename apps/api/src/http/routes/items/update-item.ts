@@ -26,6 +26,7 @@ export async function updateItem(app: FastifyInstance) {
             name: z.string().min(1).optional(),
             description: z.string().nullable().optional(),
             sectorId: z.uuid().nullable().optional(),
+            quantity: z.number().int().min(0).optional(),
           }),
           response: {
             204: z.null(),
@@ -58,18 +59,13 @@ export async function updateItem(app: FastifyInstance) {
           throw new BadRequestError('Item not found.')
         }
 
-        if (
-          ability.cannot('update', {
-            __typename: 'Item',
-            unitId: targetItem.unitId,
-          } as any)
-        ) {
+        if (ability.cannot('update', 'Item')) {
           throw new UnauthorizedError(
             'You are not allowed to update this item.'
           )
         }
 
-        const { name, description, sectorId } = request.body
+        const { name, description, sectorId, quantity } = request.body
 
         if (sectorId) {
           const sector = await prisma.sector.findUnique({
@@ -80,8 +76,6 @@ export async function updateItem(app: FastifyInstance) {
           }
         }
 
-        // We explicitly avoid allowing `unitId` modification here to prevent complex transfer edge-cases
-        // Transferring items across units might have financial implications if it has transactions
         const updatedItem = await prisma.item.update({
           where: { id: targetItemId },
           data: {
@@ -89,13 +83,7 @@ export async function updateItem(app: FastifyInstance) {
             description:
               description !== undefined ? description : targetItem.description,
             sectorId: sectorId !== undefined ? sectorId : targetItem.sectorId,
-          },
-          include: {
-            unit: {
-              select: {
-                name: true,
-              },
-            },
+            quantity: quantity !== undefined ? quantity : targetItem.quantity,
           },
         })
 
@@ -104,7 +92,7 @@ export async function updateItem(app: FastifyInstance) {
           action: 'UPDATE',
           resource: 'ITEM',
           resourceId: targetItemId,
-          details: `Editou o item/procedimento ${updatedItem.name} na unidade ${updatedItem.unit?.name ?? ''}`,
+          details: `Editou o item/procedimento ${updatedItem.name}`,
         })
 
         return reply.status(204).send(null)

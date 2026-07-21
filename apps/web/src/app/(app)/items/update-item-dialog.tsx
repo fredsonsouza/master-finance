@@ -12,15 +12,17 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Sector } from '@/http/get-sectors'
-import { Plus } from 'lucide-react'
+import type { Item } from '@/http/get-items'
+import { Edit } from 'lucide-react'
 import { useActionState, useState } from 'react'
-import { createItemAction } from './actions'
+import { updateItemAction } from './actions'
 
 interface Props {
+  item: Item
   sectors: Sector[]
 }
 
-export function CreateItemDialog({ sectors }: Props) {
+export function UpdateItemDialog({ item, sectors }: Props) {
   const [open, setOpen] = useState(false)
 
   const [state, formAction, isPending] = useActionState(
@@ -28,7 +30,7 @@ export function CreateItemDialog({ sectors }: Props) {
       prevState: { success: boolean; message: string | null },
       formData: FormData
     ) => {
-      const result = await createItemAction(formData)
+      const result = await updateItemAction(formData)
       if (result.success) {
         setOpen(false)
       }
@@ -40,26 +42,29 @@ export function CreateItemDialog({ sectors }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Novo Item
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Edit className="h-4 w-4" />
+          <span className="sr-only">Editar</span>
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Adicionar ao Catálogo</DialogTitle>
+          <DialogTitle>Editar Item do Catálogo</DialogTitle>
           <DialogDescription>
-            Crie um novo item, produto ou procedimento.
+            Atualize as informações deste item ou procedimento.
           </DialogDescription>
         </DialogHeader>
 
         <form action={formAction} className="space-y-4">
+          <input type="hidden" name="id" value={item.id} />
+
           <div className="space-y-2">
             <Label htmlFor="name">Nome do Item</Label>
             <Input
               id="name"
               name="name"
               required
+              defaultValue={item.name}
               placeholder="Ex: Luvas de Procedimento (Caixa)"
             />
           </div>
@@ -69,6 +74,7 @@ export function CreateItemDialog({ sectors }: Props) {
             <select
               id="sectorId"
               name="sectorId"
+              defaultValue={item.sectorId || ''}
               className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
             >
               <option value="">Nenhum / Global</option>
@@ -81,12 +87,13 @@ export function CreateItemDialog({ sectors }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade Inicial (Opcional)</Label>
+            <Label htmlFor="quantity">Quantidade (Estoque Inicial)</Label>
             <Input
               id="quantity"
               name="quantity"
               type="number"
               min="0"
+              defaultValue={item.quantity}
               placeholder="Ex: 50"
             />
           </div>
@@ -96,6 +103,7 @@ export function CreateItemDialog({ sectors }: Props) {
             <Input
               id="description"
               name="description"
+              defaultValue={item.description || ''}
               placeholder="Ex: Caixa com 100 unidades"
             />
           </div>
@@ -116,7 +124,7 @@ export function CreateItemDialog({ sectors }: Props) {
               Cancelar
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? 'Salvando...' : 'Salvar Item'}
+              {isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </div>
         </form>

@@ -1,6 +1,5 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -18,7 +17,6 @@ export async function getItems(app: FastifyInstance) {
           summary: 'Get all items',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
-            unitId: z.uuid().optional(),
             sectorId: z.uuid().optional(),
           }),
           response: {
@@ -28,7 +26,7 @@ export async function getItems(app: FastifyInstance) {
                   id: z.string().uuid(),
                   name: z.string(),
                   description: z.string().nullable(),
-                  unitId: z.string().uuid(),
+                  quantity: z.number().int(),
                   sectorId: z.string().uuid().nullable(),
                   createdAt: z.date(),
                   updatedAt: z.date(),
@@ -38,11 +36,6 @@ export async function getItems(app: FastifyInstance) {
                       name: z.string(),
                     })
                     .nullable()
-                    .optional(),
-                  unit: z
-                    .object({
-                      name: z.string(),
-                    })
                     .optional(),
                 })
               ),
@@ -60,27 +53,15 @@ export async function getItems(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        let { unitId, sectorId } = request.query
-
-        // Enforce employee restrictions
-        if (requestingUser.role === 'EMPLOYEE') {
-          if (!requestingUser.unitId) {
-            return reply.status(200).send({ items: [] }) // Employee with no unit sees no items
-          }
-          unitId = requestingUser.unitId
-        }
+        const { sectorId } = request.query
 
         const items = await prisma.item.findMany({
           take: 100, // Limita a 100 para não estourar a memória no acesso global
           where: {
-            unitId,
             sectorId,
           },
           include: {
             sector: true,
-            unit: {
-              select: { name: true },
-            },
           },
           orderBy: {
             createdAt: 'desc',

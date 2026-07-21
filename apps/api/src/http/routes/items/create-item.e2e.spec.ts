@@ -23,7 +23,7 @@ test('[E2E] Create Item', async () => {
       name: 'Employee User',
       username: 'employee-create-item',
       password_hash: await hash('123456', 1),
-      role: 'EMPLOYEE',
+      role: 'INVENTORY',
       unitId: unit.id,
     },
   })
@@ -45,7 +45,6 @@ test('[E2E] Create Item', async () => {
     payload: {
       name: 'Syringe',
       description: 'Standard 10ml',
-      unitId: unit.id,
       sectorId: sector.id,
     },
   })

@@ -86,6 +86,8 @@ export function SettingsContent({
     SELLER: 'Caixa',
     FINANCIAL: 'Financeiro',
     COLLECTOR: 'Coletador',
+    FISCAL: 'Fiscal',
+    INVENTORY: 'Estoque',
   }
 
   async function confirmDeleteUser() {
@@ -128,14 +130,17 @@ export function SettingsContent({
   }
 
   return (
-    <Tabs defaultValue="users" className="w-full">
+    <Tabs defaultValue={currentUserRole === 'INVENTORY' ? 'units' : 'users'} className="w-full">
       <TabsList className="mb-4">
-        <TabsTrigger value="users">Usuários</TabsTrigger>
+        {currentUserRole !== 'INVENTORY' && (
+          <TabsTrigger value="users">Usuários</TabsTrigger>
+        )}
         <TabsTrigger value="units">Unidades</TabsTrigger>
         <TabsTrigger value="sectors">Setores</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="users">
+      {currentUserRole !== 'INVENTORY' && (
+        <TabsContent value="users">
         <Card>
           <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <CardTitle className="text-xl">Usuários Cadastrados</CardTitle>
@@ -236,6 +241,7 @@ export function SettingsContent({
           </CardContent>
         </Card>
       </TabsContent>
+      )}
 
       <TabsContent value="units">
         <Card>

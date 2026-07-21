@@ -3,8 +3,8 @@ import { api } from './api-client'
 interface CreateItemRequest {
   name: string
   description?: string
-  unitId: string
   sectorId?: string
+  quantity?: number
 }
 
 export async function createItem(token: string, data: CreateItemRequest) {

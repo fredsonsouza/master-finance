@@ -47,7 +47,7 @@ describe('Get Item Unit Test', () => {
     await app.register(getItem)
   })
 
-  test('should allow EMPLOYEE to view an item in their unit', async () => {
+  test('should allow user to view a global item details', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
@@ -60,8 +60,8 @@ describe('Get Item Unit Test', () => {
       id: '423e4567-e89b-12d3-a456-426614174003',
       name: 'Desk',
       description: null,
+      quantity: 0,
       sectorId: null,
-      unitId: '223e4567-e89b-12d3-a456-426614174001', // Same unit
       createdAt: date,
       updatedAt: date,
     } as any)
@@ -77,34 +77,11 @@ describe('Get Item Unit Test', () => {
         id: '423e4567-e89b-12d3-a456-426614174003',
         name: 'Desk',
         description: null,
+        quantity: 0,
         sectorId: null,
-        unitId: '223e4567-e89b-12d3-a456-426614174001',
         createdAt: date.toISOString(),
         updatedAt: date.toISOString(),
       },
-    })
-  })
-
-  test('should block EMPLOYEE from viewing an item outside their unit', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'EMPLOYEE',
-      unitId: '223e4567-e89b-12d3-a456-426614174001',
-    } as any)
-
-    vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({
-      id: '423e4567-e89b-12d3-a456-426614174003',
-      unitId: '999e4567-e89b-12d3-a456-426614174000', // Different unit
-    } as any)
-
-    const response = await app.inject({
-      method: 'GET',
-      url: '/items/423e4567-e89b-12d3-a456-426614174003',
-    })
-
-    expect(response.statusCode).toBe(401)
-    expect(response.json()).toEqual({
-      message: 'You are not allowed to view this item.',
     })
   })
 })

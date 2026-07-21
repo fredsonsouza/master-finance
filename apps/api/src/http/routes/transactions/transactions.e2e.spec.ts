@@ -27,7 +27,6 @@ test('[E2E] Transactions Flow', async () => {
   const item = await prisma.item.create({
     data: {
       name: 'Office Desk',
-      unitId: unit.id,
     },
   })
 

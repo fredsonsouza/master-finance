@@ -47,25 +47,13 @@ export async function deleteItem(app: FastifyInstance) {
 
         const targetItem = await prisma.item.findUnique({
           where: { id: targetItemId },
-          include: {
-            unit: {
-              select: {
-                name: true,
-              },
-            },
-          },
         })
 
         if (!targetItem) {
           throw new BadRequestError('Item not found.')
         }
 
-        if (
-          ability.cannot('delete', {
-            __typename: 'Item',
-            unitId: targetItem.unitId,
-          } as any)
-        ) {
+        if (ability.cannot('delete', 'Item')) {
           throw new UnauthorizedError(
             'You are not allowed to delete this item.'
           )
@@ -80,7 +68,7 @@ export async function deleteItem(app: FastifyInstance) {
           action: 'DELETE',
           resource: 'ITEM',
           resourceId: targetItemId,
-          details: `Excluiu o item/procedimento ${targetItem.name} da unidade ${targetItem.unit?.name ?? ''}`,
+          details: `Excluiu o item/procedimento ${targetItem.name}`,
         })
 
         return reply.status(204).send(null)

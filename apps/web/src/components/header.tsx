@@ -9,7 +9,11 @@ export async function Header() {
   const { user, token } = await auth()
 
   let units: Unit[] = []
-  if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+  if (
+    user.role === 'ADMIN' ||
+    user.role === 'MANAGER' ||
+    user.role === 'INVENTORY'
+  ) {
     try {
       const res = await getUnits(token)
       units = res.units
@@ -23,7 +27,9 @@ export async function Header() {
   return (
     <header className="border-surface-container bg-surface flex h-16 items-center justify-between border-b px-6">
       <div className="flex items-center gap-4 ml-auto">
-        {(user?.role === 'ADMIN' || user?.role === 'MANAGER') && (
+        {(user?.role === 'ADMIN' ||
+          user?.role === 'MANAGER' ||
+          user?.role === 'INVENTORY') && (
           <UnitSwitcher units={units} initialActiveUnitId={activeUnitId} />
         )}
         <ProfileButton user={user} />

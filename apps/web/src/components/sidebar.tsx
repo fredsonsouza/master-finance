@@ -34,15 +34,19 @@ export async function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-2">
-        {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
+        {(user.role === 'ADMIN' ||
+          user.role === 'MANAGER' ||
+          user.role === 'INVENTORY') && (
           <>
-            <Link
-              href="/"
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="font-medium">Visão Geral</span>
-            </Link>
+            {user.role !== 'INVENTORY' && (
+              <Link
+                href="/"
+                className="flex items-center gap-3 rounded-md px-3 py-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
+              >
+                <LayoutDashboard className="h-5 w-5" />
+                <span className="font-medium">Visão Geral</span>
+              </Link>
+            )}
             <Link
               href="/transactions"
               className="flex items-center gap-3 rounded-md px-3 py-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
@@ -108,7 +112,9 @@ export async function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-surface-container">
-        {(user.role === 'ADMIN' || user.role === 'MANAGER') && (
+        {(user.role === 'ADMIN' ||
+          user.role === 'MANAGER' ||
+          user.role === 'INVENTORY') && (
           <Link
             href="/settings"
             className="flex items-center gap-3 rounded-md px-3 py-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors mb-2"

@@ -15,9 +15,6 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
     },
-    unit: {
-      findUnique: vi.fn(),
-    },
     sector: {
       findUnique: vi.fn(),
     },
@@ -54,15 +51,11 @@ describe('Create Item Unit Test', () => {
     await app.register(createItem)
   })
 
-  test('should allow EMPLOYEE to create an item in their own unit', async () => {
+  test('should allow INVENTORY to create a global item', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'EMPLOYEE',
+      role: 'INVENTORY',
       unitId: '223e4567-e89b-12d3-a456-426614174001',
-    } as any)
-
-    vi.mocked(prisma.unit.findUnique).mockResolvedValueOnce({
-      id: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
     vi.mocked(prisma.item.create).mockResolvedValue({
@@ -74,7 +67,6 @@ describe('Create Item Unit Test', () => {
       url: '/items',
       payload: {
         name: 'Desk',
-        unitId: '223e4567-e89b-12d3-a456-426614174001',
       },
     })
 
@@ -82,28 +74,5 @@ describe('Create Item Unit Test', () => {
     expect(response.json()).toEqual({
       itemId: '423e4567-e89b-12d3-a456-426614174003',
     })
-  })
-
-  test('should block EMPLOYEE from creating an item in another unit', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'EMPLOYEE',
-      unitId: '223e4567-e89b-12d3-a456-426614174001',
-    } as any)
-
-    const response = await app.inject({
-      method: 'POST',
-      url: '/items',
-      payload: {
-        name: 'Desk',
-        unitId: '323e4567-e89b-12d3-a456-426614174002', // Different unit
-      },
-    })
-
-    expect(response.statusCode).toBe(401)
-    expect(response.json()).toEqual({
-      message: 'You are not allowed to create an item in this unit.',
-    })
-    expect(prisma.item.create).not.toHaveBeenCalled()
   })
 })

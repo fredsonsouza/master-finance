@@ -12,6 +12,7 @@ export interface User {
     | 'SELLER'
     | 'COLLECTOR'
     | 'FISCAL'
+    | 'INVENTORY'
   unitId: string | null
   avatarUrl: string | null
 }

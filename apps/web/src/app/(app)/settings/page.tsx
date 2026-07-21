@@ -13,7 +13,11 @@ import { getActiveUnit } from '@/components/unit-switcher-action'
 export default async function SettingsPage() {
   const { token, user } = await auth()
 
-  if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
+  if (
+    user.role !== 'ADMIN' &&
+    user.role !== 'MANAGER' &&
+    user.role !== 'INVENTORY'
+  ) {
     redirect('/')
   }
 

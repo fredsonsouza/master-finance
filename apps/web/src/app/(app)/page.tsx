@@ -18,6 +18,10 @@ export default async function DashboardPage() {
     redirect('/collections')
   }
 
+  if (user.role === 'INVENTORY') {
+    redirect('/transactions')
+  }
+
   const activeUnitId = await getActiveUnit()
 
   let groups: any[] = []

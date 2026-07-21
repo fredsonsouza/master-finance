@@ -28,6 +28,7 @@ export async function getUsers(app: FastifyInstance) {
                 'SELLER',
                 'COLLECTOR',
                 'FISCAL',
+                'INVENTORY',
               ])
               .optional(),
           }),
@@ -46,6 +47,7 @@ export async function getUsers(app: FastifyInstance) {
                     'SELLER',
                     'COLLECTOR',
                     'FISCAL',
+                    'INVENTORY',
                   ]),
                   unitId: z.uuid().nullable(),
                   avatarUrl: z.url().nullable(),

@@ -1,37 +1,28 @@
 import { auth } from '@/auth/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getActiveUnit } from '@/components/unit-switcher-action'
 import { getItems } from '@/http/get-items'
 import type { Metadata } from 'next'
 import { CreateItemDialog } from './create-item-dialog'
-
+import { UpdateItemDialog } from './update-item-dialog'
 import { getSectors } from '@/http/get-sectors'
 import type { Sector } from '@/http/get-sectors'
-import { getUnits } from '@/http/get-units'
-import type { Unit } from '@/http/get-units'
 
 export const metadata: Metadata = {
   title: 'Catálogo de Itens - Master Admin',
-  description: 'Gerencie os itens e procedimentos da sua unidade.',
+  description: 'Gerencie os itens e procedimentos do catálogo global.',
 }
 
 export default async function ItemsPage() {
-  const { token } = await auth()
-  const activeUnitId = await getActiveUnit()
-  const { items } = await getItems(token, activeUnitId)
+  const { user, token } = await auth()
+  const { items } = await getItems(token)
 
-  // Fetch sectors to pass to item creation
+  const canManage = user.role === 'ADMIN' || user.role === 'INVENTORY'
+
+  // Fetch sectors to pass to item dialogs
   let sectors: Sector[] = []
   try {
     const res = await getSectors(token)
     sectors = res.sectors
-  } catch {}
-
-  // Fetch units to pass to item creation
-  let units: Unit[] = []
-  try {
-    const res = await getUnits(token)
-    units = res.units
   } catch {}
 
   return (
@@ -42,14 +33,10 @@ export default async function ItemsPage() {
             Catálogo
           </h1>
           <p className="text-on-surface-variant">
-            Gerencie os itens e procedimentos da sua unidade.
+            Gerencie os itens e procedimentos do catálogo global.
           </p>
         </div>
-        <CreateItemDialog
-          sectors={sectors}
-          units={units}
-          activeUnitId={activeUnitId}
-        />
+        {canManage && <CreateItemDialog sectors={sectors} />}
       </div>
 
       <Card>
@@ -68,13 +55,18 @@ export default async function ItemsPage() {
                   <tr>
                     <th className="px-6 py-3 font-semibold">Nome</th>
                     <th className="px-6 py-3 font-semibold">Descrição</th>
-                    {items.some((i) => i.unit) && (
-                      <th className="px-6 py-3 font-semibold">Unidade</th>
-                    )}
                     <th className="px-6 py-3 font-semibold">Setor</th>
+                    <th className="px-6 py-3 text-right font-semibold">
+                      Qtd. Inicial
+                    </th>
                     <th className="px-6 py-3 text-right font-semibold">
                       Data de Cadastro
                     </th>
+                    {canManage && (
+                      <th className="px-6 py-3 text-right font-semibold">
+                        Ações
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-surface-container divide-y">
@@ -87,11 +79,6 @@ export default async function ItemsPage() {
                       <td className="text-on-surface-variant px-6 py-4">
                         {item.description || '-'}
                       </td>
-                      {items.some((i) => i.unit) && (
-                        <td className="px-6 py-4 text-primary font-medium">
-                          {item.unit?.name}
-                        </td>
-                      )}
                       <td className="px-6 py-4">
                         {item.sector?.name ? (
                           <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
@@ -103,9 +90,17 @@ export default async function ItemsPage() {
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        {item.quantity}
+                      </td>
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         {new Date(item.createdAt).toLocaleDateString('pt-BR')}
                       </td>
+                      {canManage && (
+                        <td className="px-6 py-4 text-right">
+                          <UpdateItemDialog item={item} sectors={sectors} />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

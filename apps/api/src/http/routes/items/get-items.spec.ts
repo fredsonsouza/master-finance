@@ -43,7 +43,7 @@ describe('Get Items Unit Test', () => {
     await app.register(getItems)
   })
 
-  test('should fetch items using EMPLOYEE unitId automatically', async () => {
+  test('should fetch global catalog items', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
@@ -61,31 +61,6 @@ describe('Get Items Unit Test', () => {
     expect(prisma.item.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          unitId: '223e4567-e89b-12d3-a456-426614174001',
-          sectorId: undefined,
-        },
-      })
-    )
-  })
-
-  test('MANAGER can fetch items across units', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
-    } as any)
-
-    vi.mocked(prisma.item.findMany).mockResolvedValueOnce([])
-
-    const response = await app.inject({
-      method: 'GET',
-      url: '/items?unitId=323e4567-e89b-12d3-a456-426614174002',
-    })
-
-    expect(response.statusCode).toBe(200)
-    expect(prisma.item.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          unitId: '323e4567-e89b-12d3-a456-426614174002',
           sectorId: undefined,
         },
       })

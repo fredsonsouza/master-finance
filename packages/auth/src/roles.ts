@@ -8,6 +8,7 @@ export const roleSchema = z.union([
   z.literal('SELLER'),
   z.literal('COLLECTOR'),
   z.literal('FISCAL'),
+  z.literal('INVENTORY'),
 ])
 
 export type Role = z.infer<typeof roleSchema>

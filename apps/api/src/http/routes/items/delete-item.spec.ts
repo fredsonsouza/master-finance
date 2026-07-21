@@ -48,16 +48,16 @@ describe('Delete Item Unit Test', () => {
     await app.register(deleteItem)
   })
 
-  test('should successfully delete an item within Employee unit', async () => {
+  test('should successfully delete an item', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'EMPLOYEE',
+      role: 'INVENTORY',
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
     vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({
       id: '423e4567-e89b-12d3-a456-426614174003',
-      unitId: '223e4567-e89b-12d3-a456-426614174001', // Employee's unit
+      name: 'Item Test',
     } as any)
 
     vi.mocked(prisma.item.delete).mockResolvedValue({} as any)
@@ -71,26 +71,5 @@ describe('Delete Item Unit Test', () => {
     expect(prisma.item.delete).toHaveBeenCalledWith({
       where: { id: '423e4567-e89b-12d3-a456-426614174003' },
     })
-  })
-
-  test('should return 401 if Employee attempts to delete item outside their unit', async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'EMPLOYEE',
-      unitId: '223e4567-e89b-12d3-a456-426614174001',
-    } as any)
-
-    vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({
-      id: '423e4567-e89b-12d3-a456-426614174003',
-      unitId: '999e4567-e89b-12d3-a456-426614174000', // External unit
-    } as any)
-
-    const response = await app.inject({
-      method: 'DELETE',
-      url: '/items/423e4567-e89b-12d3-a456-426614174003',
-    })
-
-    expect(response.statusCode).toBe(401)
-    expect(prisma.item.delete).not.toHaveBeenCalled()
   })
 })

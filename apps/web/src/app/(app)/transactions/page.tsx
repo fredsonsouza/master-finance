@@ -14,7 +14,7 @@ export default async function TransactionsPage() {
   // Fetch paralelamente para velocidade máxima!
   const [{ transactions }, { items }, { sectors }, { units }] = await Promise.all([
     getTransactions(token, activeUnitId),
-    getItems(token, activeUnitId),
+    getItems(token),
     getSectors(token),
     getUnits(token).catch(() => ({ units: [] })),
   ])

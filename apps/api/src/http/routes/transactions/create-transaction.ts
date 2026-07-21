@@ -97,7 +97,8 @@ export async function createTransaction(app: FastifyInstance) {
               select: { type: true, quantity: true },
             })
 
-            let currentStock = 0
+            const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
+            let currentStock = itemDb?.quantity || 0
             for (const tx of pastTransactions) {
               if (tx.type === 'ENTRY') currentStock += tx.quantity
               else if (tx.type === 'EXIT') currentStock -= tx.quantity
