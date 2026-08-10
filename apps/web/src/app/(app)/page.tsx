@@ -1,13 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from '@/auth/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { getActiveUnit } from '@/components/unit-switcher-action'
 import { getDashboardMetrics } from '@/http/get-dashboard-metrics'
+import { getUnits } from '@/http/get-units'
 import { redirect } from 'next/navigation'
+import { DashboardUnitFilter } from './dashboard-unit-filter'
 
 export const dynamic = 'force-dynamic'
 
-export default async function DashboardPage() {
+interface Props {
+  searchParams?: Promise<{ unitId?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: Props) {
   const { user, token } = await auth()
 
   if (['FINANCIAL', 'SELLER'].includes(user.role)) {
@@ -22,22 +27,31 @@ export default async function DashboardPage() {
     redirect('/transactions')
   }
 
-  const activeUnitId = await getActiveUnit()
+  const resolvedParams = searchParams ? await searchParams : {}
+  const activeUnitId = resolvedParams.unitId || null
 
   let groups: any[] = []
   let balance = 0
   let entries = 0
   let exits = 0
 
-  try {
-    const res = await getDashboardMetrics(token, activeUnitId)
-    groups = res.groups
-    balance = res.totalBalance
-    entries = res.totalEntries
-    exits = res.totalExits
-  } catch (err) {
-    console.error(err)
-  }
+  const [{ units }, metricsRes] = await Promise.all([
+    getUnits(token).catch(() => ({ units: [] })),
+    getDashboardMetrics(token, activeUnitId).catch((err) => {
+      console.error(err)
+      return {
+        groups: [],
+        totalEntries: 0,
+        totalExits: 0,
+        totalBalance: 0,
+      }
+    }),
+  ])
+
+  groups = metricsRes.groups
+  balance = metricsRes.totalBalance
+  entries = metricsRes.totalEntries
+  exits = metricsRes.totalExits
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -47,12 +61,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-primary text-3xl font-bold">
-        Olá, {user.name || user.username}
-      </h1>
-      <p className="text-on-surface-variant">
-        Bem-vindo de volta ao Master Admin.
-      </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-display text-primary text-3xl font-bold">
+            Olá, {user.name || user.username}
+          </h1>
+          <p className="text-on-surface-variant">
+            Bem-vindo de volta ao Master Admin.
+          </p>
+        </div>
+        <DashboardUnitFilter units={units} selectedUnitId={activeUnitId} />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-3">
         <Card>

@@ -25,16 +25,19 @@ import { deleteTransactionAction } from './actions'
 import { UpdateTransactionDialog } from './update-transaction-dialog'
 
 import type { Sector } from '@/http/get-sectors'
+import type { Unit } from '@/http/get-units'
 
 interface Props {
   transactions: Transaction[]
   items: Item[]
   sectors: Sector[]
+  units?: Unit[]
 }
 
-export function TransactionsContent({ transactions, items, sectors }: Props) {
+export function TransactionsContent({ transactions, items, sectors, units = [] }: Props) {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('ALL')
+  const [unitFilter, setUnitFilter] = useState<string>('ALL')
   const hasUnitData = transactions.some((tx) => tx.unit)
 
   // States for Edit/Delete actions
@@ -44,17 +47,22 @@ export function TransactionsContent({ transactions, items, sectors }: Props) {
 
   // Filtering
   const filtered = transactions.filter((tx) => {
-    // Busca por nome de item ou setor
+    // Busca por nome de item, setor ou unidade
     const itemName = tx.item.name.toLowerCase()
     const sectorName = tx.sector?.name.toLowerCase() || ''
+    const unitName = tx.unit?.name.toLowerCase() || ''
     const matchesSearch =
       itemName.includes(search.toLowerCase()) ||
-      sectorName.includes(search.toLowerCase())
+      sectorName.includes(search.toLowerCase()) ||
+      unitName.includes(search.toLowerCase())
 
     // Filtro de Tipo
     const matchesType = typeFilter === 'ALL' || tx.type === typeFilter
 
-    return matchesSearch && matchesType
+    // Filtro de Unidade
+    const matchesUnit = unitFilter === 'ALL' || tx.unitId === unitFilter
+
+    return matchesSearch && matchesType && matchesUnit
   })
 
   async function confirmDelete() {
@@ -77,12 +85,24 @@ export function TransactionsContent({ transactions, items, sectors }: Props) {
         <div className="relative w-full flex-1">
           <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
           <Input
-            placeholder="Buscar por item..."
+            placeholder="Buscar por item, setor ou unidade..."
             className="bg-surface w-full pl-8"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          value={unitFilter}
+          onChange={(e) => setUnitFilter(e.target.value)}
+          className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none sm:w-48"
+        >
+          <option value="ALL">Todas as Unidades</option>
+          {units.map((unit) => (
+            <option key={unit.id} value={unit.id}>
+              {unit.name}
+            </option>
+          ))}
+        </select>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}

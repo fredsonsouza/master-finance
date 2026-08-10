@@ -1,5 +1,4 @@
 import { auth } from '@/auth/auth'
-import { getActiveUnit } from '@/components/unit-switcher-action'
 import { getItems } from '@/http/get-items'
 import { getSectors } from '@/http/get-sectors'
 import { getUnits } from '@/http/get-units'
@@ -9,11 +8,10 @@ import { TransactionsContent } from './transactions-content'
 
 export default async function TransactionsPage() {
   const { token } = await auth()
-  const activeUnitId = await getActiveUnit()
 
   // Fetch paralelamente para velocidade máxima!
   const [{ transactions }, { items }, { sectors }, { units }] = await Promise.all([
-    getTransactions(token, activeUnitId),
+    getTransactions(token),
     getItems(token),
     getSectors(token),
     getUnits(token).catch(() => ({ units: [] })),
@@ -34,7 +32,6 @@ export default async function TransactionsPage() {
           items={items}
           sectors={sectors}
           units={units}
-          activeUnitId={activeUnitId}
         />
       </div>
 
@@ -42,6 +39,7 @@ export default async function TransactionsPage() {
         transactions={transactions}
         items={items}
         sectors={sectors}
+        units={units}
       />
     </div>
   )
