@@ -62,6 +62,10 @@ import { getCollections } from './routes/collections/get-collections'
 import { updateCollection } from './routes/collections/update-collection'
 import { getLogs } from './routes/logs/get-logs'
 
+import { createEvaluation } from './routes/evaluations/create-evaluation'
+import { getEvaluations } from './routes/evaluations/get-evaluations'
+import { getPublicSeller } from './routes/evaluations/get-public-seller'
+
 import { env } from '@saas/env'
 import { errorHandler } from './error-handle'
 
@@ -156,6 +160,10 @@ app.register(getCollections)
 app.register(updateCollection)
 app.register(deleteCollection)
 app.register(getLogs)
+
+app.register(createEvaluation)
+app.register(getPublicSeller)
+app.register(getEvaluations)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT, host: '0.0.0.0' }).then(() => {

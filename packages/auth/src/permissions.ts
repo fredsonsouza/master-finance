@@ -23,6 +23,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
       'Metric',
       'CashClosure',
       'Collection',
+      'Evaluation',
     ])
   },
 
@@ -41,6 +42,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('get', 'Sector')
     can('get', 'Item')
     can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+    can('get', 'Evaluation', { sellerId: { $eq: user.id } })
 
     can('create', 'CashClosure')
     can('get', 'CashClosure', { unitId: { $eq: user.unitId } })

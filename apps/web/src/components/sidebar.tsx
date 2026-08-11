@@ -6,6 +6,7 @@ import {
   LogOut,
   Package,
   Settings,
+  Star,
   Syringe,
   Wallet,
 } from 'lucide-react'
@@ -62,6 +63,17 @@ export async function Sidebar() {
               <span className="font-medium">Catálogo de Itens</span>
             </Link>
           </>
+        )}
+        {(user.role === 'ADMIN' ||
+          user.role === 'MANAGER' ||
+          user.role === 'SELLER') && (
+          <Link
+            href="/evaluations"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
+          >
+            <Star className="h-5 w-5" />
+            <span className="font-medium">Meus Atendimentos</span>
+          </Link>
         )}
         {(user.role === 'ADMIN' ||
           user.role === 'MANAGER' ||

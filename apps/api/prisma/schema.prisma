@@ -42,6 +42,7 @@ model User {
   collectionsAsCollector Collection[] @relation("CollectionCollector")
   collectionsAsCreator   Collection[] @relation("CollectionCreator")
   auditLogs              AuditLog[]
+  evaluations            Evaluation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,6 +58,7 @@ model Unit {
   transactions Transaction[]
   cashClosures CashClosure[]
   collections  Collection[]
+  evaluations  Evaluation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -189,4 +191,28 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   @@map("audit_logs")
+}
+
+enum EvaluationRating {
+  EXCELLENT
+  GOOD
+  REGULAR
+  BAD
+}
+
+model Evaluation {
+  id            String           @id @default(uuid())
+  sellerId      String
+  seller        User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  unitId        String?
+  unit          Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  rating        EvaluationRating
+  presetComment String?
+  observation   String?
+
+  createdAt     DateTime         @default(now())
+
+  @@map("evaluations")
 }
