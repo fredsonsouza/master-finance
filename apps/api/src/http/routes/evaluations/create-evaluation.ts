@@ -31,7 +31,7 @@ export async function createEvaluation(app: FastifyInstance) {
         where: { id: sellerId },
       })
 
-      if (!seller || seller.role !== 'SELLER') {
+      if (!seller || !['SELLER', 'ADMIN', 'MANAGER'].includes(seller.role)) {
         throw new BadRequestError('Recepcionista não encontrada.')
       }
 

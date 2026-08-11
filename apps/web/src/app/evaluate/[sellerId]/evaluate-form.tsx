@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { createEvaluation } from '@/http/create-evaluation'
+import { createEvaluationAction } from './actions'
 import type { PublicSeller } from '@/http/get-public-seller'
 import { CheckCircle2, Frown, Laugh, Meh, Smile, Star, User } from 'lucide-react'
 import { useState } from 'react'
@@ -88,13 +88,18 @@ export function EvaluateForm({ seller }: Props) {
 
     setIsSubmitting(true)
     try {
-      await createEvaluation({
+      const response = await createEvaluationAction({
         sellerId: seller.id,
         rating: selectedRating,
         presetComment: selectedPreset || null,
         observation: observation.trim() || null,
       })
-      setSubmitted(true)
+
+      if (response.success) {
+        setSubmitted(true)
+      } else {
+        toast.error(response.message || 'Erro ao enviar avaliação. Tente novamente.')
+      }
     } catch (err: any) {
       toast.error('Erro ao enviar avaliação. Tente novamente.')
     } finally {

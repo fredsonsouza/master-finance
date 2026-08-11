@@ -50,7 +50,7 @@ export async function getPublicSeller(app: FastifyInstance) {
         },
       })
 
-      if (!seller || seller.role !== 'SELLER') {
+      if (!seller || !['SELLER', 'ADMIN', 'MANAGER'].includes(seller.role)) {
         throw new BadRequestError('Recepcionista não encontrada.')
       }
 
