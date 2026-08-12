@@ -15,7 +15,11 @@ export async function createTransactionAction(data: FormData) {
   }
 
   let unitId = user.unitId
-  if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+  if (
+    user.role === 'ADMIN' ||
+    user.role === 'MANAGER' ||
+    user.role === 'INVENTORY'
+  ) {
     const selectedUnitId = data.get('unitId') as string
     if (selectedUnitId) {
       unitId = selectedUnitId
