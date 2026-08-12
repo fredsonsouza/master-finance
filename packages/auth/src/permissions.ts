@@ -14,16 +14,14 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('get', 'Item')
+    can('get', ['Item', 'User', 'Evaluation'])
     can('manage', [
       'Sector',
       'Unit',
-      'User',
       'Transaction',
       'Metric',
       'CashClosure',
       'Collection',
-      'Evaluation',
     ])
   },
 

@@ -49,10 +49,10 @@ describe('Reset Password Unit Test', () => {
     await app.register(resetPassword)
   })
 
-  test('should allow MANAGER to reset an employee password', async () => {
+  test('should allow ADMIN to reset an employee password', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: 'admin-id',
-      role: 'MANAGER',
+      role: 'ADMIN',
     } as any)
 
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({

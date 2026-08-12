@@ -62,7 +62,7 @@ export async function getUser(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        if (ability.cannot('manage', 'User')) {
+        if (ability.cannot('get', 'User')) {
           throw new UnauthorizedError('You are not allowed to view users.')
         }
 

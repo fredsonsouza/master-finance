@@ -1,6 +1,15 @@
 'use client'
 
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import type { EvaluationItem, EvaluationMetrics } from '@/http/get-evaluations'
 import type { User } from '@/http/get-users'
 import {
@@ -8,12 +17,16 @@ import {
   Laugh,
   Meh,
   MessageSquare,
+  Pencil,
   Smile,
   Star,
   ThumbsUp,
+  Trash2,
   UserCheck,
 } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
+import { deleteEvaluationAction, updateEvaluationAction } from './actions'
 import { QrCodeCard } from './qr-code-card'
 
 interface Props {
@@ -58,10 +71,60 @@ export function EvaluationsContent({
 }: Props) {
   const isSeller = currentUser.role === 'SELLER'
   const isManagement = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+  const isAdmin = currentUser.role === 'ADMIN'
 
   const [selectedSellerId, setSelectedSellerId] = useState<string>(
     isSeller ? currentUser.id : ''
   )
+
+  // Edit / Delete modal states
+  const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
+  const [deletingEvaluation, setDeletingEvaluation] = useState<EvaluationItem | null>(null)
+
+  const [editRating, setEditRating] = useState<'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'>('EXCELLENT')
+  const [editPreset, setEditPreset] = useState('')
+  const [editObservation, setEditObservation] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  function openEditModal(ev: EvaluationItem) {
+    setEditingEvaluation(ev)
+    setEditRating(ev.rating)
+    setEditPreset(ev.presetComment || '')
+    setEditObservation(ev.observation || '')
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingEvaluation) return
+    setIsSubmitting(true)
+    const result = await deleteEvaluationAction(deletingEvaluation.id)
+    if (result.success) {
+      toast.success('Avaliação excluída com sucesso!')
+      setDeletingEvaluation(null)
+    } else {
+      toast.error(result.message || 'Erro ao excluir avaliação.')
+    }
+    setIsSubmitting(false)
+  }
+
+  async function handleConfirmEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingEvaluation) return
+    setIsSubmitting(true)
+
+    const result = await updateEvaluationAction(editingEvaluation.id, {
+      rating: editRating,
+      presetComment: editPreset || null,
+      observation: editObservation.trim() || null,
+    })
+
+    if (result.success) {
+      toast.success('Avaliação atualizada com sucesso!')
+      setEditingEvaluation(null)
+    } else {
+      toast.error(result.message || 'Erro ao atualizar avaliação.')
+    }
+    setIsSubmitting(false)
+  }
 
   const filteredEvaluations = evaluations.filter((ev) => {
     if (selectedSellerId) {
@@ -70,7 +133,6 @@ export function EvaluationsContent({
     return true
   })
 
-  // Recalculate metrics for filtered seller if selected
   const activeSeller = sellers.find((s) => s.id === selectedSellerId)
   const currentSellerName = isSeller
     ? currentUser.name
@@ -106,7 +168,6 @@ export function EvaluationsContent({
 
       {/* Main Grid: QR Code + Metrics */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* QR Code Card if SELLER or specific Seller selected by Admin */}
         {(isSeller || (isManagement && selectedSellerId)) && (
           <div className="lg:col-span-1">
             <QrCodeCard
@@ -116,7 +177,6 @@ export function EvaluationsContent({
           </div>
         )}
 
-        {/* Metrics Grid */}
         <div className={isSeller || (isManagement && selectedSellerId) ? 'lg:col-span-2 space-y-6' : 'lg:col-span-3 space-y-6'}>
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="bg-surface-container-lowest border-surface-container">
@@ -162,7 +222,6 @@ export function EvaluationsContent({
             </Card>
           </div>
 
-          {/* Ratings Breakdown Progress */}
           <Card className="border-surface-container">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold">
@@ -221,6 +280,9 @@ export function EvaluationsContent({
                     <th className="px-6 py-3 font-semibold">Atendente</th>
                     <th className="px-6 py-3 font-semibold">Comentário</th>
                     <th className="px-6 py-3 text-right font-semibold">Data</th>
+                    {isAdmin && (
+                      <th className="px-6 py-3 text-right font-semibold">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-surface-container divide-y">
@@ -271,6 +333,28 @@ export function EvaluationsContent({
                             timeStyle: 'short',
                           })}
                         </td>
+                        {isAdmin && (
+                          <td className="px-6 py-4 text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-on-surface hover:text-primary cursor-pointer"
+                                onClick={() => openEditModal(ev)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-on-surface hover:text-error cursor-pointer"
+                                onClick={() => setDeletingEvaluation(ev)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     )
                   })}
@@ -280,6 +364,84 @@ export function EvaluationsContent({
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Evaluation Dialog */}
+      <Dialog open={!!editingEvaluation} onOpenChange={(val) => !val && setEditingEvaluation(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Avaliação</DialogTitle>
+            <DialogDescription>
+              Altere a nota e os comentários registrados para o atendimento.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleConfirmEdit} className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-on-surface">Nota do Atendimento</label>
+              <select
+                value={editRating}
+                onChange={(e) => setEditRating(e.target.value as any)}
+                className="w-full h-10 border border-outline rounded-md px-3 bg-surface text-sm font-medium"
+              >
+                <option value="EXCELLENT">Ótimo (Excelente)</option>
+                <option value="GOOD">Bom</option>
+                <option value="REGULAR">Regular</option>
+                <option value="BAD">Ruim</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-on-surface">Depoimento Predefinido</label>
+              <Textarea
+                value={editPreset}
+                onChange={(e) => setEditPreset(e.target.value)}
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-on-surface">Observação Adicional</label>
+              <Textarea
+                value={editObservation}
+                onChange={(e) => setEditObservation(e.target.value)}
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-outline/30">
+              <Button type="button" variant="outline" onClick={() => setEditingEvaluation(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Evaluation Confirmation Dialog */}
+      <Dialog open={!!deletingEvaluation} onOpenChange={(val) => !val && setDeletingEvaluation(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-error">Excluir Avaliação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir esta avaliação de {deletingEvaluation?.seller.name}? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-outline/30">
+            <Button type="button" variant="outline" onClick={() => setDeletingEvaluation(null)}>
+              Cancelar
+            </Button>
+            <Button variant="default" className="bg-error text-white hover:bg-error/90 cursor-pointer" onClick={handleConfirmDelete} disabled={isSubmitting}>
+              {isSubmitting ? 'Excluindo...' : 'Confirmar Exclusão'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

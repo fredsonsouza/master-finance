@@ -154,11 +154,13 @@ export function SettingsContent({
                   onChange={(e) => setSearchUsers(e.target.value)}
                 />
               </div>
-              <CreateUserDialog
-                units={units}
-                activeUnitId={activeUnitId}
-                currentUserRole={currentUserRole}
-              />
+              {currentUserRole === 'ADMIN' && (
+                <CreateUserDialog
+                  units={units}
+                  activeUnitId={activeUnitId}
+                  currentUserRole={currentUserRole}
+                />
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -175,16 +177,16 @@ export function SettingsContent({
                       <th className="px-6 py-3 font-semibold">Username</th>
                       <th className="px-6 py-3 font-semibold">Cargo</th>
                       <th className="px-6 py-3 font-semibold">Unidade</th>
-                      <th className="px-6 py-3 text-right font-semibold">
-                        Ações
-                      </th>
+                      {currentUserRole === 'ADMIN' && (
+                        <th className="px-6 py-3 text-right font-semibold">
+                          Ações
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-surface-container divide-y">
                     {filteredUsers.map((u) => {
                       const uUnit = units.find((unit) => unit.id === u.unitId)
-                      const isManagerTryingToEditAdmin =
-                        u.role === 'ADMIN' && currentUserRole !== 'ADMIN'
 
                       return (
                         <tr
@@ -207,30 +209,28 @@ export function SettingsContent({
                           <td className="text-on-surface-variant px-6 py-4">
                             {uUnit ? uUnit.name : 'Acesso Global'}
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-2">
-                              {!isManagerTryingToEditAdmin && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
-                                    onClick={() => setEditingUser(u)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
-                                    onClick={() => setDeletingUser(u)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </td>
+                          {currentUserRole === 'ADMIN' && (
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                                  onClick={() => setEditingUser(u)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
+                                  onClick={() => setDeletingUser(u)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       )
                     })}
