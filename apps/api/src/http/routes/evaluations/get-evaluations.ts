@@ -52,6 +52,21 @@ export async function getEvaluations(app: FastifyInstance) {
                 badCount: z.number(),
                 satisfactionRate: z.number(),
               }),
+              podium: z.array(
+                z.object({
+                  position: z.number(),
+                  sellerId: z.string().uuid(),
+                  sellerName: z.string(),
+                  sellerAvatarUrl: z.string().nullable(),
+                  unitId: z.string().uuid().nullable(),
+                  unitName: z.string().nullable(),
+                  totalEvaluations: z.number(),
+                  excellentCount: z.number(),
+                  goodCount: z.number(),
+                  satisfactionRate: z.number(),
+                  score: z.number(),
+                })
+              ),
             }),
           },
         },
@@ -120,15 +135,86 @@ export async function getEvaluations(app: FastifyInstance) {
         let regularCount = 0
         let badCount = 0
 
+        const sellerMap = new Map<
+          string,
+          {
+            sellerId: string
+            sellerName: string
+            sellerAvatarUrl: string | null
+            unitId: string | null
+            unitName: string | null
+            totalEvaluations: number
+            excellentCount: number
+            goodCount: number
+            regularCount: number
+            badCount: number
+          }
+        >()
+
         for (const ev of evaluations) {
           if (ev.rating === 'EXCELLENT') excellentCount++
           else if (ev.rating === 'GOOD') goodCount++
           else if (ev.rating === 'REGULAR') regularCount++
           else if (ev.rating === 'BAD') badCount++
+
+          let sellerData = sellerMap.get(ev.sellerId)
+          if (!sellerData) {
+            sellerData = {
+              sellerId: ev.sellerId,
+              sellerName: ev.seller.name,
+              sellerAvatarUrl: ev.seller.avatarUrl,
+              unitId: ev.unit?.id || null,
+              unitName: ev.unit?.name || null,
+              totalEvaluations: 0,
+              excellentCount: 0,
+              goodCount: 0,
+              regularCount: 0,
+              badCount: 0,
+            }
+            sellerMap.set(ev.sellerId, sellerData)
+          }
+
+          sellerData.totalEvaluations++
+          if (ev.rating === 'EXCELLENT') sellerData.excellentCount++
+          else if (ev.rating === 'GOOD') sellerData.goodCount++
+          else if (ev.rating === 'REGULAR') sellerData.regularCount++
+          else if (ev.rating === 'BAD') sellerData.badCount++
         }
 
         const positiveCount = excellentCount + goodCount
         const satisfactionRate = total > 0 ? Math.round((positiveCount / total) * 100) : 0
+
+        const sellerStats = Array.from(sellerMap.values()).map((s) => {
+          const positive = s.excellentCount + s.goodCount
+          const sRate = s.totalEvaluations > 0 ? Math.round((positive / s.totalEvaluations) * 100) : 0
+          const score = s.excellentCount * 3 + s.goodCount * 2 + s.regularCount * 1
+
+          return {
+            ...s,
+            satisfactionRate: sRate,
+            score,
+          }
+        })
+
+        sellerStats.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score
+          if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
+          return b.totalEvaluations - a.totalEvaluations
+        })
+
+        const podium = sellerStats.slice(0, 3).map((seller, index) => ({
+          position: index + 1,
+          sellerId: seller.sellerId,
+          sellerName: seller.sellerName,
+          sellerAvatarUrl: seller.sellerAvatarUrl,
+          unitId: seller.unitId,
+          unitName: seller.unitName,
+          totalEvaluations: seller.totalEvaluations,
+          excellentCount: seller.excellentCount,
+          goodCount: seller.goodCount,
+          satisfactionRate: seller.satisfactionRate,
+          score: seller.score,
+        }))
 
         return reply.status(200).send({
           evaluations,
@@ -140,6 +226,7 @@ export async function getEvaluations(app: FastifyInstance) {
             badCount,
             satisfactionRate,
           },
+          podium,
         })
       }
     )

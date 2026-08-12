@@ -1,7 +1,7 @@
 import { auth } from '@/auth/auth'
 import { getEvaluations } from '@/http/get-evaluations'
-import { getUsers } from '@/http/get-users'
-import type { User } from '@/http/get-users'
+import { getUnits, type Unit } from '@/http/get-units'
+import { getUsers, type User } from '@/http/get-users'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { EvaluationsContent } from './evaluations-content'
@@ -21,15 +21,24 @@ export default async function EvaluationsPage() {
   const isManagement = user.role === 'ADMIN' || user.role === 'MANAGER'
 
   let sellers: User[] = []
-  const [{ evaluations, metrics }] = await Promise.all([
+  let units: Unit[] = []
+
+  const [{ evaluations, metrics, podium }] = await Promise.all([
     getEvaluations(token),
     isManagement
-      ? getUsers(token, null, 'SELLER')
-          .then((res) => {
-            sellers = res.users
-          })
-          .catch(() => {})
-      : Promise.resolve(),
+      ? Promise.all([
+          getUsers(token, null, 'SELLER')
+            .then((res) => {
+              sellers = res.users
+            })
+            .catch(() => {}),
+          getUnits(token)
+            .then((res) => {
+              units = res.units
+            })
+            .catch(() => {}),
+        ])
+      : Promise.resolve([]),
   ])
 
   return (
@@ -41,19 +50,21 @@ export default async function EvaluationsPage() {
         <p className="text-on-surface-variant">
           {user.role === 'SELLER'
             ? 'Acompanhe sua satisfação de atendimento e compartilhe seu QR Code.'
-            : 'Gerencie a satisfação dos clientes e veja os feedbacks da equipe de recepção.'}
+            : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção.'}
         </p>
       </div>
 
       <EvaluationsContent
         evaluations={evaluations}
         metrics={metrics}
+        podium={podium}
         currentUser={{
           id: user.id,
           name: user.name || user.username || '',
           role: user.role,
         }}
         sellers={sellers}
+        units={units}
       />
     </div>
   )

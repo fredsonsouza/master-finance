@@ -10,11 +10,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import type { EvaluationItem, EvaluationMetrics } from '@/http/get-evaluations'
+import type { EvaluationItem, EvaluationMetrics, PodiumItem } from '@/http/get-evaluations'
+import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import {
+  Award,
+  Crown,
   Frown,
   Laugh,
+  Medal,
   Meh,
   MessageSquare,
   Pencil,
@@ -22,6 +26,7 @@ import {
   Star,
   ThumbsUp,
   Trash2,
+  Trophy,
   UserCheck,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -32,12 +37,14 @@ import { QrCodeCard } from './qr-code-card'
 interface Props {
   evaluations: EvaluationItem[]
   metrics: EvaluationMetrics
+  podium?: PodiumItem[]
   currentUser: {
     id: string
     name: string
     role: string
   }
   sellers?: User[]
+  units?: Unit[]
 }
 
 const RATING_CONFIG = {
@@ -66,8 +73,10 @@ const RATING_CONFIG = {
 export function EvaluationsContent({
   evaluations,
   metrics,
+  podium = [],
   currentUser,
   sellers = [],
+  units = [],
 }: Props) {
   const isSeller = currentUser.role === 'SELLER'
   const isManagement = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
@@ -76,6 +85,7 @@ export function EvaluationsContent({
   const [selectedSellerId, setSelectedSellerId] = useState<string>(
     isSeller ? currentUser.id : ''
   )
+  const [selectedPodiumUnitId, setSelectedPodiumUnitId] = useState<string>('')
 
   // Edit / Delete modal states
   const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
@@ -126,6 +136,74 @@ export function EvaluationsContent({
     setIsSubmitting(false)
   }
 
+  // Filter evaluations for podium calculation dynamically
+  const podiumEvaluations = evaluations.filter((ev) => {
+    if (selectedPodiumUnitId) {
+      return ev.unit?.id === selectedPodiumUnitId
+    }
+    return true
+  })
+
+  // Calculate dynamically sorted podium for selected unit
+  const sellerMap = new Map<
+    string,
+    {
+      sellerId: string
+      sellerName: string
+      sellerAvatarUrl: string | null
+      unitName: string | null
+      total: number
+      excellent: number
+      good: number
+      regular: number
+      bad: number
+    }
+  >()
+
+  for (const ev of podiumEvaluations) {
+    let s = sellerMap.get(ev.sellerId)
+    if (!s) {
+      s = {
+        sellerId: ev.sellerId,
+        sellerName: ev.seller.name,
+        sellerAvatarUrl: ev.seller.avatarUrl,
+        unitName: ev.unit?.name || null,
+        total: 0,
+        excellent: 0,
+        good: 0,
+        regular: 0,
+        bad: 0,
+      }
+      sellerMap.set(ev.sellerId, s)
+    }
+    s.total++
+    if (ev.rating === 'EXCELLENT') s.excellent++
+    else if (ev.rating === 'GOOD') s.good++
+    else if (ev.rating === 'REGULAR') s.regular++
+    else if (ev.rating === 'BAD') s.bad++
+  }
+
+  const computedPodium = Array.from(sellerMap.values()).map((s) => {
+    const positive = s.excellent + s.good
+    const satRate = s.total > 0 ? Math.round((positive / s.total) * 100) : 0
+    const score = s.excellent * 3 + s.good * 2 + s.regular * 1
+    return {
+      ...s,
+      satisfactionRate: satRate,
+      score,
+    }
+  })
+
+  computedPodium.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
+    return b.total - a.total
+  })
+
+  const top1 = computedPodium[0] || null
+  const top2 = computedPodium[1] || null
+  const top3 = computedPodium[2] || null
+
   const filteredEvaluations = evaluations.filter((ev) => {
     if (selectedSellerId) {
       return ev.sellerId === selectedSellerId
@@ -142,13 +220,155 @@ export function EvaluationsContent({
 
   return (
     <div className="space-y-6">
+      {/* PODIUM SECTION (ADMIN & MANAGER ONLY) */}
+      {isManagement && (
+        <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-surface to-surface p-6 shadow-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
+                <Trophy className="h-6 w-6 text-amber-500" />
+                Pódio dos Recepcionistas Mais Bem Avaliados
+              </h2>
+              <p className="text-xs text-on-surface-variant">
+                Destaques no atendimento com base na pontuação e índice de satisfação dos clientes.
+              </p>
+            </div>
+
+            {units.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-on-surface whitespace-nowrap">
+                  Filtrar Unidade:
+                </span>
+                <select
+                  value={selectedPodiumUnitId}
+                  onChange={(e) => setSelectedPodiumUnitId(e.target.value)}
+                  className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs focus:ring-1 focus:ring-primary cursor-pointer"
+                >
+                  <option value="">Todas as Unidades</option>
+                  {units.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {/* Podium Visual Cards (2nd, 1st, 3rd) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-4">
+            {/* 2º Lugar - Silver */}
+            <div className="order-2 md:order-1 flex flex-col items-center">
+              <div className="w-full rounded-2xl border-2 border-slate-300/60 bg-gradient-to-b from-slate-100/80 to-white dark:from-slate-900/80 dark:to-slate-950 p-5 text-center shadow-md hover:shadow-lg transition-all relative">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-300 dark:border-slate-700">
+                  <Medal className="h-3.5 w-3.5 text-slate-400" /> 2º Lugar
+                </div>
+                {top2 ? (
+                  <div className="pt-2 space-y-2">
+                    <div className="h-14 w-14 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xl flex items-center justify-center mx-auto border-2 border-slate-400">
+                      {top2.sellerName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-on-surface text-base">{top2.sellerName}</h3>
+                      {top2.unitName && (
+                        <span className="text-xs text-on-surface-variant block">{top2.unitName}</span>
+                      )}
+                    </div>
+                    <div className="bg-slate-100 dark:bg-slate-900/60 rounded-xl p-2.5 text-xs space-y-1">
+                      <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                        {top2.satisfactionRate}% de Satisfação
+                      </div>
+                      <div className="text-on-surface-variant">
+                        {top2.total} avaliações ({top2.excellent} ótimas, {top2.good} boas)
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-on-surface-variant text-xs italic">
+                    Nenhum atendente classificado em 2º lugar nesta unidade.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 1º Lugar - Gold (Center / Tallest) */}
+            <div className="order-1 md:order-2 flex flex-col items-center">
+              <div className="w-full rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-amber-500/10 via-amber-100/30 to-white dark:from-amber-950/40 dark:to-slate-950 p-6 text-center shadow-xl hover:shadow-2xl transition-all relative transform md:-translate-y-4">
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md">
+                  <Crown className="h-4 w-4 fill-amber-950" /> 1º LUGAR
+                </div>
+                {top1 ? (
+                  <div className="pt-3 space-y-2">
+                    <div className="h-16 w-16 rounded-full bg-amber-400 text-amber-950 font-black text-2xl flex items-center justify-center mx-auto border-4 border-amber-300 shadow-md">
+                      {top1.sellerName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-on-surface text-lg">{top1.sellerName}</h3>
+                      {top1.unitName && (
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">{top1.unitName}</span>
+                      )}
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-950/60 rounded-xl p-3 text-xs space-y-1 border border-amber-200/50">
+                      <div className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">
+                        {top1.satisfactionRate}% de Satisfação
+                      </div>
+                      <div className="text-on-surface-variant font-medium">
+                        {top1.total} avaliações ({top1.excellent} ótimas, {top1.good} boas)
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-on-surface-variant text-xs italic">
+                    Nenhum atendente avaliado para o 1º lugar.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 3º Lugar - Bronze */}
+            <div className="order-3 md:order-3 flex flex-col items-center">
+              <div className="w-full rounded-2xl border-2 border-amber-700/40 bg-gradient-to-b from-amber-900/10 to-white dark:from-amber-950/20 dark:to-slate-950 p-5 text-center shadow-md hover:shadow-lg transition-all relative">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-800 text-amber-100 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-amber-700">
+                  <Award className="h-3.5 w-3.5 text-amber-300" /> 3º Lugar
+                </div>
+                {top3 ? (
+                  <div className="pt-2 space-y-2">
+                    <div className="h-14 w-14 rounded-full bg-amber-800 text-amber-100 font-bold text-xl flex items-center justify-center mx-auto border-2 border-amber-600">
+                      {top3.sellerName.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-on-surface text-base">{top3.sellerName}</h3>
+                      {top3.unitName && (
+                        <span className="text-xs text-on-surface-variant block">{top3.unitName}</span>
+                      )}
+                    </div>
+                    <div className="bg-amber-50/50 dark:bg-amber-950/40 rounded-xl p-2.5 text-xs space-y-1">
+                      <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                        {top3.satisfactionRate}% de Satisfação
+                      </div>
+                      <div className="text-on-surface-variant">
+                        {top3.total} avaliações ({top3.excellent} ótimas, {top3.good} boas)
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-on-surface-variant text-xs italic">
+                    Nenhum atendente classificado em 3º lugar nesta unidade.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Top Controls for ADMIN / MANAGER */}
       {isManagement && sellers.length > 0 && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-surface p-4 rounded-xl border border-surface-container shadow-sm">
           <div className="flex items-center gap-3">
             <UserCheck className="h-5 w-5 text-primary" />
             <span className="text-sm font-semibold text-on-surface">
-              Filtrar por Atendente:
+              Filtrar Histórico por Atendente:
             </span>
           </div>
           <select

@@ -27,9 +27,24 @@ export interface EvaluationMetrics {
   satisfactionRate: number
 }
 
+export interface PodiumItem {
+  position: number
+  sellerId: string
+  sellerName: string
+  sellerAvatarUrl: string | null
+  unitId: string | null
+  unitName: string | null
+  totalEvaluations: number
+  excellentCount: number
+  goodCount: number
+  satisfactionRate: number
+  score: number
+}
+
 interface GetEvaluationsResponse {
   evaluations: EvaluationItem[]
   metrics: EvaluationMetrics
+  podium: PodiumItem[]
 }
 
 export async function getEvaluations(
