@@ -50,7 +50,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
           <title>QR Code - ${sellerName}</title>
           <style>
             body {
-              font-family: system-ui, sans-serif;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -58,24 +58,30 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
               min-height: 100vh;
               margin: 0;
               text-align: center;
+              background-color: #f8fafc;
             }
             .card {
-              border: 2px solid #e2e8f0;
-              padding: 40px;
-              border-radius: 16px;
+              border: 2px solid #cbd5e1;
+              padding: 40px 32px;
+              border-radius: 20px;
               max-width: 360px;
+              background: #ffffff;
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             }
-            h1 { font-size: 20px; color: #0f172a; margin-bottom: 8px; }
-            p { font-size: 14px; color: #475569; margin-top: 0; margin-bottom: 24px; }
-            .url { font-size: 10px; color: #94a3b8; word-break: break-all; margin-top: 16px; }
+            h1 { font-size: 22px; color: #0f172a; margin-top: 0; margin-bottom: 8px; font-weight: 800; }
+            .seller-info { font-size: 16px; color: #475569; margin-top: 0; margin-bottom: 24px; font-weight: 500; }
+            .seller-name { font-size: 22px; color: #0284c7; font-weight: 800; display: block; margin-top: 4px; }
+            #qr { display: flex; justify-content: center; margin: 0 auto; }
           </style>
         </head>
         <body>
           <div class="card">
             <h1>Avalie meu Atendimento</h1>
-            <p>Atendente: <strong>${sellerName}</strong></p>
+            <div class="seller-info">
+              Atendente:
+              <span class="seller-name">${sellerName}</span>
+            </div>
             <div id="qr"></div>
-            <div class="url">${evaluationUrl}</div>
           </div>
           <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
           <script>
@@ -84,7 +90,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             var qr = qrcode(typeNumber, errorCorrectionLevel);
             qr.addData('${evaluationUrl}');
             qr.make();
-            document.getElementById('qr').innerHTML = qr.createImgTag(6);
+            document.getElementById('qr').innerHTML = qr.createImgTag(7);
             window.onload = function() { window.print(); }
           </script>
         </body>
@@ -109,7 +115,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
           <div ref={canvasRef} className="hidden">
             <QRCodeCanvas value={evaluationUrl} size={300} level="H" />
           </div>
-          <p className="mt-3 text-xs font-semibold text-on-surface">
+          <p className="mt-3 text-base font-bold text-on-surface">
             {sellerName}
           </p>
         </div>
