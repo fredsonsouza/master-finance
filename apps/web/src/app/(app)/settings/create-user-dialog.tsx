@@ -63,7 +63,7 @@ export function CreateUserDialog({
               id="username"
               name="username"
               required
-              placeholder="joao_silva"
+              placeholder="joaosilva"
             />
           </div>
           <div className="space-y-2">
