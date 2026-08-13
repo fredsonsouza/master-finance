@@ -64,23 +64,23 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             }
             .card {
               border: 2px solid #cbd5e1;
-              padding: 32px 32px 40px 32px;
+              padding: 24px 24px 32px 24px;
               border-radius: 20px;
               max-width: 360px;
               background: #ffffff;
               box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             }
             .clinic-logo {
-              max-height: 140px;
-              max-width: 320px;
+              max-height: 125px;
+              max-width: 290px;
               width: 100%;
               height: auto;
-              margin: 0 auto 16px auto;
+              margin: 0 auto 2px auto;
               display: block;
               object-fit: contain;
             }
-            h1 { font-size: 22px; color: #0f172a; margin-top: 0; margin-bottom: 6px; font-weight: 800; }
-            .seller-info { font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px; font-weight: 500; }
+            h1 { font-size: 20px; color: #0f172a; margin-top: 0; margin-bottom: 2px; font-weight: 800; }
+            .seller-info { font-size: 14px; color: #475569; margin-top: 0; margin-bottom: 16px; font-weight: 500; }
             .seller-name { font-size: 22px; color: #0284c7; font-weight: 800; display: block; margin-top: 4px; }
             #qr { display: flex; justify-content: center; margin: 0 auto; }
           </style>
@@ -126,7 +126,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
           <img
             src="/images/masterclin-logo.png"
             alt="Logo Masterclin"
-            className="h-36 max-w-[320px] w-full object-contain mb-4"
+            className="h-32 max-w-[280px] w-full object-contain mb-1"
           />
           <QRCodeSVG value={evaluationUrl} size={180} level="H" />
           <div ref={canvasRef} className="hidden">
@@ -138,20 +138,39 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-1.5 text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="gap-1.5 text-xs"
+          >
             <Copy className="h-3.5 w-3.5" />
             Copiar Link
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPng} className="gap-1.5 text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPng}
+            className="gap-1.5 text-xs"
+          >
             <Download className="h-3.5 w-3.5" />
             Baixar PNG
           </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 text-xs">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            className="gap-1.5 text-xs"
+          >
             <Printer className="h-3.5 w-3.5" />
             Imprimir
           </Button>
           <a href={evaluationUrl} target="_blank" rel="noreferrer">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-primary">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-primary"
+            >
               <ExternalLink className="h-3.5 w-3.5" />
               Testar
             </Button>
