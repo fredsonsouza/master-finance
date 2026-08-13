@@ -119,13 +119,17 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col items-center justify-center rounded-xl bg-white p-6 shadow-inner border border-surface-container dark:bg-slate-900">
-          <img src="/images/logo.png" alt="Logo Clínica" className="h-12 w-auto object-contain mb-4" />
+        <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/90 p-6 shadow-sm text-slate-900">
+          <img
+            src="/images/logo.png"
+            alt="Logo Clínica Masterclin"
+            className="h-14 w-auto object-contain mb-4"
+          />
           <QRCodeSVG value={evaluationUrl} size={180} level="H" />
           <div ref={canvasRef} className="hidden">
             <QRCodeCanvas value={evaluationUrl} size={300} level="H" />
           </div>
-          <p className="mt-3 text-base font-bold text-on-surface">
+          <p className="mt-3 text-base font-extrabold text-slate-900">
             {sellerName}
           </p>
         </div>
