@@ -10,14 +10,23 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import type { EvaluationItem, EvaluationMetrics, PodiumItem } from '@/http/get-evaluations'
+import type {
+  EvaluationItem,
+  EvaluationMetrics,
+  EvaluationPagination,
+  PodiumItem,
+} from '@/http/get-evaluations'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import {
   Award,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
   Crown,
   Frown,
   Laugh,
+  Loader2,
   Medal,
   Meh,
   MessageSquare,
@@ -31,13 +40,18 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { deleteEvaluationAction, updateEvaluationAction } from './actions'
+import {
+  deleteEvaluationAction,
+  fetchEvaluationsAction,
+  updateEvaluationAction,
+} from './actions'
 import { QrCodeCard } from './qr-code-card'
 
 interface Props {
-  evaluations: EvaluationItem[]
-  metrics: EvaluationMetrics
-  podium?: PodiumItem[]
+  initialEvaluations: EvaluationItem[]
+  initialMetrics: EvaluationMetrics
+  initialPagination: EvaluationPagination
+  initialPodium?: PodiumItem[]
   currentUser: {
     id: string
     name: string
@@ -71,9 +85,10 @@ const RATING_CONFIG = {
 }
 
 export function EvaluationsContent({
-  evaluations,
-  metrics,
-  podium = [],
+  initialEvaluations,
+  initialMetrics,
+  initialPagination,
+  initialPodium = [],
   currentUser,
   sellers = [],
   units = [],
@@ -82,10 +97,17 @@ export function EvaluationsContent({
   const isManagement = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
   const isAdmin = currentUser.role === 'ADMIN'
 
-  const [selectedSellerId, setSelectedSellerId] = useState<string>(
-    isSeller ? currentUser.id : ''
-  )
+  // Data states
+  const [evaluations, setEvaluations] = useState<EvaluationItem[]>(initialEvaluations)
+  const [metrics, setMetrics] = useState<EvaluationMetrics>(initialMetrics)
+  const [pagination, setPagination] = useState<EvaluationPagination>(initialPagination)
+  const [podium, setPodium] = useState<PodiumItem[]>(initialPodium)
+
+  // Filters
+  const [selectedSellerId, setSelectedSellerId] = useState<string>(isSeller ? currentUser.id : '')
   const [selectedPodiumUnitId, setSelectedPodiumUnitId] = useState<string>('')
+  const [isFetchingData, setIsFetchingData] = useState(false)
+  const [isFetchingPodium, setIsFetchingPodium] = useState(false)
 
   // Edit / Delete modal states
   const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
@@ -95,6 +117,57 @@ export function EvaluationsContent({
   const [editPreset, setEditPreset] = useState('')
   const [editObservation, setEditObservation] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch paginated history evaluations
+  async function loadEvaluationsPage(page: number, sellerId = selectedSellerId) {
+    setIsFetchingData(true)
+    const res = await fetchEvaluationsAction({
+      page,
+      perPage: pagination.perPage || 10,
+      sellerId: sellerId || undefined,
+      podiumUnitId: selectedPodiumUnitId || undefined,
+    })
+
+    if (res.success && res.data) {
+      setEvaluations(res.data.evaluations)
+      setPagination(res.data.pagination)
+      setMetrics(res.data.metrics)
+      if (res.data.podium) setPodium(res.data.podium)
+    } else {
+      toast.error('Erro ao carregar histórico de avaliações.')
+    }
+    setIsFetchingData(false)
+  }
+
+  // Handle unit change specifically for Podium
+  async function handlePodiumUnitChange(unitId: string) {
+    setSelectedPodiumUnitId(unitId)
+    if (!unitId) {
+      setPodium([])
+      return
+    }
+
+    setIsFetchingPodium(true)
+    const res = await fetchEvaluationsAction({
+      page: pagination.page,
+      perPage: pagination.perPage,
+      sellerId: selectedSellerId || undefined,
+      podiumUnitId: unitId,
+    })
+
+    if (res.success && res.data) {
+      setPodium(res.data.podium)
+    } else {
+      toast.error('Erro ao carregar pódio da unidade.')
+    }
+    setIsFetchingPodium(false)
+  }
+
+  // Handle seller filter change for evaluations history
+  async function handleSellerChange(sellerId: string) {
+    setSelectedSellerId(sellerId)
+    await loadEvaluationsPage(1, sellerId)
+  }
 
   function openEditModal(ev: EvaluationItem) {
     setEditingEvaluation(ev)
@@ -110,6 +183,7 @@ export function EvaluationsContent({
     if (result.success) {
       toast.success('Avaliação excluída com sucesso!')
       setDeletingEvaluation(null)
+      await loadEvaluationsPage(pagination.page)
     } else {
       toast.error(result.message || 'Erro ao excluir avaliação.')
     }
@@ -130,86 +204,12 @@ export function EvaluationsContent({
     if (result.success) {
       toast.success('Avaliação atualizada com sucesso!')
       setEditingEvaluation(null)
+      await loadEvaluationsPage(pagination.page)
     } else {
       toast.error(result.message || 'Erro ao atualizar avaliação.')
     }
     setIsSubmitting(false)
   }
-
-  // Filter evaluations for podium calculation dynamically
-  const podiumEvaluations = evaluations.filter((ev) => {
-    if (selectedPodiumUnitId) {
-      return ev.unit?.id === selectedPodiumUnitId
-    }
-    return true
-  })
-
-  // Calculate dynamically sorted podium for selected unit
-  const sellerMap = new Map<
-    string,
-    {
-      sellerId: string
-      sellerName: string
-      sellerAvatarUrl: string | null
-      unitName: string | null
-      total: number
-      excellent: number
-      good: number
-      regular: number
-      bad: number
-    }
-  >()
-
-  for (const ev of podiumEvaluations) {
-    let s = sellerMap.get(ev.sellerId)
-    if (!s) {
-      s = {
-        sellerId: ev.sellerId,
-        sellerName: ev.seller.name,
-        sellerAvatarUrl: ev.seller.avatarUrl,
-        unitName: ev.unit?.name || null,
-        total: 0,
-        excellent: 0,
-        good: 0,
-        regular: 0,
-        bad: 0,
-      }
-      sellerMap.set(ev.sellerId, s)
-    }
-    s.total++
-    if (ev.rating === 'EXCELLENT') s.excellent++
-    else if (ev.rating === 'GOOD') s.good++
-    else if (ev.rating === 'REGULAR') s.regular++
-    else if (ev.rating === 'BAD') s.bad++
-  }
-
-  const computedPodium = Array.from(sellerMap.values()).map((s) => {
-    const positive = s.excellent + s.good
-    const satRate = s.total > 0 ? Math.round((positive / s.total) * 100) : 0
-    const score = s.excellent * 3 + s.good * 2 + s.regular * 1
-    return {
-      ...s,
-      satisfactionRate: satRate,
-      score,
-    }
-  })
-
-  computedPodium.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score
-    if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
-    return b.total - a.total
-  })
-
-  const top1 = computedPodium[0] || null
-  const top2 = computedPodium[1] || null
-  const top3 = computedPodium[2] || null
-
-  const filteredEvaluations = evaluations.filter((ev) => {
-    if (selectedSellerId) {
-      return ev.sellerId === selectedSellerId
-    }
-    return true
-  })
 
   const activeSeller = sellers.find((s) => s.id === selectedSellerId)
   const currentSellerName = isSeller
@@ -218,33 +218,37 @@ export function EvaluationsContent({
       ? activeSeller.name
       : ''
 
+  const selectedUnitObj = units.find((u) => u.id === selectedPodiumUnitId)
+
   return (
     <div className="space-y-6">
-      {/* PODIUM SECTION (ADMIN & MANAGER ONLY) */}
+      {/* REDESIGNED PODIUM SECTION (ADMIN & MANAGER ONLY) - LIST FORMAT PER UNIT */}
       {isManagement && (
-        <Card className="border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-surface to-surface p-6 shadow-md">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-amber-500" />
-                Pódio dos Recepcionistas Mais Bem Avaliados
-              </h2>
-              <p className="text-xs text-on-surface-variant">
-                Destaques no atendimento com base na pontuação e índice de satisfação dos clientes.
-              </p>
-            </div>
+        <Card className="border-surface-container bg-surface shadow-sm overflow-hidden">
+          <CardHeader className="bg-surface-container-lowest border-b border-surface-container pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <CardTitle className="text-lg font-bold text-on-surface flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  Pódio dos Recepcionistas Mais Bem Avaliados
+                </CardTitle>
+                <p className="text-xs text-on-surface-variant">
+                  Classificação individual por unidade baseada no nível de satisfação dos clientes.
+                </p>
+              </div>
 
-            {units.length > 0 && (
-              <div className="flex items-center gap-2">
+              {/* Unit Filter dropdown with mandatory choice */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Building2 className="h-4 w-4 text-primary hidden sm:block" />
                 <span className="text-xs font-semibold text-on-surface whitespace-nowrap">
                   Filtrar Unidade:
                 </span>
                 <select
                   value={selectedPodiumUnitId}
-                  onChange={(e) => setSelectedPodiumUnitId(e.target.value)}
-                  className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs focus:ring-1 focus:ring-primary cursor-pointer"
+                  onChange={(e) => handlePodiumUnitChange(e.target.value)}
+                  className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer sm:w-56"
                 >
-                  <option value="">Todas as Unidades</option>
+                  <option value="">Escolha uma unidade</option>
                   {units.map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}
@@ -252,113 +256,115 @@ export function EvaluationsContent({
                   ))}
                 </select>
               </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6">
+            {!selectedPodiumUnitId ? (
+              /* State when no unit is selected */
+              <div className="flex flex-col items-center justify-center py-8 text-center space-y-3 bg-surface-container-lowest/50 rounded-xl border border-dashed border-outline/40">
+                <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+                  <Trophy className="h-6 w-6" />
+                </div>
+                <div className="max-w-md space-y-1">
+                  <p className="text-sm font-semibold text-on-surface">
+                    Selecione uma unidade para visualizar o pódio
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    Escolha uma unidade no filtro acima para ver os 3 melhores atendentes da recepção daquela unidade.
+                  </p>
+                </div>
+              </div>
+            ) : isFetchingPodium ? (
+              /* Loading state */
+              <div className="flex items-center justify-center py-10 text-on-surface-variant gap-2 text-sm">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                Carregando pódio da unidade...
+              </div>
+            ) : podium.length === 0 ? (
+              /* Empty state for selected unit */
+              <div className="text-center py-8 text-on-surface-variant text-sm bg-surface-container-lowest/30 rounded-xl">
+                Nenhum recepcionista com avaliações nesta unidade até o momento.
+              </div>
+            ) : (
+              /* PODIUM LIST FORMAT */
+              <div className="space-y-3">
+                <div className="text-xs font-semibold text-on-surface-variant mb-2 flex items-center gap-1.5">
+                  Top 3 Atendentes - <span className="text-primary font-bold">{selectedUnitObj?.name}</span>
+                </div>
+
+                {podium.map((item) => {
+                  const isGold = item.position === 1
+                  const isSilver = item.position === 2
+                  const isBronze = item.position === 3
+
+                  return (
+                    <div
+                      key={item.sellerId}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border transition-all ${
+                        isGold
+                          ? 'bg-gradient-to-r from-amber-500/10 via-surface to-surface border-amber-400/60 shadow-sm'
+                          : isSilver
+                            ? 'bg-gradient-to-r from-slate-300/10 via-surface to-surface border-slate-300/60'
+                            : 'bg-gradient-to-r from-amber-800/10 via-surface to-surface border-amber-700/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Position Badge / Medal */}
+                        <div
+                          className={`h-10 w-10 shrink-0 rounded-full font-black text-sm flex items-center justify-center shadow-sm ${
+                            isGold
+                              ? 'bg-amber-400 text-amber-950 ring-4 ring-amber-400/20'
+                              : isSilver
+                                ? 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+                                : 'bg-amber-800 text-amber-100'
+                          }`}
+                        >
+                          {isGold ? (
+                            <Crown className="h-5 w-5 fill-amber-950" />
+                          ) : isSilver ? (
+                            <Medal className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+                          ) : (
+                            <Award className="h-5 w-5 text-amber-200" />
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-on-surface text-base">
+                              {item.position}º {item.sellerName}
+                            </span>
+                            {isGold && (
+                              <span className="bg-amber-400/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border border-amber-400/40">
+                                Destaque #1
+                              </span>
+                            )}
+                          </div>
+                          {item.unitName && (
+                            <span className="text-xs text-on-surface-variant font-medium">
+                              {item.unitName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Score & Metrics Pill */}
+                      <div className="flex items-center gap-4 sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-outline/20">
+                        <div className="text-right">
+                          <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+                            {item.satisfactionRate}% de Satisfação
+                          </div>
+                          <div className="text-xs text-on-surface-variant font-normal">
+                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             )}
-          </div>
-
-          {/* Podium Visual Cards (2nd, 1st, 3rd) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end pt-4">
-            {/* 2º Lugar - Silver */}
-            <div className="order-2 md:order-1 flex flex-col items-center">
-              <div className="w-full rounded-2xl border-2 border-slate-300/60 bg-gradient-to-b from-slate-100/80 to-white dark:from-slate-900/80 dark:to-slate-950 p-5 text-center shadow-md hover:shadow-lg transition-all relative">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-slate-300 dark:border-slate-700">
-                  <Medal className="h-3.5 w-3.5 text-slate-400" /> 2º Lugar
-                </div>
-                {top2 ? (
-                  <div className="pt-2 space-y-2">
-                    <div className="h-14 w-14 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xl flex items-center justify-center mx-auto border-2 border-slate-400">
-                      {top2.sellerName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-on-surface text-base">{top2.sellerName}</h3>
-                      {top2.unitName && (
-                        <span className="text-xs text-on-surface-variant block">{top2.unitName}</span>
-                      )}
-                    </div>
-                    <div className="bg-slate-100 dark:bg-slate-900/60 rounded-xl p-2.5 text-xs space-y-1">
-                      <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                        {top2.satisfactionRate}% de Satisfação
-                      </div>
-                      <div className="text-on-surface-variant">
-                        {top2.total} avaliações ({top2.excellent} ótimas, {top2.good} boas)
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-6 text-on-surface-variant text-xs italic">
-                    Nenhum atendente classificado em 2º lugar nesta unidade.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 1º Lugar - Gold (Center / Tallest) */}
-            <div className="order-1 md:order-2 flex flex-col items-center">
-              <div className="w-full rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-amber-500/10 via-amber-100/30 to-white dark:from-amber-950/40 dark:to-slate-950 p-6 text-center shadow-xl hover:shadow-2xl transition-all relative transform md:-translate-y-4">
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-1.5 shadow-md">
-                  <Crown className="h-4 w-4 fill-amber-950" /> 1º LUGAR
-                </div>
-                {top1 ? (
-                  <div className="pt-3 space-y-2">
-                    <div className="h-16 w-16 rounded-full bg-amber-400 text-amber-950 font-black text-2xl flex items-center justify-center mx-auto border-4 border-amber-300 shadow-md">
-                      {top1.sellerName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-on-surface text-lg">{top1.sellerName}</h3>
-                      {top1.unitName && (
-                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 block">{top1.unitName}</span>
-                      )}
-                    </div>
-                    <div className="bg-amber-50 dark:bg-amber-950/60 rounded-xl p-3 text-xs space-y-1 border border-amber-200/50">
-                      <div className="text-emerald-600 dark:text-emerald-400 font-extrabold text-base">
-                        {top1.satisfactionRate}% de Satisfação
-                      </div>
-                      <div className="text-on-surface-variant font-medium">
-                        {top1.total} avaliações ({top1.excellent} ótimas, {top1.good} boas)
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-8 text-on-surface-variant text-xs italic">
-                    Nenhum atendente avaliado para o 1º lugar.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 3º Lugar - Bronze */}
-            <div className="order-3 md:order-3 flex flex-col items-center">
-              <div className="w-full rounded-2xl border-2 border-amber-700/40 bg-gradient-to-b from-amber-900/10 to-white dark:from-amber-950/20 dark:to-slate-950 p-5 text-center shadow-md hover:shadow-lg transition-all relative">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-800 text-amber-100 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-amber-700">
-                  <Award className="h-3.5 w-3.5 text-amber-300" /> 3º Lugar
-                </div>
-                {top3 ? (
-                  <div className="pt-2 space-y-2">
-                    <div className="h-14 w-14 rounded-full bg-amber-800 text-amber-100 font-bold text-xl flex items-center justify-center mx-auto border-2 border-amber-600">
-                      {top3.sellerName.substring(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-on-surface text-base">{top3.sellerName}</h3>
-                      {top3.unitName && (
-                        <span className="text-xs text-on-surface-variant block">{top3.unitName}</span>
-                      )}
-                    </div>
-                    <div className="bg-amber-50/50 dark:bg-amber-950/40 rounded-xl p-2.5 text-xs space-y-1">
-                      <div className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                        {top3.satisfactionRate}% de Satisfação
-                      </div>
-                      <div className="text-on-surface-variant">
-                        {top3.total} avaliações ({top3.excellent} ótimas, {top3.good} boas)
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-6 text-on-surface-variant text-xs italic">
-                    Nenhum atendente classificado em 3º lugar nesta unidade.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       )}
 
@@ -373,7 +379,7 @@ export function EvaluationsContent({
           </div>
           <select
             value={selectedSellerId}
-            onChange={(e) => setSelectedSellerId(e.target.value)}
+            onChange={(e) => handleSellerChange(e.target.value)}
             className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none sm:w-72"
           >
             <option value="">Todos os Atendentes</option>
@@ -478,108 +484,154 @@ export function EvaluationsContent({
         </div>
       </div>
 
-      {/* Evaluations Table / Feed */}
+      {/* Evaluations Table / Feed with Pagination */}
       <Card className="border-surface-container">
-        <CardHeader>
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
             Histórico de Avaliações
           </CardTitle>
+
+          {pagination.totalCount > 0 && (
+            <div className="text-xs text-on-surface-variant font-medium">
+              Mostrando {evaluations.length} de {pagination.totalCount} avaliações
+            </div>
+          )}
         </CardHeader>
         <CardContent>
-          {filteredEvaluations.length === 0 ? (
+          {isFetchingData ? (
+            <div className="flex items-center justify-center py-12 text-on-surface-variant gap-2 text-sm">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              Carregando avaliações...
+            </div>
+          ) : evaluations.length === 0 ? (
             <div className="text-on-surface-variant py-10 text-center text-sm">
               Nenhuma avaliação registrada até o momento.
             </div>
           ) : (
-            <div className="relative overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Avaliação</th>
-                    <th className="px-6 py-3 font-semibold">Atendente</th>
-                    <th className="px-6 py-3 font-semibold">Comentário</th>
-                    <th className="px-6 py-3 text-right font-semibold">Data</th>
-                    {isAdmin && (
-                      <th className="px-6 py-3 text-right font-semibold">Ações</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-surface-container divide-y">
-                  {filteredEvaluations.map((ev) => {
-                    const cfg = RATING_CONFIG[ev.rating] || RATING_CONFIG.GOOD
-                    const Icon = cfg.icon
-                    return (
-                      <tr
-                        key={ev.id}
-                        className="hover:bg-surface-container-lowest transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.badgeClass}`}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                            {cfg.label}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-medium">
-                          {ev.seller.name}
-                          {ev.unit?.name && (
-                            <span className="block text-xs text-on-surface-variant font-normal">
-                              {ev.unit.name}
+            <div className="space-y-4">
+              <div className="relative overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
+                    <tr>
+                      <th className="px-6 py-3 font-semibold">Avaliação</th>
+                      <th className="px-6 py-3 font-semibold">Atendente</th>
+                      <th className="px-6 py-3 font-semibold">Comentário</th>
+                      <th className="px-6 py-3 text-right font-semibold">Data</th>
+                      {isAdmin && (
+                        <th className="px-6 py-3 text-right font-semibold">Ações</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-surface-container divide-y">
+                    {evaluations.map((ev) => {
+                      const cfg = RATING_CONFIG[ev.rating] || RATING_CONFIG.GOOD
+                      const Icon = cfg.icon
+                      return (
+                        <tr
+                          key={ev.id}
+                          className="hover:bg-surface-container-lowest transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.badgeClass}`}
+                            >
+                              <Icon className="h-3.5 w-3.5" />
+                              {cfg.label}
                             </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-xs space-y-1">
-                          {ev.presetComment && (
-                            <p className="font-medium text-on-surface">
-                              "{ev.presetComment}"
-                            </p>
-                          )}
-                          {ev.observation && (
-                            <p className="text-on-surface-variant italic">
-                              Obs: {ev.observation}
-                            </p>
-                          )}
-                          {!ev.presetComment && !ev.observation && (
-                            <span className="text-on-surface-variant italic">
-                              Sem comentário
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap text-xs text-on-surface-variant">
-                          {new Date(ev.createdAt).toLocaleString('pt-BR', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </td>
-                        {isAdmin && (
-                          <td className="px-6 py-4 text-right whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-on-surface hover:text-primary cursor-pointer"
-                                onClick={() => openEditModal(ev)}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-on-surface hover:text-error cursor-pointer"
-                                onClick={() => setDeletingEvaluation(ev)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
                           </td>
-                        )}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          <td className="px-6 py-4 font-medium">
+                            {ev.seller.name}
+                            {ev.unit?.name && (
+                              <span className="block text-xs text-on-surface-variant font-normal">
+                                {ev.unit.name}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-xs space-y-1">
+                            {ev.presetComment && (
+                              <p className="font-medium text-on-surface">
+                                "{ev.presetComment}"
+                              </p>
+                            )}
+                            {ev.observation && (
+                              <p className="text-on-surface-variant italic">
+                                Obs: {ev.observation}
+                              </p>
+                            )}
+                            {!ev.presetComment && !ev.observation && (
+                              <span className="text-on-surface-variant italic">
+                                Sem comentário
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right whitespace-nowrap text-xs text-on-surface-variant">
+                            {new Date(ev.createdAt).toLocaleString('pt-BR', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </td>
+                          {isAdmin && (
+                            <td className="px-6 py-4 text-right whitespace-nowrap">
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-on-surface hover:text-primary cursor-pointer"
+                                  onClick={() => openEditModal(ev)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-on-surface hover:text-error cursor-pointer"
+                                  onClick={() => setDeletingEvaluation(ev)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* PAGINATION CONTROLS */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
+                  <div className="text-on-surface-variant">
+                    Página <span className="font-bold text-on-surface">{pagination.page}</span> de{' '}
+                    <span className="font-bold text-on-surface">{pagination.totalPages}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pagination.page <= 1 || isFetchingData}
+                      onClick={() => loadEvaluationsPage(pagination.page - 1)}
+                      className="h-8 gap-1 text-xs cursor-pointer"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pagination.page >= pagination.totalPages || isFetchingData}
+                      onClick={() => loadEvaluationsPage(pagination.page + 1)}
+                      className="h-8 gap-1 text-xs cursor-pointer"
+                    >
+                      Próxima
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

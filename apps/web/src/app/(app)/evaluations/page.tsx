@@ -23,8 +23,8 @@ export default async function EvaluationsPage() {
   let sellers: User[] = []
   let units: Unit[] = []
 
-  const [{ evaluations, metrics, podium }] = await Promise.all([
-    getEvaluations(token),
+  const [{ evaluations, pagination, metrics, podium }] = await Promise.all([
+    getEvaluations(token, { page: 1, perPage: 10 }),
     isManagement
       ? Promise.all([
           getUsers(token, null, 'SELLER')
@@ -50,14 +50,15 @@ export default async function EvaluationsPage() {
         <p className="text-on-surface-variant">
           {user.role === 'SELLER'
             ? 'Acompanhe sua satisfação de atendimento e compartilhe seu QR Code.'
-            : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção.'}
+            : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.'}
         </p>
       </div>
 
       <EvaluationsContent
-        evaluations={evaluations}
-        metrics={metrics}
-        podium={podium}
+        initialEvaluations={evaluations}
+        initialMetrics={metrics}
+        initialPagination={pagination}
+        initialPodium={podium}
         currentUser={{
           id: user.id,
           name: user.name || user.username || '',

@@ -15,11 +15,14 @@ export async function getEvaluations(app: FastifyInstance) {
       {
         schema: {
           tags: ['evaluations'],
-          summary: 'Get evaluations and metrics for sellers',
+          summary: 'Get evaluations, metrics, and podium for sellers',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             sellerId: z.string().uuid().optional(),
             unitId: z.string().uuid().optional(),
+            podiumUnitId: z.string().uuid().optional(),
+            page: z.coerce.number().int().min(1).default(1),
+            perPage: z.coerce.number().int().min(1).max(100).default(10),
           }),
           response: {
             200: z.object({
@@ -44,6 +47,12 @@ export async function getEvaluations(app: FastifyInstance) {
                     .nullable(),
                 })
               ),
+              pagination: z.object({
+                page: z.number(),
+                perPage: z.number(),
+                totalCount: z.number(),
+                totalPages: z.number(),
+              }),
               metrics: z.object({
                 total: z.number(),
                 excellentCount: z.number(),
@@ -91,18 +100,27 @@ export async function getEvaluations(app: FastifyInstance) {
           throw new UnauthorizedError('Você não tem permissão para ver avaliações.')
         }
 
-        let { sellerId, unitId } = request.query
+        let { sellerId, unitId, podiumUnitId, page, perPage } = request.query
 
         // If SELLER role, force filtering by own sellerId
         if (requestingUser.role === 'SELLER') {
           sellerId = requestingUser.id
         }
 
+        const where = {
+          sellerId: sellerId || undefined,
+          unitId: unitId || undefined,
+        }
+
+        // 1. Total count for pagination
+        const totalCount = await prisma.evaluation.count({ where })
+        const totalPages = Math.ceil(totalCount / perPage) || 1
+
+        // 2. Fetch paginated evaluations
         const evaluations = await prisma.evaluation.findMany({
-          where: {
-            sellerId: sellerId || undefined,
-            unitId: unitId || undefined,
-          },
+          where,
+          skip: (page - 1) * perPage,
+          take: perPage,
           orderBy: {
             createdAt: 'desc',
           },
@@ -129,97 +147,168 @@ export async function getEvaluations(app: FastifyInstance) {
           },
         })
 
-        const total = evaluations.length
+        // 3. Fast SQL aggregate for metrics distribution
+        const ratingGroups = await prisma.evaluation.groupBy({
+          by: ['rating'],
+          where,
+          _count: {
+            rating: true,
+          },
+        })
+
         let excellentCount = 0
         let goodCount = 0
         let regularCount = 0
         let badCount = 0
 
-        const sellerMap = new Map<
-          string,
-          {
-            sellerId: string
-            sellerName: string
-            sellerAvatarUrl: string | null
-            unitId: string | null
-            unitName: string | null
-            totalEvaluations: number
-            excellentCount: number
-            goodCount: number
-            regularCount: number
-            badCount: number
-          }
-        >()
-
-        for (const ev of evaluations) {
-          if (ev.rating === 'EXCELLENT') excellentCount++
-          else if (ev.rating === 'GOOD') goodCount++
-          else if (ev.rating === 'REGULAR') regularCount++
-          else if (ev.rating === 'BAD') badCount++
-
-          let sellerData = sellerMap.get(ev.sellerId)
-          if (!sellerData) {
-            sellerData = {
-              sellerId: ev.sellerId,
-              sellerName: ev.seller.name,
-              sellerAvatarUrl: ev.seller.avatarUrl,
-              unitId: ev.unit?.id || null,
-              unitName: ev.unit?.name || null,
-              totalEvaluations: 0,
-              excellentCount: 0,
-              goodCount: 0,
-              regularCount: 0,
-              badCount: 0,
-            }
-            sellerMap.set(ev.sellerId, sellerData)
-          }
-
-          sellerData.totalEvaluations++
-          if (ev.rating === 'EXCELLENT') sellerData.excellentCount++
-          else if (ev.rating === 'GOOD') sellerData.goodCount++
-          else if (ev.rating === 'REGULAR') sellerData.regularCount++
-          else if (ev.rating === 'BAD') sellerData.badCount++
+        for (const g of ratingGroups) {
+          if (g.rating === 'EXCELLENT') excellentCount = g._count.rating
+          else if (g.rating === 'GOOD') goodCount = g._count.rating
+          else if (g.rating === 'REGULAR') regularCount = g._count.rating
+          else if (g.rating === 'BAD') badCount = g._count.rating
         }
 
         const positiveCount = excellentCount + goodCount
-        const satisfactionRate = total > 0 ? Math.round((positiveCount / total) * 100) : 0
+        const satisfactionRate = totalCount > 0 ? Math.round((positiveCount / totalCount) * 100) : 0
 
-        const sellerStats = Array.from(sellerMap.values()).map((s) => {
-          const positive = s.excellentCount + s.goodCount
-          const sRate = s.totalEvaluations > 0 ? Math.round((positive / s.totalEvaluations) * 100) : 0
-          const score = s.excellentCount * 3 + s.goodCount * 2 + s.regularCount * 1
+        // 4. Podium calculation - ONLY for specific unit if targetPodiumUnitId is specified
+        const targetPodiumUnitId = podiumUnitId || (unitId ? unitId : undefined)
+        let podium: Array<{
+          position: number
+          sellerId: string
+          sellerName: string
+          sellerAvatarUrl: string | null
+          unitId: string | null
+          unitName: string | null
+          totalEvaluations: number
+          excellentCount: number
+          goodCount: number
+          satisfactionRate: number
+          score: number
+        }> = []
 
-          return {
-            ...s,
-            satisfactionRate: sRate,
-            score,
+        if (targetPodiumUnitId) {
+          const sellerRatingGroups = await prisma.evaluation.groupBy({
+            by: ['sellerId', 'rating'],
+            where: {
+              unitId: targetPodiumUnitId,
+            },
+            _count: {
+              rating: true,
+            },
+          })
+
+          const sellerIds = Array.from(new Set(sellerRatingGroups.map((g) => g.sellerId)))
+
+          if (sellerIds.length > 0) {
+            const sellersInfo = await prisma.user.findMany({
+              where: {
+                id: { in: sellerIds },
+              },
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+                unit: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            })
+
+            const sellerInfoMap = new Map(sellersInfo.map((s) => [s.id, s]))
+
+            const sellerStatsMap = new Map<
+              string,
+              {
+                sellerId: string
+                sellerName: string
+                sellerAvatarUrl: string | null
+                unitId: string | null
+                unitName: string | null
+                totalEvaluations: number
+                excellentCount: number
+                goodCount: number
+                regularCount: number
+                badCount: number
+              }
+            >()
+
+            for (const g of sellerRatingGroups) {
+              const info = sellerInfoMap.get(g.sellerId)
+              if (!info) continue
+
+              let stat = sellerStatsMap.get(g.sellerId)
+              if (!stat) {
+                stat = {
+                  sellerId: info.id,
+                  sellerName: info.name,
+                  sellerAvatarUrl: info.avatarUrl,
+                  unitId: info.unit?.id || null,
+                  unitName: info.unit?.name || null,
+                  totalEvaluations: 0,
+                  excellentCount: 0,
+                  goodCount: 0,
+                  regularCount: 0,
+                  badCount: 0,
+                }
+                sellerStatsMap.set(g.sellerId, stat)
+              }
+
+              const count = g._count.rating
+              stat.totalEvaluations += count
+              if (g.rating === 'EXCELLENT') stat.excellentCount += count
+              else if (g.rating === 'GOOD') stat.goodCount += count
+              else if (g.rating === 'REGULAR') stat.regularCount += count
+              else if (g.rating === 'BAD') stat.badCount += count
+            }
+
+            const sellerStats = Array.from(sellerStatsMap.values()).map((s) => {
+              const positive = s.excellentCount + s.goodCount
+              const sRate = s.totalEvaluations > 0 ? Math.round((positive / s.totalEvaluations) * 100) : 0
+              const score = s.excellentCount * 3 + s.goodCount * 2 + s.regularCount * 1
+
+              return {
+                ...s,
+                satisfactionRate: sRate,
+                score,
+              }
+            })
+
+            sellerStats.sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score
+              if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
+              return b.totalEvaluations - a.totalEvaluations
+            })
+
+            podium = sellerStats.slice(0, 3).map((seller, index) => ({
+              position: index + 1,
+              sellerId: seller.sellerId,
+              sellerName: seller.sellerName,
+              sellerAvatarUrl: seller.sellerAvatarUrl,
+              unitId: seller.unitId,
+              unitName: seller.unitName,
+              totalEvaluations: seller.totalEvaluations,
+              excellentCount: seller.excellentCount,
+              goodCount: seller.goodCount,
+              satisfactionRate: seller.satisfactionRate,
+              score: seller.score,
+            }))
           }
-        })
-
-        sellerStats.sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score
-          if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
-          return b.totalEvaluations - a.totalEvaluations
-        })
-
-        const podium = sellerStats.slice(0, 3).map((seller, index) => ({
-          position: index + 1,
-          sellerId: seller.sellerId,
-          sellerName: seller.sellerName,
-          sellerAvatarUrl: seller.sellerAvatarUrl,
-          unitId: seller.unitId,
-          unitName: seller.unitName,
-          totalEvaluations: seller.totalEvaluations,
-          excellentCount: seller.excellentCount,
-          goodCount: seller.goodCount,
-          satisfactionRate: seller.satisfactionRate,
-          score: seller.score,
-        }))
+        }
 
         return reply.status(200).send({
           evaluations,
+          pagination: {
+            page,
+            perPage,
+            totalCount,
+            totalPages,
+          },
           metrics: {
-            total,
+            total: totalCount,
             excellentCount,
             goodCount,
             regularCount,

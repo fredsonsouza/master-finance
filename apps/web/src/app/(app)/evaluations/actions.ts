@@ -2,8 +2,27 @@
 
 import { auth } from '@/auth/auth'
 import { deleteEvaluation } from '@/http/delete-evaluation'
+import { getEvaluations } from '@/http/get-evaluations'
 import { updateEvaluation } from '@/http/update-evaluation'
 import { revalidatePath } from 'next/cache'
+
+export async function fetchEvaluationsAction(params?: {
+  sellerId?: string | null
+  unitId?: string | null
+  podiumUnitId?: string | null
+  page?: number
+  perPage?: number
+}) {
+  const { token } = await auth()
+  if (!token) return { success: false, data: null, message: 'Não autenticado' }
+
+  try {
+    const data = await getEvaluations(token, params)
+    return { success: true, data, message: null }
+  } catch (err: unknown) {
+    return { success: false, data: null, message: 'Erro ao buscar avaliações.' }
+  }
+}
 
 export async function deleteEvaluationAction(id: string) {
   const { token, user } = await auth()

@@ -12,9 +12,12 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
+      findMany: vi.fn(),
     },
     evaluation: {
+      count: vi.fn(),
       findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }))
@@ -52,6 +55,8 @@ describe('Get Evaluations Unit Test', () => {
 
     const date = new Date('2026-08-10')
 
+    vi.mocked(prisma.evaluation.count).mockResolvedValueOnce(1)
+
     vi.mocked(prisma.evaluation.findMany).mockResolvedValueOnce([
       {
         id: '323e4567-e89b-12d3-a456-426614174002',
@@ -72,6 +77,10 @@ describe('Get Evaluations Unit Test', () => {
       },
     ] as any)
 
+    vi.mocked(prisma.evaluation.groupBy).mockResolvedValueOnce([
+      { rating: 'EXCELLENT', _count: { rating: 1 } },
+    ] as any)
+
     const response = await app.inject({
       method: 'GET',
       url: '/evaluations',
@@ -85,6 +94,12 @@ describe('Get Evaluations Unit Test', () => {
       regularCount: 0,
       badCount: 0,
       satisfactionRate: 100,
+    })
+    expect(response.json().pagination).toEqual({
+      page: 1,
+      perPage: 10,
+      totalCount: 1,
+      totalPages: 1,
     })
   })
 })

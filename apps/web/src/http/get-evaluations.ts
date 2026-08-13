@@ -41,19 +41,36 @@ export interface PodiumItem {
   score: number
 }
 
+export interface EvaluationPagination {
+  page: number
+  perPage: number
+  totalCount: number
+  totalPages: number
+}
+
 interface GetEvaluationsResponse {
   evaluations: EvaluationItem[]
+  pagination: EvaluationPagination
   metrics: EvaluationMetrics
   podium: PodiumItem[]
 }
 
 export async function getEvaluations(
   token: string,
-  params?: { sellerId?: string | null; unitId?: string | null }
+  params?: {
+    sellerId?: string | null
+    unitId?: string | null
+    podiumUnitId?: string | null
+    page?: number
+    perPage?: number
+  }
 ) {
   const searchParams: Record<string, string> = {}
   if (params?.sellerId) searchParams.sellerId = params.sellerId
   if (params?.unitId) searchParams.unitId = params.unitId
+  if (params?.podiumUnitId) searchParams.podiumUnitId = params.podiumUnitId
+  if (params?.page) searchParams.page = String(params.page)
+  if (params?.perPage) searchParams.perPage = String(params.perPage)
 
   const result = await api
     .get('evaluations', {
