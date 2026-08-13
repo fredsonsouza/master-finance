@@ -71,9 +71,10 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
               box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
             }
             .clinic-logo {
-              max-height: 95px;
-              max-width: 260px;
-              width: auto;
+              max-height: 140px;
+              max-width: 320px;
+              width: 100%;
+              height: auto;
               margin: 0 auto 16px auto;
               display: block;
               object-fit: contain;
@@ -125,7 +126,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
           <img
             src="/images/masterclin-logo.png"
             alt="Logo Masterclin"
-            className="h-24 max-w-[260px] w-auto object-contain mb-4"
+            className="h-36 max-w-[320px] w-full object-contain mb-4"
           />
           <QRCodeSVG value={evaluationUrl} size={180} level="H" />
           <div ref={canvasRef} className="hidden">
