@@ -193,10 +193,25 @@ export function EvaluateForm({ seller }: Props) {
             {seller.name}
           </h3>
           {seller.unit?.name && (
-            <span className="inline-block rounded-full bg-surface-container-highest px-3 py-0.5 text-xs font-medium text-on-surface-variant">
-              Unidade: {seller.unit.name}
-            </span>
+            <div className="pt-0.5">
+              <span className="inline-block rounded-full bg-surface-container-highest px-3 py-0.5 text-xs font-medium text-on-surface-variant">
+                Unidade: {seller.unit.name}
+              </span>
+            </div>
           )}
+
+          <div className="pt-1">
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 underline cursor-pointer"
+            >
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+              Avalie também a Masterclin no Google
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </div>
       </CardHeader>
 
@@ -205,7 +220,7 @@ export function EvaluateForm({ seller }: Props) {
           {/* Client Name Input (Mandatory) */}
           <div className="space-y-2">
             <label htmlFor="clientName" className="text-xs font-semibold text-on-surface flex items-center justify-between">
-              <span>Seu Nome completo</span>
+              <span>Informe seu nome</span>
               <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
             </label>
             <Input
@@ -214,7 +229,7 @@ export function EvaluateForm({ seller }: Props) {
               required
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
-              placeholder="Digite seu nome completo"
+              placeholder="Informe seu nome"
               className="h-11 text-sm bg-surface-container-lowest focus:ring-primary"
             />
           </div>
@@ -311,20 +326,6 @@ export function EvaluateForm({ seller }: Props) {
           >
             {isSubmitting ? 'Enviando...' : 'Enviar Avaliação'}
           </Button>
-
-          {/* Google Review Banner Link */}
-          <div className="pt-2 text-center">
-            <a
-              href={GOOGLE_REVIEW_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 underline cursor-pointer"
-            >
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-              Avalie também a Masterclin no Google
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
         </form>
       </CardContent>
     </Card>
