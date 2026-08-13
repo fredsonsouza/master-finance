@@ -208,6 +208,7 @@ model Evaluation {
   unitId        String?
   unit          Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
+  clientName    String?
   rating        EvaluationRating
   presetComment String?
   observation   String?

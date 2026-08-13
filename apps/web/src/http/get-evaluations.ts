@@ -2,6 +2,7 @@ import { api } from './api-client'
 
 export interface EvaluationItem {
   id: string
+  clientName: string | null
   rating: 'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
   presetComment: string | null
   observation: string | null

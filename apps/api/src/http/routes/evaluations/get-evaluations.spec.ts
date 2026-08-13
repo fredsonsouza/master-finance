@@ -60,6 +60,7 @@ describe('Get Evaluations Unit Test', () => {
     vi.mocked(prisma.evaluation.findMany).mockResolvedValueOnce([
       {
         id: '323e4567-e89b-12d3-a456-426614174002',
+        clientName: 'João da Silva',
         rating: 'EXCELLENT',
         presetComment: 'Excelente!',
         observation: 'Ótimo',

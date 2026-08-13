@@ -515,6 +515,7 @@ export function EvaluationsContent({
                   <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
                     <tr>
                       <th className="px-6 py-3 font-semibold">Avaliação</th>
+                      <th className="px-6 py-3 font-semibold">Cliente</th>
                       <th className="px-6 py-3 font-semibold">Atendente</th>
                       <th className="px-6 py-3 font-semibold">Comentário</th>
                       <th className="px-6 py-3 text-right font-semibold">Data</th>
@@ -539,6 +540,9 @@ export function EvaluationsContent({
                               <Icon className="h-3.5 w-3.5" />
                               {cfg.label}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
+                            {ev.clientName || 'Anônimo'}
                           </td>
                           <td className="px-6 py-4 font-medium">
                             {ev.seller.name}

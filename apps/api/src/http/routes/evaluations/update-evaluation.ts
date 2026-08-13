@@ -22,6 +22,7 @@ export async function updateEvaluation(app: FastifyInstance) {
             id: z.string().uuid(),
           }),
           body: z.object({
+            clientName: z.string().optional().nullable(),
             rating: z.enum(['EXCELLENT', 'GOOD', 'REGULAR', 'BAD']).optional(),
             presetComment: z.string().optional().nullable(),
             observation: z.string().optional().nullable(),
@@ -52,7 +53,7 @@ export async function updateEvaluation(app: FastifyInstance) {
         }
 
         const { id } = request.params
-        const { rating, presetComment, observation } = request.body
+        const { clientName, rating, presetComment, observation } = request.body
 
         const evaluation = await prisma.evaluation.findUnique({
           where: { id },
@@ -65,9 +66,10 @@ export async function updateEvaluation(app: FastifyInstance) {
         await prisma.evaluation.update({
           where: { id },
           data: {
-            rating: rating || undefined,
-            presetComment: presetComment !== undefined ? presetComment : undefined,
-            observation: observation !== undefined ? observation : undefined,
+            clientName: clientName !== undefined ? clientName : evaluation.clientName,
+            rating: rating || evaluation.rating,
+            presetComment: presetComment !== undefined ? presetComment : evaluation.presetComment,
+            observation: observation !== undefined ? observation : evaluation.observation,
           },
         })
 

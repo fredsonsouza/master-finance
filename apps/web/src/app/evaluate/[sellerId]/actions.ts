@@ -4,6 +4,7 @@ import { createEvaluation } from '@/http/create-evaluation'
 
 interface CreateEvaluationParams {
   sellerId: string
+  clientName: string
   rating: 'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
   presetComment?: string | null
   observation?: string | null

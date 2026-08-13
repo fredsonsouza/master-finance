@@ -2,6 +2,7 @@ import { api } from './api-client'
 
 interface CreateEvaluationRequest {
   sellerId: string
+  clientName: string
   rating: 'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
   presetComment?: string | null
   observation?: string | null

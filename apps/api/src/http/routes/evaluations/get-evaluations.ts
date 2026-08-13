@@ -29,6 +29,7 @@ export async function getEvaluations(app: FastifyInstance) {
               evaluations: z.array(
                 z.object({
                   id: z.string().uuid(),
+                  clientName: z.string().nullable(),
                   rating: z.enum(['EXCELLENT', 'GOOD', 'REGULAR', 'BAD']),
                   presetComment: z.string().nullable(),
                   observation: z.string().nullable(),
@@ -126,6 +127,7 @@ export async function getEvaluations(app: FastifyInstance) {
           },
           select: {
             id: true,
+            clientName: true,
             rating: true,
             presetComment: true,
             observation: true,

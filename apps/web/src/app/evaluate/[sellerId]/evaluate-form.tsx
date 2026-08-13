@@ -2,18 +2,30 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { createEvaluationAction } from './actions'
 import type { PublicSeller } from '@/http/get-public-seller'
-import { CheckCircle2, Frown, Laugh, Meh, Smile, Star, User } from 'lucide-react'
+import {
+  CheckCircle2,
+  ExternalLink,
+  Frown,
+  Laugh,
+  Meh,
+  Smile,
+  Star,
+  User,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { createEvaluationAction } from './actions'
 
 interface Props {
   seller: PublicSeller
 }
 
 type RatingType = 'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
+
+const GOOGLE_REVIEW_URL = 'https://g.page/r/Ce61mfXe8zjdEBM/review'
 
 const RATING_OPTIONS: {
   value: RatingType
@@ -65,6 +77,7 @@ const RATING_OPTIONS: {
 ]
 
 export function EvaluateForm({ seller }: Props) {
+  const [clientName, setClientName] = useState('')
   const [selectedRating, setSelectedRating] = useState<RatingType | null>(null)
   const [selectedPreset, setSelectedPreset] = useState<string>('')
   const [observation, setObservation] = useState('')
@@ -81,6 +94,12 @@ export function EvaluateForm({ seller }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    if (!clientName.trim()) {
+      toast.error('Por favor, informe seu nome antes de enviar.')
+      return
+    }
+
     if (!selectedRating) {
       toast.error('Por favor, selecione uma nota para o atendimento.')
       return
@@ -90,6 +109,7 @@ export function EvaluateForm({ seller }: Props) {
     try {
       const response = await createEvaluationAction({
         sellerId: seller.id,
+        clientName: clientName.trim(),
         rating: selectedRating,
         presetComment: selectedPreset || null,
         observation: observation.trim() || null,
@@ -115,13 +135,40 @@ export function EvaluateForm({ seller }: Props) {
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-            Muito obrigado!
+            Muito obrigado, {clientName}!
           </h2>
           <p className="text-on-surface-variant text-sm">
             Sua avaliação sobre o atendimento de{' '}
             <strong className="text-on-surface">{seller.name}</strong> foi registrada com sucesso.
           </p>
         </div>
+
+        {/* Google Review Card Invitation */}
+        <div className="bg-gradient-to-r from-amber-500/10 via-surface to-blue-500/10 border border-amber-300 dark:border-amber-700/50 p-5 rounded-2xl space-y-3 shadow-sm">
+          <div className="flex items-center justify-center gap-1 text-amber-500">
+            <Star className="h-5 w-5 fill-amber-400" />
+            <Star className="h-5 w-5 fill-amber-400" />
+            <Star className="h-5 w-5 fill-amber-400" />
+            <Star className="h-5 w-5 fill-amber-400" />
+            <Star className="h-5 w-5 fill-amber-400" />
+          </div>
+          <h3 className="font-bold text-on-surface text-base">
+            Avalie também a Masterclin no Google!
+          </h3>
+          <p className="text-xs text-on-surface-variant">
+            Sua avaliação pública é muito importante para nossa clínica e leva menos de 1 minuto.
+          </p>
+          <a
+            href={GOOGLE_REVIEW_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 px-4 shadow-md transition-all cursor-pointer"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Deixar Avaliação no Google
+          </a>
+        </div>
+
         <p className="text-xs text-on-surface-variant italic">
           Sua opinião é fundamental para mantermos a excelência do nosso atendimento.
         </p>
@@ -155,42 +202,65 @@ export function EvaluateForm({ seller }: Props) {
 
       <CardContent className="p-0 space-y-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Client Name Input (Mandatory) */}
+          <div className="space-y-2">
+            <label htmlFor="clientName" className="text-xs font-semibold text-on-surface flex items-center justify-between">
+              <span>Seu Nome completo</span>
+              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
+            </label>
+            <Input
+              id="clientName"
+              type="text"
+              required
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Digite seu nome completo"
+              className="h-11 text-sm bg-surface-container-lowest focus:ring-primary"
+            />
+          </div>
+
           {/* Rating Selection */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {RATING_OPTIONS.map((opt) => {
-              const Icon = opt.icon
-              const isSelected = selectedRating === opt.value
-              return (
-                <button
-                  type="button"
-                  key={opt.value}
-                  onClick={() => handleRatingSelect(opt.value)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                    isSelected
-                      ? `${opt.borderClass} ${opt.bgClass} shadow-md scale-105`
-                      : 'border-surface-container hover:border-outline bg-surface-container-lowest'
-                  }`}
-                >
-                  <Icon
-                    className={`h-8 w-8 mb-1.5 ${
-                      isSelected ? opt.colorClass : 'text-on-surface-variant'
-                    }`}
-                  />
-                  <span
-                    className={`text-xs font-semibold ${
-                      isSelected ? 'text-on-surface' : 'text-on-surface-variant'
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-on-surface flex items-center justify-between">
+              <span>Nota do Atendimento</span>
+              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {RATING_OPTIONS.map((opt) => {
+                const Icon = opt.icon
+                const isSelected = selectedRating === opt.value
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => handleRatingSelect(opt.value)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? `${opt.borderClass} ${opt.bgClass} shadow-md scale-105`
+                        : 'border-surface-container hover:border-outline bg-surface-container-lowest'
                     }`}
                   >
-                    {opt.label}
-                  </span>
-                </button>
-              )
-            })}
+                    <Icon
+                      className={`h-8 w-8 mb-1.5 ${
+                        isSelected ? opt.colorClass : 'text-on-surface-variant'
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${
+                        isSelected ? 'text-on-surface' : 'text-on-surface-variant'
+                      }`}
+                    >
+                      {opt.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Preset Comment Selection */}
           {selectedRating && (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-1">
               <label className="text-xs font-medium text-on-surface-variant">
                 Selecione o depoimento que melhor descreve:
               </label>
@@ -236,11 +306,25 @@ export function EvaluateForm({ seller }: Props) {
 
           <Button
             type="submit"
-            disabled={!selectedRating || isSubmitting}
-            className="w-full h-11 text-base font-semibold"
+            disabled={!clientName.trim() || !selectedRating || isSubmitting}
+            className="w-full h-11 text-base font-semibold cursor-pointer"
           >
             {isSubmitting ? 'Enviando...' : 'Enviar Avaliação'}
           </Button>
+
+          {/* Google Review Banner Link */}
+          <div className="pt-2 text-center">
+            <a
+              href={GOOGLE_REVIEW_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 underline cursor-pointer"
+            >
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+              Avalie também a Masterclin no Google
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </form>
       </CardContent>
     </Card>
