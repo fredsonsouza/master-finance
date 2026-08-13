@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Copy, Download, ExternalLink, Printer, QrCode } from 'lucide-react'
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react'
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import { toast } from 'sonner'
 
 interface Props {
@@ -13,30 +13,28 @@ interface Props {
 }
 
 export function QrCodeCard({ sellerId, sellerName }: Props) {
-  const [evaluationUrl, setEvaluationUrl] = useState('')
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-      setEvaluationUrl(`${baseUrl}/evaluate/${sellerId}`)
-    }
-  }, [sellerId])
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+  const evaluationUrl = sellerId ? `${baseUrl}/evaluate/${sellerId}` : ''
 
   function handleCopyLink() {
     if (!evaluationUrl) return
     navigator.clipboard.writeText(evaluationUrl)
-    toast.success('Link de avaliação copiado!')
+    toast.success('Link de avaliação copiado para a área de transferência!')
   }
 
   function handleDownloadPng() {
-    const canvas = canvasRef.current?.querySelector('canvas')
+    if (!canvasRef.current) return
+    const canvas = canvasRef.current.querySelector('canvas')
     if (!canvas) return
-    const url = canvas.toDataURL('image/png')
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `qrcode-atendimento-${sellerName.toLowerCase().replace(/\s+/g, '-')}.png`
-    a.click()
+
+    const image = canvas.toDataURL('image/png')
+    const link = document.createElement('a')
+    link.href = image
+    link.download = `qrcode-atendimento-${sellerName.toLowerCase().replace(/\s+/g, '-')}.png`
+    link.click()
+    toast.success('Download do QR Code iniciado!')
   }
 
   function handlePrint() {
@@ -49,51 +47,97 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR Code - ${sellerName}</title>
+          <title>Crachá QR Code - ${sellerName}</title>
           <style>
+            @page {
+              size: 54mm 86mm;
+              margin: 0;
+            }
             body {
               font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
               display: flex;
-              flex-direction: column;
               align-items: center;
               justify-content: center;
               min-height: 100vh;
               margin: 0;
-              text-align: center;
+              padding: 0;
               background-color: #f8fafc;
             }
-            .card {
-              border: 2px solid #cbd5e1;
-              padding: 24px 24px 32px 24px;
-              border-radius: 20px;
-              max-width: 360px;
+            .badge-card {
+              width: 54mm;
+              height: 86mm;
+              box-sizing: border-box;
+              padding: 4mm 3mm;
+              border: 1.5px solid #cbd5e1;
+              border-radius: 4mm;
               background: #ffffff;
-              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+              text-align: center;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+            .badge-hole {
+              width: 14mm;
+              height: 2.5mm;
+              background: #e2e8f0;
+              border: 1px solid #cbd5e1;
+              border-radius: 2mm;
+              margin-bottom: 1.5mm;
             }
             .clinic-logo {
-              max-height: 125px;
-              max-width: 290px;
-              width: 100%;
-              height: auto;
-              margin: 0 auto 2px auto;
+              max-height: 16mm;
+              max-width: 44mm;
+              width: auto;
               display: block;
+              margin: 0 auto 1mm auto;
               object-fit: contain;
             }
-            h1 { font-size: 20px; color: #0f172a; margin-top: 0; margin-bottom: 2px; font-weight: 800; }
-            .seller-info { font-size: 14px; color: #475569; margin-top: 0; margin-bottom: 16px; font-weight: 500; }
-            .seller-name { font-size: 22px; color: #0284c7; font-weight: 800; display: block; margin-top: 4px; }
-            #qr { display: flex; justify-content: center; margin: 0 auto; }
+            .title {
+              font-size: 7.5pt;
+              color: #475569;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+              margin: 0;
+            }
+            .seller-name {
+              font-size: 11pt;
+              color: #0284c7;
+              font-weight: 800;
+              line-height: 1.1;
+              margin: 0.5mm 0 2mm 0;
+              display: block;
+            }
+            #qr {
+              display: flex;
+              justify-content: center;
+              margin: 0 auto;
+            }
+            .footer-tag {
+              font-size: 6.5pt;
+              color: #94a3b8;
+              font-weight: 600;
+              text-transform: uppercase;
+              margin-top: 1mm;
+            }
+            @media print {
+              body { background: transparent; }
+              .badge-card { box-shadow: none; border-color: #94a3b8; }
+            }
           </style>
         </head>
         <body>
-          <div class="card">
-            <img src="${logoUrl}" class="clinic-logo" alt="Logo Masterclin" />
-            <h1>Avalie meu Atendimento</h1>
-            <div class="seller-info">
-              Atendente:
+          <div class="badge-card">
+            <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+              <div class="badge-hole"></div>
+              <img src="${logoUrl}" class="clinic-logo" alt="Logo Masterclin" />
+              <p class="title">Avalie meu Atendimento</p>
               <span class="seller-name">${sellerName}</span>
             </div>
             <div id="qr"></div>
+            <div class="footer-tag">Escaneie a câmera</div>
           </div>
           <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
           <script>
@@ -102,7 +146,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             var qr = qrcode(typeNumber, errorCorrectionLevel);
             qr.addData('${evaluationUrl}');
             qr.make();
-            document.getElementById('qr').innerHTML = qr.createImgTag(7);
+            document.getElementById('qr').innerHTML = qr.createImgTag(4);
             window.onload = function() { window.print(); }
           </script>
         </body>
@@ -121,28 +165,49 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
           Seu QR Code de Atendimento
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/90 p-6 shadow-sm text-slate-900">
-          <img
-            src="/images/masterclin-logo.png"
-            alt="Logo Masterclin"
-            className="h-32 max-w-[280px] w-full object-contain mb-1"
-          />
-          <QRCodeSVG value={evaluationUrl} size={180} level="H" />
+      <CardContent className="space-y-4 flex flex-col items-center">
+        {/* CR80 Standard Vertical ID Badge Container */}
+        <div className="w-[260px] h-[410px] rounded-2xl bg-white border-2 border-slate-200/90 p-4 shadow-md text-slate-900 flex flex-col items-center justify-between text-center relative transition-all hover:shadow-lg">
+          {/* Badge Hole Punch Slot */}
+          <div className="w-12 h-2.5 rounded-full bg-slate-200 border border-slate-300 shadow-inner" />
+
+          {/* Logo & Seller Header */}
+          <div className="w-full flex flex-col items-center">
+            <img
+              src="/images/masterclin-logo.png"
+              alt="Logo Masterclin"
+              className="h-16 max-w-[210px] w-auto object-contain my-1"
+            />
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Avalie meu Atendimento
+            </p>
+            <p className="text-base font-extrabold text-sky-600 leading-tight mt-0.5">
+              {sellerName}
+            </p>
+          </div>
+
+          {/* QR Code Graphic */}
+          <div className="p-2 bg-slate-50 border border-slate-200/80 rounded-xl shadow-inner">
+            <QRCodeSVG value={evaluationUrl} size={150} level="H" />
+          </div>
+
           <div ref={canvasRef} className="hidden">
             <QRCodeCanvas value={evaluationUrl} size={300} level="H" />
           </div>
-          <p className="mt-3 text-base font-extrabold text-slate-900">
-            {sellerName}
-          </p>
+
+          {/* Footer Label */}
+          {/*<p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+            Escaneie com a Câmera
+          </p>*/}
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-2 w-full pt-1">
           <Button
             variant="outline"
             size="sm"
             onClick={handleCopyLink}
-            className="gap-1.5 text-xs"
+            className="gap-1.5 text-xs cursor-pointer"
           >
             <Copy className="h-3.5 w-3.5" />
             Copiar Link
@@ -151,7 +216,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             variant="outline"
             size="sm"
             onClick={handleDownloadPng}
-            className="gap-1.5 text-xs"
+            className="gap-1.5 text-xs cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
             Baixar PNG
@@ -160,16 +225,16 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             variant="outline"
             size="sm"
             onClick={handlePrint}
-            className="gap-1.5 text-xs"
+            className="gap-1.5 text-xs cursor-pointer"
           >
             <Printer className="h-3.5 w-3.5" />
-            Imprimir
+            Imprimir Crachá
           </Button>
           <a href={evaluationUrl} target="_blank" rel="noreferrer">
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1.5 text-xs text-primary"
+              className="gap-1.5 text-xs text-primary cursor-pointer"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Testar
