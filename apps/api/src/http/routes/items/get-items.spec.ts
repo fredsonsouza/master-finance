@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     item: {
+      count: vi.fn(),
       findMany: vi.fn(),
     },
   },
@@ -50,6 +51,7 @@ describe('Get Items Unit Test', () => {
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
+    vi.mocked(prisma.item.count).mockResolvedValueOnce(0)
     vi.mocked(prisma.item.findMany).mockResolvedValueOnce([])
 
     const response = await app.inject({
@@ -58,12 +60,14 @@ describe('Get Items Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(200)
-    expect(prisma.item.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          sectorId: undefined,
-        },
-      })
-    )
+    expect(response.json()).toEqual({
+      items: [],
+      pagination: {
+        page: 1,
+        perPage: 20,
+        totalCount: 0,
+        totalPages: 1,
+      },
+    })
   })
 })

@@ -14,10 +14,13 @@ export async function getItems(app: FastifyInstance) {
       {
         schema: {
           tags: ['items'],
-          summary: 'Get all items',
+          summary: 'Get all items with search, filtering and pagination',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
-            sectorId: z.uuid().optional(),
+            search: z.string().optional(),
+            sectorId: z.string().uuid().optional(),
+            page: z.coerce.number().int().min(1).default(1),
+            perPage: z.coerce.number().int().min(1).max(100).default(20),
           }),
           response: {
             200: z.object({
@@ -39,6 +42,12 @@ export async function getItems(app: FastifyInstance) {
                     .optional(),
                 })
               ),
+              pagination: z.object({
+                page: z.number(),
+                perPage: z.number(),
+                totalCount: z.number(),
+                totalPages: z.number(),
+              }),
             }),
           },
         },
@@ -53,13 +62,25 @@ export async function getItems(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        const { sectorId } = request.query
+        const { search, sectorId, page, perPage } = request.query
+
+        const where = {
+          sectorId: sectorId || undefined,
+          OR: search?.trim()
+            ? [
+                { name: { contains: search.trim(), mode: 'insensitive' as const } },
+                { description: { contains: search.trim(), mode: 'insensitive' as const } },
+              ]
+            : undefined,
+        }
+
+        const totalCount = await prisma.item.count({ where })
+        const totalPages = Math.ceil(totalCount / perPage) || 1
 
         const items = await prisma.item.findMany({
-          take: 100, // Limita a 100 para não estourar a memória no acesso global
-          where: {
-            sectorId,
-          },
+          where,
+          skip: (page - 1) * perPage,
+          take: perPage,
           include: {
             sector: true,
           },
@@ -68,7 +89,15 @@ export async function getItems(app: FastifyInstance) {
           },
         })
 
-        return reply.status(200).send({ items })
+        return reply.status(200).send({
+          items,
+          pagination: {
+            page,
+            perPage,
+            totalCount,
+            totalPages,
+          },
+        })
       }
     )
 }

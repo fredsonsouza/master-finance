@@ -2,8 +2,26 @@
 
 import { auth } from '@/auth/auth'
 import { createItem } from '@/http/create-item'
+import { getItems } from '@/http/get-items'
 import { updateItem } from '@/http/update-item'
 import { revalidatePath } from 'next/cache'
+
+export async function fetchItemsAction(params?: {
+  search?: string | null
+  sectorId?: string | null
+  page?: number
+  perPage?: number
+}) {
+  const { token } = await auth()
+  if (!token) return { success: false, data: null, message: 'Não autenticado' }
+
+  try {
+    const data = await getItems(token, params)
+    return { success: true, data, message: null }
+  } catch (err: unknown) {
+    return { success: false, data: null, message: 'Erro ao buscar itens.' }
+  }
+}
 
 export async function createItemAction(data: FormData) {
   const { token } = await auth()
