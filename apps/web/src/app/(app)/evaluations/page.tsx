@@ -5,6 +5,7 @@ import { getUsers, type User } from '@/http/get-users'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { EvaluationsContent } from './evaluations-content'
+import { RegulationButton } from './regulation-button'
 
 export const metadata: Metadata = {
   title: 'Meus Atendimentos - Master Admin',
@@ -43,15 +44,19 @@ export default async function EvaluationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-primary text-3xl font-bold">
-          {user.role === 'SELLER' ? 'Meus Atendimentos' : 'Avaliações de Atendimento'}
-        </h1>
-        <p className="text-on-surface-variant">
-          {user.role === 'SELLER'
-            ? 'Acompanhe sua satisfação de atendimento e compartilhe seu QR Code.'
-            : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.'}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-primary text-3xl font-bold">
+            {user.role === 'SELLER' ? 'Meus Atendimentos' : 'Avaliações de Atendimento'}
+          </h1>
+          <p className="text-on-surface-variant">
+            {user.role === 'SELLER'
+              ? 'Acompanhe sua satisfação de atendimento e compartilhe seu QR Code.'
+              : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.'}
+          </p>
+        </div>
+
+        <RegulationButton />
       </div>
 
       <EvaluationsContent
