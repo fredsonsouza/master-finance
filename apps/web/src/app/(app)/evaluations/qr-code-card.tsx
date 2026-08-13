@@ -43,6 +43,8 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
     const printWindow = window.open('', '_blank')
     if (!printWindow || !evaluationUrl) return
 
+    const logoUrl = `${window.location.origin}/images/masterclin-logo.png`
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -62,11 +64,18 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             }
             .card {
               border: 2px solid #cbd5e1;
-              padding: 40px 32px;
+              padding: 32px 32px 40px 32px;
               border-radius: 20px;
               max-width: 360px;
               background: #ffffff;
               box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            }
+            .clinic-logo {
+              max-height: 56px;
+              width: auto;
+              margin: 0 auto 16px auto;
+              display: block;
+              object-fit: contain;
             }
             h1 { font-size: 22px; color: #0f172a; margin-top: 0; margin-bottom: 6px; font-weight: 800; }
             .seller-info { font-size: 15px; color: #475569; margin-top: 0; margin-bottom: 24px; font-weight: 500; }
@@ -76,6 +85,7 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
         </head>
         <body>
           <div class="card">
+            <img src="${logoUrl}" class="clinic-logo" alt="Logo Masterclin" />
             <h1>Avalie meu Atendimento</h1>
             <div class="seller-info">
               Atendente:
@@ -111,6 +121,11 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/90 p-6 shadow-sm text-slate-900">
+          <img
+            src="/images/masterclin-logo.png"
+            alt="Logo Masterclin"
+            className="h-14 w-auto object-contain mb-4"
+          />
           <QRCodeSVG value={evaluationUrl} size={180} level="H" />
           <div ref={canvasRef} className="hidden">
             <QRCodeCanvas value={evaluationUrl} size={300} level="H" />
