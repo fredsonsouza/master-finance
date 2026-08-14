@@ -14,7 +14,7 @@ export async function getLogs(app: FastifyInstance) {
       {
         schema: {
           tags: ['logs'],
-          summary: 'Get all audit logs (ADMIN only)',
+          summary: 'Get all audit logs with filters and pagination (ADMIN only)',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             resource: z.string().optional(),
@@ -22,6 +22,8 @@ export async function getLogs(app: FastifyInstance) {
             search: z.string().optional(),
             startDate: z.string().optional(),
             endDate: z.string().optional(),
+            page: z.coerce.number().int().min(1).default(1),
+            perPage: z.coerce.number().int().min(1).max(200).default(20),
           }),
           response: {
             200: z.object({
@@ -41,6 +43,12 @@ export async function getLogs(app: FastifyInstance) {
                   }),
                 })
               ),
+              pagination: z.object({
+                page: z.number(),
+                perPage: z.number(),
+                totalCount: z.number(),
+                totalPages: z.number(),
+              }),
             }),
           },
         },
@@ -59,7 +67,8 @@ export async function getLogs(app: FastifyInstance) {
           throw new UnauthorizedError('Acesso restrito a administradores.')
         }
 
-        const { resource, action, search, startDate, endDate } = request.query
+        const { resource, action, search, startDate, endDate, page, perPage } =
+          request.query
 
         const whereClause: any = {}
 
@@ -71,11 +80,11 @@ export async function getLogs(app: FastifyInstance) {
           whereClause.action = action
         }
 
-        if (search) {
+        if (search?.trim()) {
           whereClause.OR = [
-            { details: { contains: search, mode: 'insensitive' } },
-            { user: { name: { contains: search, mode: 'insensitive' } } },
-            { user: { username: { contains: search, mode: 'insensitive' } } },
+            { details: { contains: search.trim(), mode: 'insensitive' } },
+            { user: { name: { contains: search.trim(), mode: 'insensitive' } } },
+            { user: { username: { contains: search.trim(), mode: 'insensitive' } } },
           ]
         }
 
@@ -93,8 +102,15 @@ export async function getLogs(app: FastifyInstance) {
           }
         }
 
+        const totalCount = await prisma.auditLog.count({
+          where: whereClause,
+        })
+        const totalPages = Math.ceil(totalCount / perPage) || 1
+
         const logs = await prisma.auditLog.findMany({
           where: whereClause,
+          skip: (page - 1) * perPage,
+          take: perPage,
           include: {
             user: {
               select: {
@@ -110,7 +126,15 @@ export async function getLogs(app: FastifyInstance) {
           },
         })
 
-        return reply.status(200).send({ logs })
+        return reply.status(200).send({
+          logs,
+          pagination: {
+            page,
+            perPage,
+            totalCount,
+            totalPages,
+          },
+        })
       }
     )
 }

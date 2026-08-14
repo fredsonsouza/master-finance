@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     auditLog: {
+      count: vi.fn(),
       findMany: vi.fn(),
     },
   },
@@ -46,7 +47,7 @@ describe('Get Audit Logs Route', () => {
     await app.register(getLogs)
   })
 
-  test('should allow ADMIN to retrieve audit logs', async () => {
+  test('should allow ADMIN to retrieve audit logs with pagination', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'ADMIN',
@@ -69,7 +70,8 @@ describe('Get Audit Logs Route', () => {
       },
     ]
 
-    vi.mocked(prisma.auditLog.findMany).mockResolvedValue(mockLogs as any)
+    vi.mocked(prisma.auditLog.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.auditLog.findMany).mockResolvedValueOnce(mockLogs as any)
 
     const response = await app.inject({
       method: 'GET',
@@ -80,6 +82,12 @@ describe('Get Audit Logs Route', () => {
     const body = response.json()
     expect(body.logs).toHaveLength(1)
     expect(body.logs[0].details).toBe('Criou a unidade Central')
+    expect(body.pagination).toEqual({
+      page: 1,
+      perPage: 20,
+      totalCount: 1,
+      totalPages: 1,
+    })
     expect(prisma.auditLog.findMany).toHaveBeenCalled()
   })
 

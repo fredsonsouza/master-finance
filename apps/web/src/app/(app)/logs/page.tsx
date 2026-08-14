@@ -1,5 +1,5 @@
 import { auth } from '@/auth/auth'
-import { getLogs } from '@/http/get-logs'
+import { getLogs, type AuditLog, type AuditLogPagination } from '@/http/get-logs'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LogsContent } from './logs-content'
@@ -18,6 +18,8 @@ interface LogsPageProps {
     search?: string
     startDate?: string
     endDate?: string
+    page?: string
+    perPage?: string
   }>
 }
 
@@ -29,7 +31,17 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
     redirect('/')
   }
 
-  let logs: any[] = []
+  const page = Number(params.page) || 1
+  const perPage = Number(params.perPage) || 20
+
+  let logs: AuditLog[] = []
+  let pagination: AuditLogPagination = {
+    page,
+    perPage,
+    totalCount: 0,
+    totalPages: 1,
+  }
+
   try {
     const logsRes = await getLogs(token, {
       resource: params.resource,
@@ -37,8 +49,13 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
       search: params.search,
       startDate: params.startDate,
       endDate: params.endDate,
+      page,
+      perPage,
     })
     logs = logsRes.logs
+    if (logsRes.pagination) {
+      pagination = logsRes.pagination
+    }
   } catch (err) {
     console.error('Failed to load audit logs:', err)
   }
@@ -54,7 +71,7 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
         </p>
       </div>
 
-      <LogsContent initialLogs={logs} />
+      <LogsContent initialLogs={logs} initialPagination={pagination} />
     </div>
   )
 }
