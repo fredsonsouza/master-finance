@@ -4,7 +4,33 @@ import { auth } from '@/auth/auth'
 import { createSector } from '@/http/create-sector'
 import { createUnit } from '@/http/create-unit'
 import { createUser } from '@/http/create-user'
+import { getUsers } from '@/http/get-users'
 import { revalidatePath } from 'next/cache'
+
+export async function fetchUsersAction(params?: {
+  unitId?: string | null
+  role?: string | null
+  search?: string | null
+  page?: number
+  perPage?: number
+}) {
+  const { token } = await auth()
+  if (!token) return { success: false, data: null, message: 'Não autenticado' }
+
+  try {
+    const data = await getUsers(
+      token,
+      params?.unitId,
+      params?.role,
+      params?.search,
+      params?.page,
+      params?.perPage
+    )
+    return { success: true, data, message: null }
+  } catch (err: unknown) {
+    return { success: false, data: null, message: 'Erro ao buscar usuários.' }
+  }
+}
 
 export async function createUnitAction(data: FormData) {
   const { token } = await auth()

@@ -17,18 +17,32 @@ export interface User {
   avatarUrl: string | null
 }
 
+export interface UserPagination {
+  page: number
+  perPage: number
+  totalCount: number
+  totalPages: number
+}
+
 interface GetUsersResponse {
   users: User[]
+  pagination: UserPagination
 }
 
 export async function getUsers(
   token: string,
   unitId?: string | null,
-  role?: string
+  role?: string | null,
+  search?: string | null,
+  page?: number,
+  perPage?: number
 ) {
   const searchParams: Record<string, string> = {}
   if (unitId) searchParams.unitId = unitId
   if (role) searchParams.role = role
+  if (search) searchParams.search = search
+  if (page) searchParams.page = String(page)
+  if (perPage) searchParams.perPage = String(perPage)
 
   const result = await api
     .get('users', {
@@ -39,6 +53,7 @@ export async function getUsers(
         Object.keys(searchParams).length > 0 ? searchParams : undefined,
       next: {
         tags: ['users'],
+        revalidate: 0,
       },
     })
     .json<GetUsersResponse>()

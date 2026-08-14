@@ -15,9 +15,10 @@ export async function getUsers(app: FastifyInstance) {
       {
         schema: {
           tags: ['users'],
-          summary: 'Get all users',
+          summary: 'Get all users with search, filtering and pagination',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
+            search: z.string().optional(),
             unitId: z.string().uuid().optional(),
             role: z
               .enum([
@@ -31,6 +32,8 @@ export async function getUsers(app: FastifyInstance) {
                 'INVENTORY',
               ])
               .optional(),
+            page: z.coerce.number().int().min(1).default(1),
+            perPage: z.coerce.number().int().min(1).max(200).default(20),
           }),
           response: {
             200: z.object({
@@ -53,6 +56,12 @@ export async function getUsers(app: FastifyInstance) {
                   avatarUrl: z.url().nullable(),
                 })
               ),
+              pagination: z.object({
+                page: z.number(),
+                perPage: z.number(),
+                totalCount: z.number(),
+                totalPages: z.number(),
+              }),
             }),
           },
         },
@@ -77,13 +86,26 @@ export async function getUsers(app: FastifyInstance) {
           throw new UnauthorizedError('You are not allowed to view users.')
         }
 
-        const { unitId, role } = request.query
+        const { search, unitId, role, page, perPage } = request.query
+
+        const where = {
+          unitId: unitId || undefined,
+          role: role || undefined,
+          OR: search?.trim()
+            ? [
+                { name: { contains: search.trim(), mode: 'insensitive' as const } },
+                { username: { contains: search.trim(), mode: 'insensitive' as const } },
+              ]
+            : undefined,
+        }
+
+        const totalCount = await prisma.user.count({ where })
+        const totalPages = Math.ceil(totalCount / perPage) || 1
 
         const users = await prisma.user.findMany({
-          where: {
-            unitId,
-            role,
-          },
+          where,
+          skip: (page - 1) * perPage,
+          take: perPage,
           select: {
             id: true,
             name: true,
@@ -92,9 +114,20 @@ export async function getUsers(app: FastifyInstance) {
             unitId: true,
             avatarUrl: true,
           },
+          orderBy: {
+            name: 'asc',
+          },
         })
 
-        return reply.status(200).send({ users })
+        return reply.status(200).send({
+          users,
+          pagination: {
+            page,
+            perPage,
+            totalCount,
+            totalPages,
+          },
+        })
       }
     )
 }

@@ -1,10 +1,7 @@
 import { auth } from '@/auth/auth'
-import { getSectors } from '@/http/get-sectors'
-import type { Sector } from '@/http/get-sectors'
-import { getUnits } from '@/http/get-units'
-import type { Unit } from '@/http/get-units'
-import { getUsers } from '@/http/get-users'
-import type { User } from '@/http/get-users'
+import { getSectors, type Sector } from '@/http/get-sectors'
+import { getUnits, type Unit } from '@/http/get-units'
+import { getUsers, type User, type UserPagination } from '@/http/get-users'
 import { redirect } from 'next/navigation'
 import { SettingsContent } from './settings-content'
 
@@ -26,16 +23,28 @@ export default async function SettingsPage() {
   let units: Unit[] = []
   let sectors: Sector[] = []
   let users: User[] = []
+  let userPagination: UserPagination = {
+    page: 1,
+    perPage: 20,
+    totalCount: 0,
+    totalPages: 1,
+  }
 
   try {
     const [unitsRes, sectorsRes, usersRes] = await Promise.all([
       getUnits(token).catch(() => ({ units: [] })),
       getSectors(token).catch(() => ({ sectors: [] })),
-      getUsers(token).catch(() => ({ users: [] })),
+      getUsers(token, null, null, null, 1, 20).catch(() => ({
+        users: [],
+        pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+      })),
     ])
     units = unitsRes.units
     sectors = sectorsRes.sectors
     users = usersRes.users
+    if (usersRes.pagination) {
+      userPagination = usersRes.pagination
+    }
   } catch (err) {
     console.error(err)
   }
@@ -53,6 +62,7 @@ export default async function SettingsPage() {
 
       <SettingsContent
         users={users}
+        userPagination={userPagination}
         units={units}
         sectors={sectors}
         activeUnitId={activeUnitId}

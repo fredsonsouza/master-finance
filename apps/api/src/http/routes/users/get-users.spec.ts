@@ -12,6 +12,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     user: {
       findUnique: vi.fn(),
+      count: vi.fn(),
       findMany: vi.fn(),
     },
   },
@@ -42,12 +43,13 @@ describe('Get Users Unit Test', () => {
     await app.register(getUsers)
   })
 
-  test('should allow MANAGER to view users', async () => {
+  test('should allow MANAGER to view users with pagination', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'MANAGER',
     } as any)
 
+    vi.mocked(prisma.user.count).mockResolvedValueOnce(2)
     vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
       {
         id: '223e4567-e89b-12d3-a456-426614174001',
@@ -92,6 +94,12 @@ describe('Get Users Unit Test', () => {
           avatarUrl: null,
         },
       ],
+      pagination: {
+        page: 1,
+        perPage: 20,
+        totalCount: 2,
+        totalPages: 1,
+      },
     })
   })
 
