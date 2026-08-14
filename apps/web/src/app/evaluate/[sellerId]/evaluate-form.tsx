@@ -7,12 +7,10 @@ import { Textarea } from '@/components/ui/textarea'
 import type { PublicSeller } from '@/http/get-public-seller'
 import {
   CheckCircle2,
-  ExternalLink,
   Frown,
   Laugh,
   Meh,
   Smile,
-  Star,
   User,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -24,8 +22,6 @@ interface Props {
 }
 
 type RatingType = 'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
-
-const GOOGLE_REVIEW_URL = 'https://g.page/r/Ce61mfXe8zjdEBM/review'
 
 const RATING_OPTIONS: {
   value: RatingType
@@ -143,32 +139,6 @@ export function EvaluateForm({ seller }: Props) {
           </p>
         </div>
 
-        {/* Google Review Card Invitation */}
-        <div className="bg-gradient-to-r from-amber-500/10 via-surface to-blue-500/10 border border-amber-300 dark:border-amber-700/50 p-5 rounded-2xl space-y-3 shadow-sm">
-          <div className="flex items-center justify-center gap-1 text-amber-500">
-            <Star className="h-5 w-5 fill-amber-400" />
-            <Star className="h-5 w-5 fill-amber-400" />
-            <Star className="h-5 w-5 fill-amber-400" />
-            <Star className="h-5 w-5 fill-amber-400" />
-            <Star className="h-5 w-5 fill-amber-400" />
-          </div>
-          <h3 className="font-bold text-on-surface text-base">
-            Avalie também a Masterclin no Google!
-          </h3>
-          <p className="text-xs text-on-surface-variant">
-            Sua avaliação pública é muito importante para nossa clínica e leva menos de 1 minuto.
-          </p>
-          <a
-            href={GOOGLE_REVIEW_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 px-4 shadow-md transition-all cursor-pointer"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Deixar Avaliação no Google
-          </a>
-        </div>
-
         <p className="text-xs text-on-surface-variant italic">
           Sua opinião é fundamental para mantermos a excelência do nosso atendimento.
         </p>
@@ -199,19 +169,6 @@ export function EvaluateForm({ seller }: Props) {
               </span>
             </div>
           )}
-
-          <div className="pt-1">
-            <a
-              href={GOOGLE_REVIEW_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 underline cursor-pointer"
-            >
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-              Avalie também a Masterclin no Google
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
         </div>
       </CardHeader>
 
@@ -240,28 +197,30 @@ export function EvaluateForm({ seller }: Props) {
               <span>Nota do Atendimento</span>
               <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
             </label>
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {RATING_OPTIONS.map((opt) => {
                 const Icon = opt.icon
                 const isSelected = selectedRating === opt.value
+
                 return (
                   <button
-                    type="button"
                     key={opt.value}
+                    type="button"
                     onClick={() => handleRatingSelect(opt.value)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all cursor-pointer ${
                       isSelected
                         ? `${opt.borderClass} ${opt.bgClass} shadow-md scale-105`
                         : 'border-surface-container hover:border-outline bg-surface-container-lowest'
                     }`}
                   >
                     <Icon
-                      className={`h-8 w-8 mb-1.5 ${
+                      className={`h-8 w-8 mb-1 transition-transform ${
                         isSelected ? opt.colorClass : 'text-on-surface-variant'
                       }`}
                     />
                     <span
-                      className={`text-xs font-semibold ${
+                      className={`text-xs font-bold ${
                         isSelected ? 'text-on-surface' : 'text-on-surface-variant'
                       }`}
                     >
@@ -273,58 +232,40 @@ export function EvaluateForm({ seller }: Props) {
             </div>
           </div>
 
-          {/* Preset Comment Selection */}
+          {/* Preset Comment Selection (Optional) */}
           {selectedRating && (
-            <div className="space-y-3 pt-1">
-              <label className="text-xs font-medium text-on-surface-variant">
-                Selecione o depoimento que melhor descreve:
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="text-xs font-semibold text-on-surface">
+                Comentário Sugerido (opcional)
               </label>
-              <div className="space-y-2">
-                {RATING_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    onClick={() => setSelectedPreset(opt.preset)}
-                    className={`flex items-start gap-3 p-3 rounded-lg border text-xs cursor-pointer transition-colors ${
-                      selectedPreset === opt.preset
-                        ? 'border-primary bg-primary/5 text-on-surface font-medium'
-                        : 'border-surface-container hover:bg-surface-container-highest text-on-surface-variant'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="presetComment"
-                      checked={selectedPreset === opt.preset}
-                      onChange={() => setSelectedPreset(opt.preset)}
-                      className="mt-0.5 accent-primary h-4 w-4"
-                    />
-                    <span>{opt.preset}</span>
-                  </label>
-                ))}
+              <div className="rounded-xl border border-surface-container bg-surface-container-lowest p-3 text-xs text-on-surface-variant">
+                "{selectedPreset}"
               </div>
             </div>
           )}
 
-          {/* Optional Observation Text */}
-          <div className="space-y-2 pt-1">
-            <label htmlFor="observation" className="text-xs font-medium text-on-surface-variant">
-              Comentário adicional (opcional):
+          {/* Additional Observation (Optional) */}
+          <div className="space-y-2">
+            <label htmlFor="observation" className="text-xs font-semibold text-on-surface">
+              Observação adicional (opcional)
             </label>
             <Textarea
               id="observation"
               value={observation}
               onChange={(e) => setObservation(e.target.value)}
-              placeholder="Escreva aqui caso queira adicionar mais algum detalhe..."
+              placeholder="Digite mais detalhes sobre sua experiência, se desejar..."
               rows={3}
-              className="text-sm bg-surface-container-lowest"
+              className="text-sm bg-surface-container-lowest focus:ring-primary"
             />
           </div>
 
+          {/* Submit Button */}
           <Button
             type="submit"
-            disabled={!clientName.trim() || !selectedRating || isSubmitting}
-            className="w-full h-11 text-base font-semibold cursor-pointer"
+            disabled={isSubmitting || !selectedRating || !clientName.trim()}
+            className="w-full h-12 text-sm font-bold shadow-md cursor-pointer"
           >
-            {isSubmitting ? 'Enviando...' : 'Enviar Avaliação'}
+            {isSubmitting ? 'Registrando Avaliação...' : 'Enviar Avaliação'}
           </Button>
         </form>
       </CardContent>
