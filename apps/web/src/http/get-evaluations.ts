@@ -62,6 +62,9 @@ export async function getEvaluations(
     sellerId?: string | null
     unitId?: string | null
     podiumUnitId?: string | null
+    podiumMonth?: string | null
+    startDate?: string | null
+    endDate?: string | null
     page?: number
     perPage?: number
   }
@@ -70,6 +73,9 @@ export async function getEvaluations(
   if (params?.sellerId) searchParams.sellerId = params.sellerId
   if (params?.unitId) searchParams.unitId = params.unitId
   if (params?.podiumUnitId) searchParams.podiumUnitId = params.podiumUnitId
+  if (params?.podiumMonth) searchParams.podiumMonth = params.podiumMonth
+  if (params?.startDate) searchParams.startDate = params.startDate
+  if (params?.endDate) searchParams.endDate = params.endDate
   if (params?.page) searchParams.page = String(params.page)
   if (params?.perPage) searchParams.perPage = String(params.perPage)
 

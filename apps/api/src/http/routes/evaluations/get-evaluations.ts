@@ -15,12 +15,15 @@ export async function getEvaluations(app: FastifyInstance) {
       {
         schema: {
           tags: ['evaluations'],
-          summary: 'Get evaluations, metrics, and podium for sellers',
+          summary: 'Get evaluations, metrics, and podium for sellers with date filters and monthly podium',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             sellerId: z.string().uuid().optional(),
             unitId: z.string().uuid().optional(),
             podiumUnitId: z.string().uuid().optional(),
+            podiumMonth: z.string().optional(),
+            startDate: z.string().optional(),
+            endDate: z.string().optional(),
             page: z.coerce.number().int().min(1).default(1),
             perPage: z.coerce.number().int().min(1).max(500).default(10),
           }),
@@ -101,16 +104,39 @@ export async function getEvaluations(app: FastifyInstance) {
           throw new UnauthorizedError('Você não tem permissão para ver avaliações.')
         }
 
-        let { sellerId, unitId, podiumUnitId, page, perPage } = request.query
+        let {
+          sellerId,
+          unitId,
+          podiumUnitId,
+          podiumMonth,
+          startDate,
+          endDate,
+          page,
+          perPage,
+        } = request.query
 
         // If SELLER role, force filtering by own sellerId
         if (requestingUser.role === 'SELLER') {
           sellerId = requestingUser.id
         }
 
-        const where = {
+        const where: any = {
           sellerId: sellerId || undefined,
           unitId: unitId || undefined,
+        }
+
+        if (startDate || endDate) {
+          where.createdAt = {}
+          if (startDate) {
+            const start = new Date(startDate)
+            start.setUTCHours(0, 0, 0, 0)
+            where.createdAt.gte = start
+          }
+          if (endDate) {
+            const end = new Date(endDate)
+            end.setUTCHours(23, 59, 59, 999)
+            where.createdAt.lte = end
+          }
         }
 
         // 1. Total count for pagination
@@ -173,7 +199,7 @@ export async function getEvaluations(app: FastifyInstance) {
         const positiveCount = excellentCount + goodCount
         const satisfactionRate = totalCount > 0 ? Math.round((positiveCount / totalCount) * 100) : 0
 
-        // 4. Podium calculation - ONLY for specific unit if targetPodiumUnitId is specified
+        // 4. Podium calculation - Filtered by unit & specific month (defaults to current month if passed)
         const targetPodiumUnitId = podiumUnitId || (unitId ? unitId : undefined)
         let podium: Array<{
           position: number
@@ -190,10 +216,26 @@ export async function getEvaluations(app: FastifyInstance) {
         }> = []
 
         if (targetPodiumUnitId) {
+          let podiumCreatedAtFilter: any = undefined
+          if (podiumMonth) {
+            const [yearStr, monthStr] = podiumMonth.split('-')
+            const year = parseInt(yearStr, 10)
+            const month = parseInt(monthStr, 10) - 1
+            if (!isNaN(year) && !isNaN(month)) {
+              const startMonth = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0))
+              const endMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999))
+              podiumCreatedAtFilter = {
+                gte: startMonth,
+                lte: endMonth,
+              }
+            }
+          }
+
           const sellerRatingGroups = await prisma.evaluation.groupBy({
             by: ['sellerId', 'rating'],
             where: {
               unitId: targetPodiumUnitId,
+              ...(podiumCreatedAtFilter ? { createdAt: podiumCreatedAtFilter } : {}),
             },
             _count: {
               rating: true,

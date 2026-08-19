@@ -5,6 +5,7 @@ interface ExportEvaluationsPdfParams {
   metrics: EvaluationMetrics
   unitName?: string
   sellerName?: string
+  period?: string
 }
 
 export function downloadEvaluationsPdf({
@@ -12,6 +13,7 @@ export function downloadEvaluationsPdf({
   metrics,
   unitName = 'Todas as Unidades',
   sellerName = 'Todos os Atendentes',
+  period = 'Todo o Histórico',
 }: ExportEvaluationsPdfParams) {
   const printWindow = window.open('', '_blank')
   if (!printWindow) return
@@ -243,6 +245,7 @@ export function downloadEvaluationsPdf({
         <div class="filter-box">
           <div class="filter-item"><strong>Unidade:</strong> ${unitName}</div>
           <div class="filter-item"><strong>Atendente:</strong> ${sellerName}</div>
+          <div class="filter-item"><strong>Período:</strong> ${period}</div>
           <div class="filter-item"><strong>Emissão:</strong> ${now}</div>
           <div class="filter-item"><strong>Total de Registros:</strong> ${evaluations.length}</div>
         </div>

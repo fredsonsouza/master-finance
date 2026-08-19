@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Dialog,
   DialogContent,
@@ -18,9 +19,11 @@ import type {
 } from '@/http/get-evaluations'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
+import dayjs from 'dayjs'
 import {
   Award,
   Building2,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   Crown,
@@ -48,6 +51,7 @@ import {
   updateEvaluationAction,
 } from './actions'
 import { downloadEvaluationsPdf } from './download-evaluations-pdf'
+import { downloadPodiumPdf } from './download-podium-pdf'
 import { QrCodeCard } from './qr-code-card'
 
 interface Props {
@@ -106,13 +110,21 @@ export function EvaluationsContent({
   const [pagination, setPagination] = useState<EvaluationPagination>(initialPagination)
   const [podium, setPodium] = useState<PodiumItem[]>(initialPodium)
 
-  // Filters
+  // Filters - History
   const [selectedSellerId, setSelectedSellerId] = useState<string>(isSeller ? currentUser.id : '')
   const [selectedHistoryUnitId, setSelectedHistoryUnitId] = useState<string>('')
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
+
+  // Filters - Podium (synchronized to current month by default)
   const [selectedPodiumUnitId, setSelectedPodiumUnitId] = useState<string>('')
+  const [selectedPodiumMonth, setSelectedPodiumMonth] = useState<string>(dayjs().format('YYYY-MM'))
+
+  // Loading states
   const [isFetchingData, setIsFetchingData] = useState(false)
   const [isFetchingPodium, setIsFetchingPodium] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
+  const [isExportingPodiumPdf, setIsExportingPodiumPdf] = useState(false)
 
   // Edit / Delete modal states
   const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
@@ -127,7 +139,9 @@ export function EvaluationsContent({
   async function loadEvaluationsPage(
     page: number,
     sellerId = selectedSellerId,
-    unitId = selectedHistoryUnitId
+    unitId = selectedHistoryUnitId,
+    start = startDate,
+    end = endDate
   ) {
     setIsFetchingData(true)
     const res = await fetchEvaluationsAction({
@@ -135,7 +149,10 @@ export function EvaluationsContent({
       perPage: pagination.perPage || 10,
       sellerId: sellerId || undefined,
       unitId: unitId || undefined,
+      startDate: start || undefined,
+      endDate: end || undefined,
       podiumUnitId: selectedPodiumUnitId || undefined,
+      podiumMonth: selectedPodiumMonth || undefined,
     })
 
     if (res.success && res.data) {
@@ -150,7 +167,7 @@ export function EvaluationsContent({
   }
 
   // Handle unit change specifically for Podium
-  async function handlePodiumUnitChange(unitId: string) {
+  async function handlePodiumUnitChange(unitId: string, month = selectedPodiumMonth) {
     setSelectedPodiumUnitId(unitId)
     if (!unitId) {
       setPodium([])
@@ -163,7 +180,10 @@ export function EvaluationsContent({
       perPage: pagination.perPage,
       sellerId: selectedSellerId || undefined,
       unitId: selectedHistoryUnitId || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
       podiumUnitId: unitId,
+      podiumMonth: month || undefined,
     })
 
     if (res.success && res.data) {
@@ -174,23 +194,44 @@ export function EvaluationsContent({
     setIsFetchingPodium(false)
   }
 
+  // Handle month change for Podium
+  async function handlePodiumMonthChange(month: string) {
+    setSelectedPodiumMonth(month)
+    if (selectedPodiumUnitId) {
+      await handlePodiumUnitChange(selectedPodiumUnitId, month)
+    }
+  }
+
   // Handle unit filter change for evaluations history
   async function handleHistoryUnitChange(unitId: string) {
     setSelectedHistoryUnitId(unitId)
-    await loadEvaluationsPage(1, selectedSellerId, unitId)
+    await loadEvaluationsPage(1, selectedSellerId, unitId, startDate, endDate)
   }
 
   // Handle seller filter change for evaluations history
   async function handleSellerChange(sellerId: string) {
     setSelectedSellerId(sellerId)
-    await loadEvaluationsPage(1, sellerId, selectedHistoryUnitId)
+    await loadEvaluationsPage(1, sellerId, selectedHistoryUnitId, startDate, endDate)
+  }
+
+  // Handle date changes for history
+  async function handleStartDateChange(date: string) {
+    setStartDate(date)
+    await loadEvaluationsPage(1, selectedSellerId, selectedHistoryUnitId, date, endDate)
+  }
+
+  async function handleEndDateChange(date: string) {
+    setEndDate(date)
+    await loadEvaluationsPage(1, selectedSellerId, selectedHistoryUnitId, startDate, date)
   }
 
   // Clear history filters
   async function handleClearFilters() {
     setSelectedSellerId(isSeller ? currentUser.id : '')
     setSelectedHistoryUnitId('')
-    await loadEvaluationsPage(1, isSeller ? currentUser.id : '', '')
+    setStartDate('')
+    setEndDate('')
+    await loadEvaluationsPage(1, isSeller ? currentUser.id : '', '', '', '')
   }
 
   // Export PDF of current filtered dataset
@@ -203,6 +244,8 @@ export function EvaluationsContent({
         perPage: 500,
         sellerId: selectedSellerId || undefined,
         unitId: selectedHistoryUnitId || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
       })
 
       const dataToExport = res.success && res.data ? res.data.evaluations : evaluations
@@ -211,16 +254,48 @@ export function EvaluationsContent({
       const activeUnitObj = units.find((u) => u.id === selectedHistoryUnitId)
       const activeSellerObj = sellers.find((s) => s.id === selectedSellerId)
 
+      let periodDescription = 'Todo o Histórico'
+      if (startDate && endDate) {
+        periodDescription = `${dayjs(startDate).format('DD/MM/YYYY')} até ${dayjs(endDate).format('DD/MM/YYYY')}`
+      } else if (startDate) {
+        periodDescription = `A partir de ${dayjs(startDate).format('DD/MM/YYYY')}`
+      } else if (endDate) {
+        periodDescription = `Até ${dayjs(endDate).format('DD/MM/YYYY')}`
+      }
+
       downloadEvaluationsPdf({
         evaluations: dataToExport,
         metrics: metricsToExport,
         unitName: activeUnitObj ? activeUnitObj.name : 'Todas as Unidades',
         sellerName: isSeller ? currentUser.name : activeSellerObj ? activeSellerObj.name : 'Todos os Atendentes',
+        period: periodDescription,
       })
     } catch (err) {
       toast.error('Erro ao gerar relatório em PDF.')
     } finally {
       setIsExportingPdf(false)
+    }
+  }
+
+  // Export Podium in PDF
+  function handleExportPodiumPdf() {
+    if (!selectedPodiumUnitId || podium.length === 0) {
+      toast.error('Selecione uma unidade com pódio gerado para exportar.')
+      return
+    }
+
+    setIsExportingPodiumPdf(true)
+    try {
+      const activeUnit = units.find((u) => u.id === selectedPodiumUnitId)
+      downloadPodiumPdf({
+        podium,
+        unitName: activeUnit ? activeUnit.name : 'Unidade Selecionada',
+        podiumMonth: selectedPodiumMonth,
+      })
+    } catch (err) {
+      toast.error('Erro ao exportar pódio em PDF.')
+    } finally {
+      setIsExportingPodiumPdf(false)
     }
   }
 
@@ -282,39 +357,64 @@ export function EvaluationsContent({
 
   return (
     <div className="space-y-6">
-      {/* REDESIGNED PODIUM SECTION (ADMIN & MANAGER ONLY) - LIST FORMAT PER UNIT */}
+      {/* REDESIGNED PODIUM SECTION (ADMIN & MANAGER ONLY) - LIST FORMAT PER UNIT & MONTH */}
       {isManagement && (
         <Card className="border-surface-container bg-surface shadow-sm overflow-hidden">
           <CardHeader className="bg-surface-container-lowest border-b border-surface-container pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-on-surface flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-amber-500" />
                   Pódio dos Recepcionistas Mais Bem Avaliados
                 </CardTitle>
                 <p className="text-xs text-on-surface-variant">
-                  Classificação individual por unidade baseada no nível de satisfação dos clientes.
+                  Classificação mensal por unidade baseada no nível de satisfação dos clientes e bonificações.
                 </p>
               </div>
 
-              {/* Unit Filter dropdown with mandatory choice */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Building2 className="h-4 w-4 text-primary hidden sm:block" />
-                <span className="text-xs font-semibold text-on-surface whitespace-nowrap">
-                  Filtrar Unidade:
-                </span>
-                <select
-                  value={selectedPodiumUnitId}
-                  onChange={(e) => handlePodiumUnitChange(e.target.value)}
-                  className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer sm:w-56"
+              {/* Filters & Export button */}
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                {/* Month Picker Input */}
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-primary hidden sm:block" />
+                  <input
+                    type="month"
+                    value={selectedPodiumMonth}
+                    onChange={(e) => handlePodiumMonthChange(e.target.value)}
+                    className="h-9 rounded-md border border-outline bg-surface text-on-surface px-2.5 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer w-38"
+                    title="Mês de Referência do Pódio"
+                  />
+                </div>
+
+                {/* Unit Filter dropdown */}
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4 text-primary hidden sm:block" />
+                  <select
+                    value={selectedPodiumUnitId}
+                    onChange={(e) => handlePodiumUnitChange(e.target.value)}
+                    className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer sm:w-52"
+                  >
+                    <option value="">Escolha uma unidade</option>
+                    {units.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Export Podium PDF Button */}
+                <Button
+                  onClick={handleExportPodiumPdf}
+                  disabled={isExportingPodiumPdf || !selectedPodiumUnitId || podium.length === 0}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 gap-1.5 text-xs cursor-pointer"
+                  title="Exportar pódio e bonificações em PDF"
                 >
-                  <option value="">Escolha uma unidade</option>
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
-                  ))}
-                </select>
+                  <Printer className="h-4 w-4" />
+                  Exportar Pódio (PDF)
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -328,10 +428,10 @@ export function EvaluationsContent({
                 </div>
                 <div className="max-w-md space-y-1">
                   <p className="text-sm font-semibold text-on-surface">
-                    Selecione uma unidade para visualizar o pódio
+                    Selecione uma unidade para visualizar o pódio do mês
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    Escolha uma unidade no filtro acima para ver os 3 melhores atendentes da recepção daquela unidade.
+                    Escolha uma unidade e o mês no filtro acima para ver os 3 melhores atendentes da recepção e seus respectivos prêmios.
                   </p>
                 </div>
               </div>
@@ -342,21 +442,27 @@ export function EvaluationsContent({
                 Carregando pódio da unidade...
               </div>
             ) : podium.length === 0 ? (
-              /* Empty state for selected unit */
+              /* Empty state for selected unit & month */
               <div className="text-center py-8 text-on-surface-variant text-sm bg-surface-container-lowest/30 rounded-xl">
-                Nenhum recepcionista com avaliações nesta unidade até o momento.
+                Nenhum recepcionista com avaliações nesta unidade no mês selecionado ({dayjs(selectedPodiumMonth).format('MM/YYYY')}).
               </div>
             ) : (
               /* PODIUM LIST FORMAT */
               <div className="space-y-3">
-                <div className="text-xs font-semibold text-on-surface-variant mb-2 flex items-center gap-1.5">
-                  Top 3 Atendentes - <span className="text-primary font-bold">{selectedUnitObj?.name}</span>
+                <div className="text-xs font-semibold text-on-surface-variant mb-2 flex items-center justify-between">
+                  <div>
+                    Top 3 Atendentes — <span className="text-primary font-bold">{selectedUnitObj?.name}</span> ({dayjs(selectedPodiumMonth).format('MMMM [de] YYYY')})
+                  </div>
+                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    1º: R$ 400 | 2º: R$ 300 | 3º: R$ 200
+                  </div>
                 </div>
 
                 {podium.map((item) => {
                   const isGold = item.position === 1
                   const isSilver = item.position === 2
                   const isBronze = item.position === 3
+                  const bonusText = isGold ? 'R$ 400,00' : isSilver ? 'R$ 300,00' : 'R$ 200,00'
 
                   return (
                     <div
@@ -400,11 +506,16 @@ export function EvaluationsContent({
                               </span>
                             )}
                           </div>
-                          {item.unitName && (
-                            <span className="text-xs text-on-surface-variant font-medium">
-                              {item.unitName}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {item.unitName && (
+                              <span className="text-xs text-on-surface-variant font-medium">
+                                {item.unitName}
+                              </span>
+                            )}
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                              • Bonificação: {bonusText}
                             </span>
-                          )}
+                          </div>
                         </div>
                       </div>
 
@@ -415,7 +526,7 @@ export function EvaluationsContent({
                             {item.satisfactionRate}% de Satisfação
                           </div>
                           <div className="text-xs text-on-surface-variant font-normal">
-                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas)
+                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas) • {item.score} pts
                           </div>
                         </div>
                       </div>
@@ -439,7 +550,7 @@ export function EvaluationsContent({
               </span>
             </div>
 
-            {(selectedHistoryUnitId || selectedSellerId) && (
+            {(selectedHistoryUnitId || selectedSellerId || startDate || endDate) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -452,9 +563,9 @@ export function EvaluationsContent({
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             {/* Unit Filter */}
-            <div className="flex-1 min-w-[200px]">
+            <div>
               <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
                 Unidade:
               </label>
@@ -473,9 +584,9 @@ export function EvaluationsContent({
             </div>
 
             {/* Seller Filter */}
-            <div className="flex-1 min-w-[200px]">
+            <div>
               <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
-                Atendente / Recepcionista:
+                Atendente:
               </label>
               <select
                 value={selectedSellerId}
@@ -489,6 +600,32 @@ export function EvaluationsContent({
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Start Date */}
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
+                Data Inicial:
+              </label>
+              <DatePicker
+                value={startDate}
+                onChange={handleStartDateChange}
+                outputFormat="YYYY-MM-DD"
+                className="w-full h-9"
+              />
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
+                Data Final:
+              </label>
+              <DatePicker
+                value={endDate}
+                onChange={handleEndDateChange}
+                outputFormat="YYYY-MM-DD"
+                className="w-full h-9"
+              />
             </div>
           </div>
         </div>

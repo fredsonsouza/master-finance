@@ -10,6 +10,9 @@ export async function fetchEvaluationsAction(params?: {
   sellerId?: string | null
   unitId?: string | null
   podiumUnitId?: string | null
+  podiumMonth?: string | null
+  startDate?: string | null
+  endDate?: string | null
   page?: number
   perPage?: number
 }) {
