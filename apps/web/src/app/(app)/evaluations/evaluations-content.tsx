@@ -27,7 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
+  Download,
   Frown,
+  ImageIcon,
   Laugh,
   Loader2,
   Medal,
@@ -52,6 +54,7 @@ import {
 } from './actions'
 import { downloadEvaluationsPdf } from './download-evaluations-pdf'
 import { downloadPodiumPdf } from './download-podium-pdf'
+import { downloadPodiumPng } from './download-podium-png'
 import { QrCodeCard } from './qr-code-card'
 
 interface Props {
@@ -125,6 +128,7 @@ export function EvaluationsContent({
   const [isFetchingPodium, setIsFetchingPodium] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [isExportingPodiumPdf, setIsExportingPodiumPdf] = useState(false)
+  const [isExportingPodiumPng, setIsExportingPodiumPng] = useState(false)
 
   // Edit / Delete modal states
   const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
@@ -299,6 +303,29 @@ export function EvaluationsContent({
     }
   }
 
+  // Export Podium in PNG (for WhatsApp Status / Instagram Stories)
+  async function handleExportPodiumPng() {
+    if (!selectedPodiumUnitId || podium.length === 0) {
+      toast.error('Selecione uma unidade com pódio gerado para exportar.')
+      return
+    }
+
+    setIsExportingPodiumPng(true)
+    try {
+      const activeUnit = units.find((u) => u.id === selectedPodiumUnitId)
+      await downloadPodiumPng({
+        podium,
+        unitName: activeUnit ? activeUnit.name : 'Unidade Selecionada',
+        podiumMonth: selectedPodiumMonth,
+      })
+      toast.success('Card do Pódio (PNG) gerado com sucesso para Stories e WhatsApp!')
+    } catch (err) {
+      toast.error('Erro ao gerar card do pódio em PNG.')
+    } finally {
+      setIsExportingPodiumPng(false)
+    }
+  }
+
   function openEditModal(ev: EvaluationItem) {
     setEditingEvaluation(ev)
     setEditRating(ev.rating)
@@ -361,7 +388,7 @@ export function EvaluationsContent({
       {isManagement && (
         <Card className="border-surface-container bg-surface shadow-sm overflow-hidden">
           <CardHeader className="bg-surface-container-lowest border-b border-surface-container pb-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
               <div className="space-y-1">
                 <CardTitle className="text-lg font-bold text-on-surface flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-amber-500" />
@@ -372,8 +399,8 @@ export function EvaluationsContent({
                 </p>
               </div>
 
-              {/* Filters & Export button */}
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
+              {/* Filters & Export buttons */}
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                 {/* Month Picker Input */}
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-4 w-4 text-primary hidden sm:block" />
@@ -392,7 +419,7 @@ export function EvaluationsContent({
                   <select
                     value={selectedPodiumUnitId}
                     onChange={(e) => handlePodiumUnitChange(e.target.value)}
-                    className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer sm:w-52"
+                    className="h-9 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer sm:w-50"
                   >
                     <option value="">Escolha uma unidade</option>
                     {units.map((u) => (
@@ -403,6 +430,23 @@ export function EvaluationsContent({
                   </select>
                 </div>
 
+                {/* Export Podium PNG (Stories / Status) Button */}
+                <Button
+                  onClick={handleExportPodiumPng}
+                  disabled={isExportingPodiumPng || !selectedPodiumUnitId || podium.length === 0}
+                  variant="default"
+                  size="sm"
+                  className="h-9 gap-1.5 text-xs cursor-pointer shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+                  title="Baixar Card em PNG (Stories e WhatsApp)"
+                >
+                  {isExportingPodiumPng ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
+                  Baixar Card (PNG)
+                </Button>
+
                 {/* Export Podium PDF Button */}
                 <Button
                   onClick={handleExportPodiumPdf}
@@ -412,8 +456,12 @@ export function EvaluationsContent({
                   className="h-9 gap-1.5 text-xs cursor-pointer"
                   title="Exportar pódio e bonificações em PDF"
                 >
-                  <Printer className="h-4 w-4" />
-                  Exportar Pódio (PDF)
+                  {isExportingPodiumPdf ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <Printer className="h-4 w-4" />
+                  )}
+                  Exportar PDF
                 </Button>
               </div>
             </div>
