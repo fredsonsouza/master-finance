@@ -38,7 +38,7 @@ describe('Create Evaluation Unit Test', () => {
     await app.register(createEvaluation)
   })
 
-  test('should allow public customer to submit evaluation for a seller', async () => {
+  test('should allow public customer to submit evaluation with mandatory comment', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Maria Recepção',
@@ -55,9 +55,9 @@ describe('Create Evaluation Unit Test', () => {
       url: '/evaluations/public',
       payload: {
         sellerId: '123e4567-e89b-12d3-a456-426614174000',
+        clientName: 'João da Silva',
         rating: 'EXCELLENT',
-        presetComment: 'Excelente! O atendente foi muito educado.',
-        observation: 'Tudo perfeito.',
+        observation: 'Ótimo atendimento, muito rápido e atencioso.',
       },
     })
 

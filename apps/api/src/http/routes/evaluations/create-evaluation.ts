@@ -16,7 +16,7 @@ export async function createEvaluation(app: FastifyInstance) {
           clientName: z.string().min(2, 'O nome do cliente é obrigatório.'),
           rating: z.enum(['EXCELLENT', 'GOOD', 'REGULAR', 'BAD']),
           presetComment: z.string().optional().nullable(),
-          observation: z.string().optional().nullable(),
+          observation: z.string().min(1, 'O comentário sobre o atendimento é obrigatório.'),
         }),
         response: {
           201: z.object({
@@ -43,7 +43,7 @@ export async function createEvaluation(app: FastifyInstance) {
           clientName: clientName.trim(),
           rating,
           presetComment: presetComment || null,
-          observation: observation || null,
+          observation: observation.trim(),
         },
       })
 

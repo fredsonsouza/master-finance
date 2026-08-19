@@ -31,6 +31,8 @@ import {
   Meh,
   MessageSquare,
   Pencil,
+  Printer,
+  RotateCcw,
   Smile,
   Star,
   ThumbsUp,
@@ -45,6 +47,7 @@ import {
   fetchEvaluationsAction,
   updateEvaluationAction,
 } from './actions'
+import { downloadEvaluationsPdf } from './download-evaluations-pdf'
 import { QrCodeCard } from './qr-code-card'
 
 interface Props {
@@ -105,9 +108,11 @@ export function EvaluationsContent({
 
   // Filters
   const [selectedSellerId, setSelectedSellerId] = useState<string>(isSeller ? currentUser.id : '')
+  const [selectedHistoryUnitId, setSelectedHistoryUnitId] = useState<string>('')
   const [selectedPodiumUnitId, setSelectedPodiumUnitId] = useState<string>('')
   const [isFetchingData, setIsFetchingData] = useState(false)
   const [isFetchingPodium, setIsFetchingPodium] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   // Edit / Delete modal states
   const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
@@ -119,12 +124,17 @@ export function EvaluationsContent({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch paginated history evaluations
-  async function loadEvaluationsPage(page: number, sellerId = selectedSellerId) {
+  async function loadEvaluationsPage(
+    page: number,
+    sellerId = selectedSellerId,
+    unitId = selectedHistoryUnitId
+  ) {
     setIsFetchingData(true)
     const res = await fetchEvaluationsAction({
       page,
       perPage: pagination.perPage || 10,
       sellerId: sellerId || undefined,
+      unitId: unitId || undefined,
       podiumUnitId: selectedPodiumUnitId || undefined,
     })
 
@@ -152,6 +162,7 @@ export function EvaluationsContent({
       page: pagination.page,
       perPage: pagination.perPage,
       sellerId: selectedSellerId || undefined,
+      unitId: selectedHistoryUnitId || undefined,
       podiumUnitId: unitId,
     })
 
@@ -163,10 +174,54 @@ export function EvaluationsContent({
     setIsFetchingPodium(false)
   }
 
+  // Handle unit filter change for evaluations history
+  async function handleHistoryUnitChange(unitId: string) {
+    setSelectedHistoryUnitId(unitId)
+    await loadEvaluationsPage(1, selectedSellerId, unitId)
+  }
+
   // Handle seller filter change for evaluations history
   async function handleSellerChange(sellerId: string) {
     setSelectedSellerId(sellerId)
-    await loadEvaluationsPage(1, sellerId)
+    await loadEvaluationsPage(1, sellerId, selectedHistoryUnitId)
+  }
+
+  // Clear history filters
+  async function handleClearFilters() {
+    setSelectedSellerId(isSeller ? currentUser.id : '')
+    setSelectedHistoryUnitId('')
+    await loadEvaluationsPage(1, isSeller ? currentUser.id : '', '')
+  }
+
+  // Export PDF of current filtered dataset
+  async function handleExportPdf() {
+    setIsExportingPdf(true)
+    try {
+      // Fetch all items (up to 500) matching the current filter
+      const res = await fetchEvaluationsAction({
+        page: 1,
+        perPage: 500,
+        sellerId: selectedSellerId || undefined,
+        unitId: selectedHistoryUnitId || undefined,
+      })
+
+      const dataToExport = res.success && res.data ? res.data.evaluations : evaluations
+      const metricsToExport = res.success && res.data ? res.data.metrics : metrics
+
+      const activeUnitObj = units.find((u) => u.id === selectedHistoryUnitId)
+      const activeSellerObj = sellers.find((s) => s.id === selectedSellerId)
+
+      downloadEvaluationsPdf({
+        evaluations: dataToExport,
+        metrics: metricsToExport,
+        unitName: activeUnitObj ? activeUnitObj.name : 'Todas as Unidades',
+        sellerName: isSeller ? currentUser.name : activeSellerObj ? activeSellerObj.name : 'Todos os Atendentes',
+      })
+    } catch (err) {
+      toast.error('Erro ao gerar relatório em PDF.')
+    } finally {
+      setIsExportingPdf(false)
+    }
   }
 
   function openEditModal(ev: EvaluationItem) {
@@ -219,6 +274,11 @@ export function EvaluationsContent({
       : ''
 
   const selectedUnitObj = units.find((u) => u.id === selectedPodiumUnitId)
+
+  // Filter sellers shown in dropdown based on selected unit if any
+  const filteredSellers = selectedHistoryUnitId
+    ? sellers.filter((s) => s.unitId === selectedHistoryUnitId)
+    : sellers
 
   return (
     <div className="space-y-6">
@@ -368,27 +428,69 @@ export function EvaluationsContent({
         </Card>
       )}
 
-      {/* Top Controls for ADMIN / MANAGER */}
-      {isManagement && sellers.length > 0 && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-surface p-4 rounded-xl border border-surface-container shadow-sm">
-          <div className="flex items-center gap-3">
-            <UserCheck className="h-5 w-5 text-primary" />
-            <span className="text-sm font-semibold text-on-surface">
-              Filtrar Histórico por Atendente:
-            </span>
+      {/* History Filters for ADMIN / MANAGER */}
+      {isManagement && (
+        <div className="flex flex-col gap-4 bg-surface p-4 rounded-xl border border-surface-container shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5 text-primary" />
+              <span className="text-sm font-bold text-on-surface">
+                Filtros do Histórico:
+              </span>
+            </div>
+
+            {(selectedHistoryUnitId || selectedSellerId) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearFilters}
+                className="h-8 gap-1.5 text-xs cursor-pointer ml-auto"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Limpar Filtros
+              </Button>
+            )}
           </div>
-          <select
-            value={selectedSellerId}
-            onChange={(e) => handleSellerChange(e.target.value)}
-            className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none sm:w-72"
-          >
-            <option value="">Todos os Atendentes</option>
-            {sellers.map((seller) => (
-              <option key={seller.id} value={seller.id}>
-                {seller.name}
-              </option>
-            ))}
-          </select>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Unit Filter */}
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
+                Unidade:
+              </label>
+              <select
+                value={selectedHistoryUnitId}
+                onChange={(e) => handleHistoryUnitChange(e.target.value)}
+                className="w-full border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-9 cursor-pointer rounded-md border px-3 text-xs focus-visible:ring-1 focus-visible:outline-none"
+              >
+                <option value="">Todas as Unidades</option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Seller Filter */}
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-[11px] font-semibold text-on-surface-variant mb-1 block">
+                Atendente / Recepcionista:
+              </label>
+              <select
+                value={selectedSellerId}
+                onChange={(e) => handleSellerChange(e.target.value)}
+                className="w-full border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-9 cursor-pointer rounded-md border px-3 text-xs focus-visible:ring-1 focus-visible:outline-none"
+              >
+                <option value="">Todos os Atendentes</option>
+                {filteredSellers.map((seller) => (
+                  <option key={seller.id} value={seller.id}>
+                    {seller.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
       )}
 
@@ -484,19 +586,36 @@ export function EvaluationsContent({
         </div>
       </div>
 
-      {/* Evaluations Table / Feed with Pagination */}
+      {/* Evaluations Table / Feed with Pagination & PDF Export */}
       <Card className="border-surface-container">
         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Histórico de Avaliações
-          </CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Histórico de Avaliações
+            </CardTitle>
+            {pagination.totalCount > 0 && (
+              <p className="text-xs text-on-surface-variant font-medium">
+                Mostrando <span className="font-bold text-on-surface">{evaluations.length}</span> de{' '}
+                <span className="font-bold text-on-surface">{pagination.totalCount}</span> avaliações
+              </p>
+            )}
+          </div>
 
-          {pagination.totalCount > 0 && (
-            <div className="text-xs text-on-surface-variant font-medium">
-              Mostrando {evaluations.length} de {pagination.totalCount} avaliações
-            </div>
-          )}
+          <Button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf || evaluations.length === 0}
+            variant="outline"
+            size="sm"
+            className="gap-2 cursor-pointer shrink-0"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            ) : (
+              <Printer className="h-4 w-4" />
+            )}
+            Exportar Histórico (PDF)
+          </Button>
         </CardHeader>
         <CardContent>
           {isFetchingData ? (
@@ -506,7 +625,7 @@ export function EvaluationsContent({
             </div>
           ) : evaluations.length === 0 ? (
             <div className="text-on-surface-variant py-10 text-center text-sm">
-              Nenhuma avaliação registrada até o momento.
+              Nenhuma avaliação registrada até o momento com os filtros selecionados.
             </div>
           ) : (
             <div className="space-y-4">
@@ -553,14 +672,14 @@ export function EvaluationsContent({
                             )}
                           </td>
                           <td className="px-6 py-4 text-xs space-y-1">
-                            {ev.presetComment && (
-                              <p className="font-medium text-on-surface">
-                                "{ev.presetComment}"
+                            {ev.observation && (
+                              <p className="font-medium text-on-surface leading-relaxed">
+                                {ev.observation}
                               </p>
                             )}
-                            {ev.observation && (
-                              <p className="text-on-surface-variant italic">
-                                Obs: {ev.observation}
+                            {ev.presetComment && !ev.observation && (
+                              <p className="font-medium text-on-surface">
+                                "{ev.presetComment}"
                               </p>
                             )}
                             {!ev.presetComment && !ev.observation && (
@@ -569,7 +688,7 @@ export function EvaluationsContent({
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-right whitespace-nowrap text-xs text-on-surface-variant">
+                          <td className="px-6 py-4 text-right whitespace-nowrap text-xs text-on-surface-variant font-mono">
                             {new Date(ev.createdAt).toLocaleString('pt-BR', {
                               dateStyle: 'short',
                               timeStyle: 'short',
@@ -607,7 +726,7 @@ export function EvaluationsContent({
               {/* PAGINATION CONTROLS */}
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
-                  <div className="text-on-surface-variant">
+                  <div className="text-on-surface-variant font-medium">
                     Página <span className="font-bold text-on-surface">{pagination.page}</span> de{' '}
                     <span className="font-bold text-on-surface">{pagination.totalPages}</span>
                   </div>
@@ -647,7 +766,7 @@ export function EvaluationsContent({
           <DialogHeader>
             <DialogTitle>Editar Avaliação</DialogTitle>
             <DialogDescription>
-              Altere a nota e os comentários registrados para o atendimento.
+              Altere a nota e o comentário registrado para o atendimento.
             </DialogDescription>
           </DialogHeader>
 
@@ -667,22 +786,13 @@ export function EvaluationsContent({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-on-surface">Depoimento Predefinido</label>
-              <Textarea
-                value={editPreset}
-                onChange={(e) => setEditPreset(e.target.value)}
-                rows={2}
-                className="text-sm"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-on-surface">Observação Adicional</label>
+              <label className="text-xs font-semibold text-on-surface">Comentário do Atendimento</label>
               <Textarea
                 value={editObservation}
                 onChange={(e) => setEditObservation(e.target.value)}
-                rows={2}
+                rows={3}
                 className="text-sm"
+                placeholder="Deixe seu comentário sobre o atendimento recebido..."
               />
             </div>
 

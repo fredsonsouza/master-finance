@@ -22,7 +22,7 @@ export async function getEvaluations(app: FastifyInstance) {
             unitId: z.string().uuid().optional(),
             podiumUnitId: z.string().uuid().optional(),
             page: z.coerce.number().int().min(1).default(1),
-            perPage: z.coerce.number().int().min(1).max(100).default(10),
+            perPage: z.coerce.number().int().min(1).max(500).default(10),
           }),
           response: {
             200: z.object({

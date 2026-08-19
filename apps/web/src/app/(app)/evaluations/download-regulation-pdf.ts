@@ -166,7 +166,6 @@ export function downloadRegulationPdf() {
         <ul>
           <li><strong>a) Advertência Formal:</strong> Registro de advertência em prontuário de recursos humanos por violação ética.</li>
           <li><strong>b) Desclassificação e Perda de Bonificação:</strong> Cancelamento imediato da participação no Pódio de Atendimento do mês corrente e perda do direito a qualquer tipo de premiação/bonificação vinculada.</li>
-          <li><strong>c) Sanções Conforme a CLT:</strong> Em casos de reincidência ou conduta comprovadamente dolosa, aplicação das penalidades previstas na legislação trabalhista (suspensão disciplinar ou demissão por justa causa conforme Art. 482 da CLT).</li>
         </ul>
 
         <div class="section-title">5. PÓDIO DA RECEPÇÃO E CRITÉRIOS DE BONIFICAÇÃO</div>
@@ -186,27 +185,24 @@ export function downloadRegulationPdf() {
             <tr>
               <td><strong>1º Lugar (Ouro 🥇)</strong></td>
               <td>Atendente Destaque #1 da Unidade</td>
-              <td><strong>R$ 0,00</strong> <em>(A ser definido pela Gerência)</em></td>
+              <td><strong>R$ 400,00</strong></td>
             </tr>
             <tr>
               <td><strong>2º Lugar (Prata 🥈)</strong></td>
               <td>Atendente Destaque #2 da Unidade</td>
-              <td><strong>R$ 0,00</strong> <em>(A ser definido pela Gerência)</em></td>
+              <td><strong>R$ 300,00</strong></td>
             </tr>
             <tr>
               <td><strong>3º Lugar (Bronze 🥉)</strong></td>
               <td>Atendente Destaque #3 da Unidade</td>
-              <td><strong>R$ 0,00</strong> <em>(A ser definido pela Gerência)</em></td>
+              <td><strong>R$ 200,00</strong></td>
             </tr>
           </tbody>
         </table>
-        <p style="font-size: 10pt; color: #64748b;">
-          * Nota: Os valores financeiros das bonificações estão temporariamente zerados e os critérios exatos de premiação serão divulgados oportunamente em aditivo oficial emitido pela Gerência.
-        </p>
 
         <div class="section-title">6. DISPOSIÇÕES GERAIS</div>
         <p>
-          A Gerência da Clínica Masterclin reserva-se o direito de auditar periodicamente todos os registros e IPs de envio de avaliações no sistema. Casos não previstos neste documento serão deliberados soberanamente pela administração geral.
+          A Gerência da Clínica Masterclin reserva-se o direito de auditar periodicamente todos os registros e IPs de envio de avaliações no sistema. Casos não previstos neste documento serão analisados e deliberados pela administração geral.
         </p>
 
         <div class="signature-section">

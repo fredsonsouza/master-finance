@@ -30,7 +30,6 @@ const RATING_OPTIONS: {
   colorClass: string
   bgClass: string
   borderClass: string
-  preset: string
 }[] = [
   {
     value: 'EXCELLENT',
@@ -39,8 +38,6 @@ const RATING_OPTIONS: {
     colorClass: 'text-emerald-500',
     bgClass: 'bg-emerald-50 dark:bg-emerald-950/30',
     borderClass: 'border-emerald-500',
-    preset:
-      'Excelente! O atendente foi muito educado, paciente e resolveu minha dúvida de forma rápida e clara.',
   },
   {
     value: 'GOOD',
@@ -49,8 +46,6 @@ const RATING_OPTIONS: {
     colorClass: 'text-blue-500',
     bgClass: 'bg-blue-50 dark:bg-blue-950/30',
     borderClass: 'border-blue-500',
-    preset:
-      'Bom! A equipe demonstrou total conhecimento e resolveu meu problema logo no primeiro contato.',
   },
   {
     value: 'REGULAR',
@@ -59,7 +54,6 @@ const RATING_OPTIONS: {
     colorClass: 'text-amber-500',
     bgClass: 'bg-amber-50 dark:bg-amber-950/30',
     borderClass: 'border-amber-500',
-    preset: 'Regular! Atendimento mediano dentro do esperado.',
   },
   {
     value: 'BAD',
@@ -68,24 +62,18 @@ const RATING_OPTIONS: {
     colorClass: 'text-rose-500',
     bgClass: 'bg-rose-50 dark:bg-rose-950/30',
     borderClass: 'border-rose-500',
-    preset: 'Ruim! Atendimento demorado ou insatisfatório.',
   },
 ]
 
 export function EvaluateForm({ seller }: Props) {
   const [clientName, setClientName] = useState('')
   const [selectedRating, setSelectedRating] = useState<RatingType | null>(null)
-  const [selectedPreset, setSelectedPreset] = useState<string>('')
   const [observation, setObservation] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
   function handleRatingSelect(rating: RatingType) {
     setSelectedRating(rating)
-    const found = RATING_OPTIONS.find((opt) => opt.value === rating)
-    if (found) {
-      setSelectedPreset(found.preset)
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,14 +89,19 @@ export function EvaluateForm({ seller }: Props) {
       return
     }
 
+    if (!observation.trim()) {
+      toast.error('Por favor, deixe seu comentário sobre o atendimento.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const response = await createEvaluationAction({
         sellerId: seller.id,
         clientName: clientName.trim(),
         rating: selectedRating,
-        presetComment: selectedPreset || null,
-        observation: observation.trim() || null,
+        presetComment: null,
+        observation: observation.trim(),
       })
 
       if (response.success) {
@@ -232,28 +225,18 @@ export function EvaluateForm({ seller }: Props) {
             </div>
           </div>
 
-          {/* Preset Comment Selection (Optional) */}
-          {selectedRating && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-              <label className="text-xs font-semibold text-on-surface">
-                Comentário Sugerido (opcional)
-              </label>
-              <div className="rounded-xl border border-surface-container bg-surface-container-lowest p-3 text-xs text-on-surface-variant">
-                "{selectedPreset}"
-              </div>
-            </div>
-          )}
-
-          {/* Additional Observation (Optional) */}
+          {/* Mandatory Comment / Observação */}
           <div className="space-y-2">
-            <label htmlFor="observation" className="text-xs font-semibold text-on-surface">
-              Observação adicional (opcional)
+            <label htmlFor="observation" className="text-xs font-semibold text-on-surface flex items-center justify-between">
+              <span>Deixe seu comentário</span>
+              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
             </label>
             <Textarea
               id="observation"
+              required
               value={observation}
               onChange={(e) => setObservation(e.target.value)}
-              placeholder="Digite mais detalhes sobre sua experiência, se desejar..."
+              placeholder="Deixe seu comentário sobre o atendimento recebido..."
               rows={3}
               className="text-sm bg-surface-container-lowest focus:ring-primary"
             />
@@ -262,7 +245,7 @@ export function EvaluateForm({ seller }: Props) {
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={isSubmitting || !selectedRating || !clientName.trim()}
+            disabled={isSubmitting || !selectedRating || !clientName.trim() || !observation.trim()}
             className="w-full h-12 text-sm font-bold shadow-md cursor-pointer"
           >
             {isSubmitting ? 'Registrando Avaliação...' : 'Enviar Avaliação'}
