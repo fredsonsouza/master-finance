@@ -11,28 +11,34 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { Sector } from '@/http/get-sectors'
+import type { Category } from '@/http/get-categories'
 import type { Item } from '@/http/get-items'
-import { Edit } from 'lucide-react'
+import { Edit, Tag } from 'lucide-react'
 import { useActionState, useState } from 'react'
+import { toast } from 'sonner'
 import { updateItemAction } from './actions'
 
 interface Props {
   item: Item
-  sectors: Sector[]
+  categories: Category[]
 }
 
-export function UpdateItemDialog({ item, sectors }: Props) {
+export function UpdateItemDialog({ item, categories }: Props) {
   const [open, setOpen] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(item.categoryId || '')
 
   const [state, formAction, isPending] = useActionState(
     async (
       prevState: { success: boolean; message: string | null },
       formData: FormData
     ) => {
+      formData.set('categoryId', selectedCategoryId)
       const result = await updateItemAction(formData)
       if (result.success) {
+        toast.success('Item atualizado com sucesso!')
         setOpen(false)
+      } else if (result.message) {
+        toast.error(result.message)
       }
       return result
     },
@@ -42,12 +48,12 @@ export function UpdateItemDialog({ item, sectors }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
           <Edit className="h-4 w-4" />
           <span className="sr-only">Editar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Item do Catálogo</DialogTitle>
           <DialogDescription>
@@ -70,17 +76,20 @@ export function UpdateItemDialog({ item, sectors }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sectorId">Setor (Opcional)</Label>
+            <Label htmlFor="categoryId" className="flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5 text-primary" />
+              Categoria
+            </Label>
             <select
-              id="sectorId"
-              name="sectorId"
-              defaultValue={item.sectorId || ''}
+              id="categoryId"
+              value={selectedCategoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
               className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
             >
-              <option value="">Nenhum / Global</option>
-              {sectors.map((sector) => (
-                <option key={sector.id} value={sector.id}>
-                  {sector.name}
+              <option value="">Nenhuma Categoria</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>
@@ -119,11 +128,11 @@ export function UpdateItemDialog({ item, sectors }: Props) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="bg-transparent text-on-surface hover:bg-surface-container"
+              className="bg-transparent text-on-surface hover:bg-surface-container cursor-pointer"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending} className="cursor-pointer">
               {isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </div>

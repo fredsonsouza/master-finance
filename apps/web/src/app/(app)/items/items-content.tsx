@@ -3,14 +3,15 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import type { Category } from '@/http/get-categories'
 import type { Item, ItemPagination } from '@/http/get-items'
-import type { Sector } from '@/http/get-sectors'
 import {
   ChevronLeft,
   ChevronRight,
   Filter,
   Loader2,
   Search,
+  Tag,
   X,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -21,14 +22,14 @@ import { UpdateItemDialog } from './update-item-dialog'
 interface Props {
   initialItems: Item[]
   initialPagination: ItemPagination
-  sectors: Sector[]
+  categories: Category[]
   canManage: boolean
 }
 
 export function ItemsContent({
   initialItems,
   initialPagination,
-  sectors,
+  categories,
   canManage,
 }: Props) {
   const [items, setItems] = useState<Item[]>(initialItems)
@@ -36,20 +37,20 @@ export function ItemsContent({
 
   const [searchInput, setSearchInput] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
-  const [selectedSectorId, setSelectedSectorId] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   async function loadPage(
     page: number,
     search = activeSearch,
-    sectorId = selectedSectorId
+    categoryId = selectedCategoryId
   ) {
     setIsLoading(true)
     const res = await fetchItemsAction({
       page,
       perPage: pagination.perPage || 20,
       search: search || undefined,
-      sectorId: sectorId || undefined,
+      categoryId: categoryId || undefined,
     })
 
     if (res.success && res.data) {
@@ -64,18 +65,18 @@ export function ItemsContent({
   async function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setActiveSearch(searchInput.trim())
-    await loadPage(1, searchInput.trim(), selectedSectorId)
+    await loadPage(1, searchInput.trim(), selectedCategoryId)
   }
 
-  async function handleSectorChange(sectorId: string) {
-    setSelectedSectorId(sectorId)
-    await loadPage(1, activeSearch, sectorId)
+  async function handleCategoryChange(categoryId: string) {
+    setSelectedCategoryId(categoryId)
+    await loadPage(1, activeSearch, categoryId)
   }
 
   async function handleClearFilters() {
     setSearchInput('')
     setActiveSearch('')
-    setSelectedSectorId('')
+    setSelectedCategoryId('')
     await loadPage(1, '', '')
   }
 
@@ -109,18 +110,18 @@ export function ItemsContent({
               )}
             </div>
 
-            {/* Sector Filter Dropdown */}
+            {/* Category Filter Dropdown */}
             <div className="flex items-center gap-2 shrink-0">
-              <Filter className="h-4 w-4 text-primary hidden sm:block" />
+              <Tag className="h-4 w-4 text-primary hidden sm:block" />
               <select
-                value={selectedSectorId}
-                onChange={(e) => handleSectorChange(e.target.value)}
+                value={selectedCategoryId}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className="h-10 rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer w-full md:w-56"
               >
-                <option value="">Todos os Setores</option>
-                {sectors.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+                <option value="">Todas as Categorias</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -141,7 +142,7 @@ export function ItemsContent({
                 Buscar
               </Button>
 
-              {(activeSearch || selectedSectorId || searchInput) && (
+              {(activeSearch || selectedCategoryId || searchInput) && (
                 <Button
                   type="button"
                   variant="outline"
@@ -180,7 +181,7 @@ export function ItemsContent({
           ) : items.length === 0 ? (
             <div className="text-on-surface-variant py-10 text-center text-sm space-y-2">
               <p>Nenhum item encontrado no catálogo com os filtros aplicados.</p>
-              {(activeSearch || selectedSectorId) && (
+              {(activeSearch || selectedCategoryId) && (
                 <Button
                   variant="ghost"
                   onClick={handleClearFilters}
@@ -198,7 +199,7 @@ export function ItemsContent({
                     <tr>
                       <th className="px-6 py-3 font-semibold">Nome</th>
                       <th className="px-6 py-3 font-semibold">Descrição</th>
-                      <th className="px-6 py-3 font-semibold">Setor</th>
+                      <th className="px-6 py-3 font-semibold">Categoria</th>
                       <th className="px-6 py-3 text-right font-semibold">
                         Qtd. Inicial
                       </th>
@@ -223,13 +224,13 @@ export function ItemsContent({
                           {item.description || '-'}
                         </td>
                         <td className="px-6 py-4">
-                          {item.sector?.name ? (
-                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                              {item.sector.name}
+                          {item.category?.name ? (
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                              {item.category.name}
                             </span>
                           ) : (
                             <span className="text-on-surface-variant text-xs italic">
-                              Sem Setor
+                              Sem Categoria
                             </span>
                           )}
                         </td>
@@ -241,7 +242,7 @@ export function ItemsContent({
                         </td>
                         {canManage && (
                           <td className="px-6 py-4 text-right">
-                            <UpdateItemDialog item={item} sectors={sectors} />
+                            <UpdateItemDialog item={item} categories={categories} />
                           </td>
                         )}
                       </tr>

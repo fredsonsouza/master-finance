@@ -3,7 +3,8 @@ import { api } from './api-client'
 interface CreateItemRequest {
   name: string
   description?: string
-  sectorId?: string
+  categoryId?: string | null
+  sectorId?: string | null
   quantity?: number
 }
 

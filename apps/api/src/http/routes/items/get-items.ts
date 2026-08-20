@@ -18,6 +18,7 @@ export async function getItems(app: FastifyInstance) {
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             search: z.string().optional(),
+            categoryId: z.string().uuid().optional(),
             sectorId: z.string().uuid().optional(),
             page: z.coerce.number().int().min(1).default(1),
             perPage: z.coerce.number().int().min(1).max(100).default(20),
@@ -30,9 +31,17 @@ export async function getItems(app: FastifyInstance) {
                   name: z.string(),
                   description: z.string().nullable(),
                   quantity: z.number().int(),
-                  sectorId: z.string().uuid().nullable(),
+                  categoryId: z.string().uuid().nullable().optional(),
+                  sectorId: z.string().uuid().nullable().optional(),
                   createdAt: z.date(),
                   updatedAt: z.date(),
+                  category: z
+                    .object({
+                      id: z.string().uuid(),
+                      name: z.string(),
+                    })
+                    .nullable()
+                    .optional(),
                   sector: z
                     .object({
                       id: z.string().uuid(),
@@ -62,9 +71,10 @@ export async function getItems(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        const { search, sectorId, page, perPage } = request.query
+        const { search, categoryId, sectorId, page, perPage } = request.query
 
         const where = {
+          categoryId: categoryId || undefined,
           sectorId: sectorId || undefined,
           OR: search?.trim()
             ? [
@@ -82,6 +92,7 @@ export async function getItems(app: FastifyInstance) {
           skip: (page - 1) * perPage,
           take: perPage,
           include: {
+            category: true,
             sector: true,
           },
           orderBy: {

@@ -16,6 +16,8 @@ import { getProfile } from './routes/auth/get-profile'
 import { resetPassword } from './routes/auth/reset-password'
 import { updatePassword } from './routes/auth/update-password'
 import { updateProfile } from './routes/auth/update-profile'
+import { createCategory } from './routes/categories/create-category'
+import { getCategories } from './routes/categories/get-categories'
 import { createItem } from './routes/items/create-item'
 import { deleteItem } from './routes/items/delete-item'
 import { getItem } from './routes/items/get-item'
@@ -99,22 +101,20 @@ app.register(fastifySwagger, {
   app.register(fastifySwaggerUi, {
     routePrefix: '/docs',
   })
-
 app.register(fastifyJwt, {
   secret: env.JWT_SECRET,
 })
-
 app.register(fastifyCors)
 
-app.register(createAccount)
 app.register(authenticateWithPassword)
 app.register(getProfile)
+app.register(createAccount)
 app.register(resetPassword)
 app.register(updatePassword)
 app.register(updateProfile)
 
-app.register(getUsers)
 app.register(getUser)
+app.register(getUsers)
 app.register(updateUser)
 app.register(deleteUser)
 app.register(createUser)
@@ -130,6 +130,9 @@ app.register(getSectors)
 app.register(getSector)
 app.register(updateSector)
 app.register(deleteSector)
+
+app.register(createCategory)
+app.register(getCategories)
 
 app.register(createItem)
 app.register(getItems)

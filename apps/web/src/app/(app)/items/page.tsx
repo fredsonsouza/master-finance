@@ -1,6 +1,6 @@
 import { auth } from '@/auth/auth'
+import { getCategories, type Category } from '@/http/get-categories'
 import { getItems } from '@/http/get-items'
-import { getSectors, type Sector } from '@/http/get-sectors'
 import type { Metadata } from 'next'
 import { CreateItemDialog } from './create-item-dialog'
 import { ItemsContent } from './items-content'
@@ -16,11 +16,11 @@ export default async function ItemsPage() {
 
   const canManage = user.role === 'ADMIN' || user.role === 'INVENTORY'
 
-  // Fetch sectors to pass to item dialogs and filter
-  let sectors: Sector[] = []
+  // Fetch categories to pass to item dialogs and filter
+  let categories: Category[] = []
   try {
-    const res = await getSectors(token)
-    sectors = res.sectors
+    const res = await getCategories(token)
+    categories = res.categories
   } catch {}
 
   return (
@@ -34,13 +34,13 @@ export default async function ItemsPage() {
             Gerencie os itens e procedimentos do catálogo global.
           </p>
         </div>
-        {canManage && <CreateItemDialog sectors={sectors} />}
+        {canManage && <CreateItemDialog categories={categories} />}
       </div>
 
       <ItemsContent
         initialItems={items}
         initialPagination={pagination}
-        sectors={sectors}
+        categories={categories}
         canManage={canManage}
       />
     </div>

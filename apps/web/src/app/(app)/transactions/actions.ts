@@ -39,15 +39,17 @@ export async function createTransactionAction(data: FormData) {
     }
   }
 
-  const sectorId = data.get('sectorId') as string
-  if (!sectorId) {
+  const type = data.get('type') as 'ENTRY' | 'EXIT'
+  const rawSectorId = data.get('sectorId') as string | undefined
+  const sectorId = rawSectorId ? rawSectorId : undefined
+
+  if (type === 'EXIT' && !sectorId) {
     return {
       success: false,
-      message: 'Selecione um setor para registrar as transações.',
+      message: 'Selecione um setor de destino para registrar a saída.',
     }
   }
 
-  const type = data.get('type') as 'ENTRY' | 'EXIT'
   const dateStr = data.get('date') as string
   const itemsJson = data.get('itemsJson') as string
 
@@ -84,7 +86,7 @@ export async function createTransactionAction(data: FormData) {
       type,
       date: dateIso,
       unitId,
-      sectorId,
+      sectorId: sectorId || null,
       items: payloadItems,
     })
 
@@ -95,8 +97,8 @@ export async function createTransactionAction(data: FormData) {
     let errorMessage = 'Erro ao criar transação.'
     if (err && typeof err === 'object' && 'response' in err) {
       try {
-        const response = (err as any).response
-        const errorData = await response.clone().json()
+        const response = (err as { response: Response }).response
+        const errorData = await response.json()
         if (errorData.message) errorMessage = errorData.message
       } catch {}
     }
@@ -104,14 +106,15 @@ export async function createTransactionAction(data: FormData) {
   }
 }
 
-import { deleteTransaction } from '@/http/delete-transaction'
-import { updateTransaction } from '@/http/update-transaction'
-
 export async function deleteTransactionAction(id: string) {
   const { token } = await auth()
-  if (!token) return { success: false, message: 'Não autenticado' }
+
+  if (!token) {
+    return { success: false, message: 'Não autenticado' }
+  }
 
   try {
+    const { deleteTransaction } = await import('@/http/delete-transaction')
     await deleteTransaction(token, id)
     updateTag('transactions')
     return { success: true, message: null }
@@ -122,18 +125,22 @@ export async function deleteTransactionAction(id: string) {
 
 export async function updateTransactionAction(id: string, data: FormData) {
   const { token } = await auth()
-  if (!token) return { success: false, message: 'Não autenticado' }
 
-  const type = data.get('type') as 'ENTRY' | 'EXIT' | null
-  const dateStr = data.get('date') as string | null
-  const rawValue = data.get('value') as string | null
-  const value = rawValue ? Number(rawValue) / 100 : undefined
+  if (!token) {
+    return { success: false, message: 'Não autenticado' }
+  }
 
-  const rawQuantity = data.get('quantity')
+  const type = data.get('type') as 'ENTRY' | 'EXIT'
+  const rawValue = data.get('value') as string
+  const rawQuantity = data.get('quantity') as string
+  const rawSectorId = data.get('sectorId') as string
+  const dateStr = data.get('date') as string
+
+  const value = rawValue
+    ? Number(rawValue.replace(/\D/g, '')) / 100
+    : undefined
   const quantity = rawQuantity ? Number(rawQuantity) : undefined
-
-  const itemId = data.get('itemId') as string | null
-  const sectorId = data.get('sectorId') as string | null
+  const sectorId = rawSectorId ? rawSectorId : undefined
 
   try {
     let dateIso: string | undefined = undefined
@@ -141,13 +148,13 @@ export async function updateTransactionAction(id: string, data: FormData) {
       dateIso = new Date(`${dateStr}T12:00:00Z`).toISOString()
     }
 
+    const { updateTransaction } = await import('@/http/update-transaction')
     await updateTransaction(token, id, {
-      type: type || undefined,
-      date: dateIso,
+      type,
       value,
       quantity,
-      itemId: itemId || undefined,
-      sectorId: sectorId || undefined,
+      sectorId,
+      date: dateIso,
     })
 
     updateTag('transactions')
@@ -156,8 +163,8 @@ export async function updateTransactionAction(id: string, data: FormData) {
     let errorMessage = 'Erro ao atualizar transação.'
     if (err && typeof err === 'object' && 'response' in err) {
       try {
-        const response = (err as any).response
-        const errorData = await response.clone().json()
+        const response = (err as { response: Response }).response
+        const errorData = await response.json()
         if (errorData.message) errorMessage = errorData.message
       } catch {}
     }
@@ -165,15 +172,14 @@ export async function updateTransactionAction(id: string, data: FormData) {
   }
 }
 
-import { getItemMetrics } from '@/http/get-item-metrics'
-
-export async function getItemMetricsAction(itemId: string, unitId?: string | null) {
+export async function getItemMetricsAction(itemId: string, unitId?: string) {
   const { token } = await auth()
   if (!token) return null
 
   try {
-    const data = await getItemMetrics(token, itemId, unitId)
-    return data
+    const { getItemMetrics } = await import('@/http/get-item-metrics')
+    const res = await getItemMetrics(token, itemId, unitId)
+    return res
   } catch (err) {
     return null
   }

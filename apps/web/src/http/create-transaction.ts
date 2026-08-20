@@ -10,7 +10,7 @@ export interface CreateTransactionRequest {
   type: 'ENTRY' | 'EXIT'
   date: string
   unitId: string
-  sectorId: string
+  sectorId?: string | null
   items: CreateTransactionItem[]
 }
 

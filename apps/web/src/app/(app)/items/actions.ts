@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth/auth'
+import { createCategory } from '@/http/create-category'
 import { createItem } from '@/http/create-item'
 import { getItems } from '@/http/get-items'
 import { updateItem } from '@/http/update-item'
@@ -8,6 +9,7 @@ import { revalidatePath } from 'next/cache'
 
 export async function fetchItemsAction(params?: {
   search?: string | null
+  categoryId?: string | null
   sectorId?: string | null
   page?: number
   perPage?: number
@@ -23,6 +25,27 @@ export async function fetchItemsAction(params?: {
   }
 }
 
+export async function createCategoryAction(name: string) {
+  const { token } = await auth()
+  if (!token) return { success: false, category: null, message: 'Não autenticado' }
+
+  try {
+    const res = await createCategory(token, { name })
+    revalidatePath('/items')
+    return { success: true, category: res.category, message: null }
+  } catch (err: unknown) {
+    let errorMessage = 'Erro ao criar categoria.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const response = (err as { response: Response }).response
+        const errorData = await response.json()
+        if (errorData.message) errorMessage = errorData.message
+      } catch {}
+    }
+    return { success: false, category: null, message: errorMessage }
+  }
+}
+
 export async function createItemAction(data: FormData) {
   const { token } = await auth()
 
@@ -32,15 +55,15 @@ export async function createItemAction(data: FormData) {
 
   const name = data.get('name') as string
   const description = data.get('description') as string | undefined
-  const rawSectorId = data.get('sectorId') as string | undefined
-  const sectorId = rawSectorId === '' ? undefined : rawSectorId
+  const rawCategoryId = data.get('categoryId') as string | undefined
+  const categoryId = rawCategoryId === '' ? undefined : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
 
   try {
     await createItem(token, {
       name,
       description,
-      sectorId,
+      categoryId,
       quantity: quantity ? Number(quantity) : 0,
     })
 
@@ -70,8 +93,8 @@ export async function updateItemAction(data: FormData) {
   const id = data.get('id') as string
   const name = data.get('name') as string
   const description = data.get('description') as string | undefined
-  const rawSectorId = data.get('sectorId') as string | undefined
-  const sectorId = rawSectorId === '' ? null : rawSectorId
+  const rawCategoryId = data.get('categoryId') as string | undefined
+  const categoryId = rawCategoryId === '' ? null : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
 
   try {
@@ -79,7 +102,7 @@ export async function updateItemAction(data: FormData) {
       id,
       name,
       description,
-      sectorId,
+      categoryId,
       quantity: quantity ? Number(quantity) : undefined,
     })
 

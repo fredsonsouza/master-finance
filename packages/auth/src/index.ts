@@ -7,6 +7,7 @@ import {
 import z from 'zod'
 import type { User } from './models/user'
 import { permissions } from './permissions'
+import { categorySubject } from './subjects/category'
 import { itemSubject } from './subjects/item'
 import { metricSubject } from './subjects/metric'
 import { sectorSubject } from './subjects/sector'
@@ -19,6 +20,7 @@ import { collectionSubject } from './subjects/collection'
 import { evaluationSubject } from './subjects/evaluation'
 
 const appAbilitiesSchema = z.union([
+  categorySubject,
   sectorSubject,
   userSubject,
   itemSubject,

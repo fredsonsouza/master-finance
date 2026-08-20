@@ -14,7 +14,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('get', ['Item', 'User', 'Evaluation'])
+    can('get', ['Item', 'User', 'Evaluation', 'Category'])
     can('manage', [
       'Sector',
       'Unit',
@@ -27,18 +27,20 @@ export const permissions: Record<Role, PermissionsByRole> = {
 
   FINANCIAL(_, { can }) {
     can('manage', ['Transaction', 'Metric', 'CashClosure'])
-    can('get', ['Item', 'Sector', 'Unit', 'User'])
+    can('get', ['Item', 'Sector', 'Unit', 'User', 'Category'])
   },
 
   EMPLOYEE(user, { can }) {
     can('get', 'Sector')
     can('get', 'Item')
+    can('get', 'Category')
     can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
   },
 
   SELLER(user, { can }) {
     can('get', 'Sector')
     can('get', 'Item')
+    can('get', 'Category')
     can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
     can('get', 'Evaluation', { sellerId: { $eq: user.id } })
 
@@ -61,6 +63,6 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   INVENTORY(_, { can }) {
-    can('manage', ['Transaction', 'Item', 'Unit', 'Sector'])
+    can('manage', ['Transaction', 'Item', 'Unit', 'Sector', 'Category'])
   },
 }

@@ -5,9 +5,14 @@ export interface Item {
   name: string
   description: string | null
   quantity: number
-  sectorId: string | null
+  categoryId?: string | null
+  sectorId?: string | null
   createdAt: string
   updatedAt: string
+  category?: {
+    id: string
+    name: string
+  } | null
   sector?: {
     id: string
     name: string
@@ -30,6 +35,7 @@ export async function getItems(
   token: string,
   params?: {
     search?: string | null
+    categoryId?: string | null
     sectorId?: string | null
     page?: number
     perPage?: number
@@ -37,6 +43,7 @@ export async function getItems(
 ) {
   const searchParams: Record<string, string> = {}
   if (params?.search) searchParams.search = params.search
+  if (params?.categoryId) searchParams.categoryId = params.categoryId
   if (params?.sectorId) searchParams.sectorId = params.sectorId
   if (params?.page) searchParams.page = String(params.page)
   if (params?.perPage) searchParams.perPage = String(params.perPage)

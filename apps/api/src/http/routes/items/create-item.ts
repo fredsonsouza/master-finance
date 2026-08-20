@@ -17,12 +17,13 @@ export async function createItem(app: FastifyInstance) {
       {
         schema: {
           tags: ['items'],
-          summary: 'Create a new item',
+          summary: 'Create a new item with optional category',
           security: [{ bearerAuth: [] }],
           body: z.object({
             name: z.string().min(1),
             description: z.string().nullable().optional(),
-            sectorId: z.uuid().nullable().optional(),
+            categoryId: z.string().uuid().nullable().optional(),
+            sectorId: z.string().uuid().nullable().optional(),
             quantity: z.number().int().min(0).optional().default(0),
           }),
           response: {
@@ -48,12 +49,21 @@ export async function createItem(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const { name, description, sectorId, quantity } = request.body
+        const { name, description, categoryId, sectorId, quantity } = request.body
 
         if (ability.cannot('create', 'Item')) {
           throw new UnauthorizedError(
             'You are not allowed to create an item.'
           )
+        }
+
+        if (categoryId) {
+          const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+          })
+          if (!category) {
+            throw new BadRequestError('Category not found.')
+          }
         }
 
         if (sectorId) {
@@ -69,7 +79,8 @@ export async function createItem(app: FastifyInstance) {
           data: {
             name,
             description,
-            sectorId,
+            categoryId: categoryId || null,
+            sectorId: sectorId || null,
             quantity,
           },
         })

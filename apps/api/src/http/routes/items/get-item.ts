@@ -28,9 +28,24 @@ export async function getItem(app: FastifyInstance) {
                 name: z.string(),
                 description: z.string().nullable(),
                 quantity: z.number().int(),
-                sectorId: z.string().uuid().nullable(),
+                categoryId: z.string().uuid().nullable().optional(),
+                sectorId: z.string().uuid().nullable().optional(),
                 createdAt: z.date(),
                 updatedAt: z.date(),
+                category: z
+                  .object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                  })
+                  .nullable()
+                  .optional(),
+                sector: z
+                  .object({
+                    id: z.string().uuid(),
+                    name: z.string(),
+                  })
+                  .nullable()
+                  .optional(),
               }),
             }),
           },
@@ -56,6 +71,10 @@ export async function getItem(app: FastifyInstance) {
 
         const item = await prisma.item.findUnique({
           where: { id: targetItemId },
+          include: {
+            category: true,
+            sector: true,
+          },
         })
 
         if (!item) {

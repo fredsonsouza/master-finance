@@ -24,7 +24,7 @@ export async function createTransaction(app: FastifyInstance) {
             type: z.enum(['ENTRY', 'EXIT']),
             date: z.coerce.date(),
             unitId: z.uuid(),
-            sectorId: z.uuid(),
+            sectorId: z.uuid().nullable().optional(),
             items: z
               .array(
                 z.object({
@@ -74,10 +74,42 @@ export async function createTransaction(app: FastifyInstance) {
           throw new BadRequestError('Unit not found.')
         }
 
-        // Validate sector
-        const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
-        if (!sector) {
-          throw new BadRequestError('Sector not found.')
+        // Resolve sector: ENTRY automatically goes to 'Estoque', EXIT requires specified sector
+        let finalSectorId: string
+        let sectorName = 'Estoque'
+
+        if (type === 'ENTRY') {
+          let estoqueSector = await prisma.sector.findFirst({
+            where: {
+              name: {
+                equals: 'Estoque',
+                mode: 'insensitive',
+              },
+            },
+          })
+
+          if (!estoqueSector) {
+            estoqueSector = await prisma.sector.create({
+              data: {
+                name: 'Estoque',
+              },
+            })
+          }
+
+          finalSectorId = estoqueSector.id
+          sectorName = estoqueSector.name
+        } else {
+          if (!sectorId) {
+            throw new BadRequestError('O setor é obrigatório para transações de saída.')
+          }
+
+          const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
+          if (!sector) {
+            throw new BadRequestError('Sector not found.')
+          }
+
+          finalSectorId = sector.id
+          sectorName = sector.name
         }
 
         // Validate items exist
@@ -105,7 +137,6 @@ export async function createTransaction(app: FastifyInstance) {
             }
 
             if (itemReq.quantity > currentStock) {
-              const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
               throw new BadRequestError(
                 `Estoque insuficiente para o item ${itemDb?.name || itemReq.itemId}.`
               )
@@ -127,7 +158,7 @@ export async function createTransaction(app: FastifyInstance) {
                 quantity: itemReq.quantity,
                 itemId: itemReq.itemId,
                 unitId,
-                sectorId,
+                sectorId: finalSectorId,
                 userId,
                 batchId,
               },
@@ -147,7 +178,7 @@ export async function createTransaction(app: FastifyInstance) {
           action: 'CREATE',
           resource: 'TRANSACTION',
           resourceId: batchId,
-          details: `Registrou movimentação de ${type === 'ENTRY' ? 'ENTRADA' : 'SAÍDA'} em lote na unidade ${unit.name} e setor ${sector.name}. Itens: ${itemsDetails}`,
+          details: `Registrou movimentação de ${type === 'ENTRY' ? 'ENTRADA' : 'SAÍDA'} em lote na unidade ${unit.name} e setor ${sectorName}. Itens: ${itemsDetails}`,
         })
 
         return reply.status(201).send({ batchId })
