@@ -1,6 +1,6 @@
 import { auth } from '@/auth/auth'
 import { getCategories, type Category } from '@/http/get-categories'
-import { getItems } from '@/http/get-items'
+import { getItems, type Item } from '@/http/get-items'
 import type { Metadata } from 'next'
 import { CreateItemDialog } from './create-item-dialog'
 import { ItemsContent } from './items-content'
@@ -12,16 +12,28 @@ export const metadata: Metadata = {
 
 export default async function ItemsPage() {
   const { user, token } = await auth()
-  const { items, pagination } = await getItems(token, { page: 1, perPage: 20 })
 
   const canManage = user.role === 'ADMIN' || user.role === 'INVENTORY'
 
-  // Fetch categories to pass to item dialogs and filter
+  let items: Item[] = []
+  let pagination = { page: 1, perPage: 20, totalCount: 0, totalPages: 1 }
   let categories: Category[] = []
+
   try {
-    const res = await getCategories(token)
-    categories = res.categories
-  } catch {}
+    const [itemsRes, categoriesRes] = await Promise.all([
+      getItems(token, { page: 1, perPage: 20 }).catch(() => ({
+        items: [],
+        pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+      })),
+      getCategories(token).catch(() => ({ categories: [] })),
+    ])
+
+    items = itemsRes.items
+    pagination = itemsRes.pagination
+    categories = categoriesRes.categories
+  } catch (err) {
+    console.error('Error loading items page data:', err)
+  }
 
   return (
     <div className="space-y-6">

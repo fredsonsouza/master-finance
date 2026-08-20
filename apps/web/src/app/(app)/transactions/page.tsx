@@ -1,21 +1,37 @@
 import { auth } from '@/auth/auth'
-import { getItems } from '@/http/get-items'
-import { getSectors } from '@/http/get-sectors'
-import { getUnits } from '@/http/get-units'
-import { getTransactions } from '@/http/get-transactions'
+import { getItems, type Item } from '@/http/get-items'
+import { getSectors, type Sector } from '@/http/get-sectors'
+import { getTransactions, type Transaction } from '@/http/get-transactions'
+import { getUnits, type Unit } from '@/http/get-units'
 import { CreateTransactionDialog } from './create-transaction-dialog'
 import { TransactionsContent } from './transactions-content'
 
 export default async function TransactionsPage() {
   const { token } = await auth()
 
-  // Fetch paralelamente para velocidade máxima!
-  const [{ transactions }, { items }, { sectors }, { units }] = await Promise.all([
-    getTransactions(token),
-    getItems(token),
-    getSectors(token),
-    getUnits(token).catch(() => ({ units: [] })),
-  ])
+  let transactions: Transaction[] = []
+  let items: Item[] = []
+  let sectors: Sector[] = []
+  let units: Unit[] = []
+
+  try {
+    const [txRes, itemsRes, sectorsRes, unitsRes] = await Promise.all([
+      getTransactions(token).catch(() => ({ transactions: [] })),
+      getItems(token, { page: 1, perPage: 100 }).catch(() => ({
+        items: [],
+        pagination: { page: 1, perPage: 100, totalCount: 0, totalPages: 1 },
+      })),
+      getSectors(token).catch(() => ({ sectors: [] })),
+      getUnits(token).catch(() => ({ units: [] })),
+    ])
+
+    transactions = txRes.transactions || []
+    items = itemsRes.items || []
+    sectors = sectorsRes.sectors || []
+    units = unitsRes.units || []
+  } catch (err) {
+    console.error('Error loading transactions page data:', err)
+  }
 
   return (
     <div className="space-y-6">
