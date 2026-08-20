@@ -40,11 +40,17 @@ export async function getCategories(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        const categories = await prisma.category.findMany({
-          orderBy: {
-            name: 'asc',
-          },
-        })
+        let categories: any[] = []
+        try {
+          categories = await prisma.category.findMany({
+            orderBy: {
+              name: 'asc',
+            },
+          })
+        } catch (err) {
+          // Table doesn't exist yet
+          categories = []
+        }
 
         return reply.status(200).send({ categories })
       }

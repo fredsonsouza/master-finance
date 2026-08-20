@@ -73,6 +73,10 @@ export async function getItems(app: FastifyInstance) {
 
         const { search, categoryId, sectorId, page, perPage } = request.query
 
+        let items: any[] = []
+        let totalCount = 0
+        let totalPages = 1
+
         const where = {
           categoryId: categoryId || undefined,
           sectorId: sectorId || undefined,
@@ -84,21 +88,54 @@ export async function getItems(app: FastifyInstance) {
             : undefined,
         }
 
-        const totalCount = await prisma.item.count({ where })
-        const totalPages = Math.ceil(totalCount / perPage) || 1
+        try {
+          totalCount = await prisma.item.count({ where })
+          totalPages = Math.ceil(totalCount / perPage) || 1
 
-        const items = await prisma.item.findMany({
-          where,
-          skip: (page - 1) * perPage,
-          take: perPage,
-          include: {
-            category: true,
-            sector: true,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        })
+          items = await prisma.item.findMany({
+            where,
+            skip: (page - 1) * perPage,
+            take: perPage,
+            include: {
+              category: true,
+              sector: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          })
+        } catch (dbError) {
+          // Fallback if category table/column is not yet migrated in database
+          const fallbackWhere = {
+            sectorId: sectorId || undefined,
+            OR: search?.trim()
+              ? [
+                  { name: { contains: search.trim(), mode: 'insensitive' as const } },
+                  { description: { contains: search.trim(), mode: 'insensitive' as const } },
+                ]
+              : undefined,
+          }
+          totalCount = await prisma.item.count({ where: fallbackWhere })
+          totalPages = Math.ceil(totalCount / perPage) || 1
+
+          const rawItems = await prisma.item.findMany({
+            where: fallbackWhere,
+            skip: (page - 1) * perPage,
+            take: perPage,
+            include: {
+              sector: true,
+            },
+            orderBy: {
+              createdAt: 'desc',
+            },
+          })
+
+          items = rawItems.map((item) => ({
+            ...item,
+            categoryId: null,
+            category: null,
+          }))
+        }
 
         return reply.status(200).send({
           items,

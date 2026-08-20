@@ -69,13 +69,28 @@ export async function getItem(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const item = await prisma.item.findUnique({
-          where: { id: targetItemId },
-          include: {
-            category: true,
-            sector: true,
-          },
-        })
+        let item: any = null
+
+        try {
+          item = await prisma.item.findUnique({
+            where: { id: targetItemId },
+            include: {
+              category: true,
+              sector: true,
+            },
+          })
+        } catch (err) {
+          item = await prisma.item.findUnique({
+            where: { id: targetItemId },
+            include: {
+              sector: true,
+            },
+          })
+          if (item) {
+            item.categoryId = null
+            item.category = null
+          }
+        }
 
         if (!item) {
           throw new ResourceNotFoundError('Item not found.')
