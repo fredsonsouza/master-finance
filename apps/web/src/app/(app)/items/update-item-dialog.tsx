@@ -13,19 +13,22 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Category } from '@/http/get-categories'
 import type { Item } from '@/http/get-items'
-import { Edit, Tag } from 'lucide-react'
+import { Edit, Loader2, Plus, Tag } from 'lucide-react'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
-import { updateItemAction } from './actions'
+import { createCategoryAction, updateItemAction } from './actions'
 
 interface Props {
   item: Item
   categories: Category[]
 }
 
-export function UpdateItemDialog({ item, categories }: Props) {
+export function UpdateItemDialog({ item, categories: initialCategories }: Props) {
   const [open, setOpen] = useState(false)
+  const [categories, setCategories] = useState<Category[]>(initialCategories)
   const [selectedCategoryId, setSelectedCategoryId] = useState(item.categoryId || '')
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
 
   const [state, formAction, isPending] = useActionState(
     async (
@@ -37,6 +40,7 @@ export function UpdateItemDialog({ item, categories }: Props) {
       if (result.success) {
         toast.success('Item atualizado com sucesso!')
         setOpen(false)
+        setNewCategoryName('')
       } else if (result.message) {
         toast.error(result.message)
       }
@@ -44,6 +48,32 @@ export function UpdateItemDialog({ item, categories }: Props) {
     },
     { success: false, message: null }
   )
+
+  async function handleAddCategory(e: React.MouseEvent | React.KeyboardEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const name = newCategoryName.trim()
+    if (!name) {
+      toast.error('Digite o nome da categoria.')
+      return
+    }
+
+    setIsCreatingCategory(true)
+    const result = await createCategoryAction(name)
+    if (result.success && result.category) {
+      setCategories((prev) => {
+        if (prev.some((c) => c.id === result.category!.id)) return prev
+        return [...prev, result.category!]
+      })
+      setSelectedCategoryId(result.category.id)
+      setNewCategoryName('')
+      toast.success(`Categoria "${result.category.name}" criada e selecionada!`)
+    } else {
+      toast.error(result.message || 'Erro ao criar categoria.')
+    }
+    setIsCreatingCategory(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -93,6 +123,44 @@ export function UpdateItemDialog({ item, categories }: Props) {
                 </option>
               ))}
             </select>
+
+            {/* Inline Quick Add Category Input + Plus Button */}
+            <div className="pt-1.5">
+              <Label className="text-[11px] text-on-surface-variant block mb-1">
+                Ou adicione uma nova categoria:
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddCategory(e)
+                    }
+                  }}
+                  placeholder="Nome da nova categoria..."
+                  className="h-9 text-xs flex-1 bg-surface-container-lowest"
+                  disabled={isCreatingCategory}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddCategory}
+                  disabled={isCreatingCategory || !newCategoryName.trim()}
+                  className="h-9 px-3 gap-1 text-xs cursor-pointer shrink-0 border-primary/40 hover:bg-primary/10 text-primary"
+                  title="Criar Categoria"
+                >
+                  {isCreatingCategory ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="h-3.5 w-3.5" />
+                  )}
+                  Criar
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
