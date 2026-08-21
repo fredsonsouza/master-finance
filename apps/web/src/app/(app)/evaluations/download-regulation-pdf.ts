@@ -13,7 +13,14 @@ export function downloadRegulationPdf() {
         <style>
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 12mm 18mm 16mm 18mm;
+            @bottom-right {
+              content: counter(page) "/" counter(pages);
+              font-size: 8.5pt;
+              font-family: Arial, Helvetica, sans-serif;
+              color: #475569;
+              font-weight: 600;
+            }
           }
           * {
             box-sizing: border-box;
@@ -25,10 +32,9 @@ export function downloadRegulationPdf() {
           body {
             font-family: Arial, Helvetica, sans-serif;
             color: #1e293b;
-            line-height: 1.45;
-            padding: 12mm 18mm 15mm 18mm;
+            line-height: 1.42;
             background: #ffffff;
-            font-size: 10pt;
+            font-size: 9.5pt;
           }
           .header {
             text-align: center;
@@ -37,15 +43,16 @@ export function downloadRegulationPdf() {
             margin-bottom: 14px;
           }
           .logo {
-            max-height: 95px;
-            max-width: 360px;
-            width: auto;
-            margin: 0 auto 10px auto;
+            max-height: 150px;
+            max-width: 500px;
+            width: 360px;
+            height: auto;
+            margin: 0 auto 12px auto;
             display: block;
             object-fit: contain;
           }
           .title {
-            font-size: 13.5pt;
+            font-size: 13pt;
             font-weight: 800;
             color: #0f172a;
             margin: 0 0 4px 0;
@@ -53,80 +60,80 @@ export function downloadRegulationPdf() {
             letter-spacing: 0.5px;
           }
           .subtitle {
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #0284c7;
             font-weight: 700;
             margin: 0;
             text-transform: uppercase;
           }
           .section-title {
-            font-size: 10pt;
+            font-size: 9.5pt;
             font-weight: 700;
             color: #0284c7;
             background-color: #f1f5f9;
             padding: 4px 8px;
             border-left: 4px solid #0284c7;
-            margin-top: 12px;
-            margin-bottom: 6px;
+            margin-top: 10px;
+            margin-bottom: 5px;
             text-transform: uppercase;
           }
           p {
             margin-top: 0;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
             text-align: justify;
           }
           ul {
-            margin-top: 4px;
-            margin-bottom: 6px;
-            padding-left: 20px;
+            margin-top: 3px;
+            margin-bottom: 5px;
+            padding-left: 18px;
           }
           li {
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             text-align: justify;
           }
           .table-bonus {
             width: 100%;
             border-collapse: collapse;
             margin-top: 6px;
-            margin-bottom: 10px;
-            font-size: 9.5pt;
+            margin-bottom: 8px;
+            font-size: 9pt;
           }
           .table-bonus th {
             background-color: #0284c7;
             color: #ffffff;
-            padding: 6px 10px;
+            padding: 5px 8px;
             text-align: left;
             font-weight: 700;
           }
           .table-bonus td {
             border: 1px solid #cbd5e1;
-            padding: 6px 10px;
+            padding: 5px 8px;
           }
           .termo-box {
             border: 1.5px solid #0284c7;
             border-radius: 6px;
-            padding: 12px;
-            margin-top: 14px;
+            padding: 10px;
+            margin-top: 12px;
             background-color: #fafafa;
             page-break-inside: avoid;
           }
           .termo-title {
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: 800;
             color: #0284c7;
             text-align: center;
-            margin: 0 0 8px 0;
+            margin: 0 0 6px 0;
             text-transform: uppercase;
           }
           .fields-grid {
-            margin-top: 12px;
-            font-size: 9.5pt;
-            line-height: 1.8;
+            margin-top: 10px;
+            font-size: 9pt;
+            line-height: 1.7;
           }
           .signatures-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 30px;
+            margin-top: 25px;
             padding: 0 15px;
             page-break-inside: avoid;
           }
@@ -136,19 +143,29 @@ export function downloadRegulationPdf() {
           }
           .signature-line {
             border-top: 1.5px solid #334155;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
           }
           .signature-label {
-            font-size: 9pt;
+            font-size: 8.5pt;
             font-weight: 700;
             color: #0f172a;
             text-transform: uppercase;
+          }
+          .page-number-footer {
+            position: fixed;
+            bottom: 2mm;
+            right: 0;
+            font-size: 8pt;
+            color: #64748b;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: 600;
           }
           @media print {
             body { background: transparent; }
             .section-title { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .table-bonus th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .termo-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page-number-footer { display: block; }
           }
         </style>
       </head>
@@ -167,6 +184,9 @@ export function downloadRegulationPdf() {
 
         <div class="section-title">2. PARTICIPAÇÃO E CONDUTA ÉTICA</div>
         <ul>
+          <li><strong>Espontaneidade Obrigatória:</strong> Cada avaliação deve refletir o feedback espontâneo e legítimo do cliente/paciente que foi efetivamente atendido na unidade.</li>
+          <li><strong>Vedação de Autoavaliação:</strong> É estritamente proibido ao colaborador realizar autoavaliações, solicitar que colegas, familiares ou amigos simulem atendimentos fictícios para gerar avaliações positivas.</li>
+          <li><strong>Proibição de Coação:</strong> É vedado induzir, coagir ou direcionar o cliente a atribuir notas específicas durante o processo de coleta de opinião.</li>
           <li>A participação no programa não gera direito adquirido à bonificação, sendo a premiação condicionada ao cumprimento das regras deste Regulamento e à efetiva apuração dos resultados do respectivo período.</li>
           <li>A empresa poderá, a qualquer momento, mediante comunicação interna, alterar, suspender, modificar ou encerrar o programa, inclusive seus critérios, valores e condições de participação, conforme necessidade administrativa ou operacional.</li>
         </ul>
@@ -187,7 +207,7 @@ export function downloadRegulationPdf() {
           <li><strong>d)</strong> Exclusão do Programa e perda do direito à bonificação do período;</li>
           <li><strong>e)</strong> Outras medidas administrativas e disciplinares legalmente cabíveis.</li>
         </ul>
-        <p style="font-size: 9pt; color: #475569; font-style: italic;">
+        <p style="font-size: 8.5pt; color: #475569; font-style: italic;">
           <strong>Parágrafo único:</strong> A existência deste Programa não limita o poder diretivo e disciplinar da empresa nem impede a aplicação das medidas previstas em outros regulamentos internos ou na legislação.
         </p>
 
