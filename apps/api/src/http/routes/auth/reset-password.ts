@@ -1,7 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -18,10 +17,17 @@ export async function resetPassword(app: FastifyInstance) {
       {
         schema: {
           tags: ['auth'],
-          summary: 'Reset an employee password (Manager/Admin only)',
+          summary: 'Reset a user password (Admin only)',
+          security: [{ bearerAuth: [] }],
           params: z.object({
-            id: z.uuid(),
+            id: z.string().uuid(),
           }),
+          body: z
+            .object({
+              password: z.string().min(4).optional(),
+            })
+            .nullable()
+            .optional(),
           response: {
             204: z.null(),
           },
@@ -39,14 +45,11 @@ export async function resetPassword(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        const ability = defineAbilityFor({
-          id: requestingUser.id,
-          role: requestingUser.role,
-          unitId: requestingUser.unitId,
-        } as any)
-
-        if (ability.cannot('manage', 'User')) {
-          throw new UnauthorizedError('You are not allowed to reset passwords.')
+        // Apenas o usuário com a role ADMIN pode alterar/resetar a senha dos demais usuários
+        if (requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError(
+            'Apenas administradores podem alterar ou redefinir a senha de outros usuários.'
+          )
         }
 
         const targetUser = await prisma.user.findUnique({
@@ -54,16 +57,17 @@ export async function resetPassword(app: FastifyInstance) {
         })
 
         if (!targetUser) {
-          throw new BadRequestError('User not found.')
+          throw new BadRequestError('Usuário não encontrado.')
         }
 
-        const defaultPasswordHash = await hash('123', 6)
+        const customPassword = request.body?.password
+        const newPasswordHash = await hash(customPassword || '123', 6)
 
         await prisma.user.update({
           where: { id: targetUserId },
           data: {
-            password_hash: defaultPasswordHash,
-            forcePasswordChange: true,
+            password_hash: newPasswordHash,
+            forcePasswordChange: customPassword ? false : true,
           },
         })
 
@@ -72,7 +76,9 @@ export async function resetPassword(app: FastifyInstance) {
           action: 'UPDATE',
           resource: 'AUTH',
           resourceId: targetUserId,
-          details: `Resetou a senha do usuário: ${targetUser.name} (${targetUser.username})`,
+          details: customPassword
+            ? `Alterou a senha do usuário: ${targetUser.name} (${targetUser.username})`
+            : `Resetou a senha padrão (123) do usuário: ${targetUser.name} (${targetUser.username})`,
         })
 
         return reply.status(204).send(null)

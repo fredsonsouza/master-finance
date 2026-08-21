@@ -4,7 +4,14 @@ import { auth } from '@/auth/auth'
 import { createSector } from '@/http/create-sector'
 import { createUnit } from '@/http/create-unit'
 import { createUser } from '@/http/create-user'
+import { deleteSector } from '@/http/delete-sector'
+import { deleteUnit } from '@/http/delete-unit'
+import { deleteUser } from '@/http/delete-user'
 import { getUsers } from '@/http/get-users'
+import { resetPassword } from '@/http/reset-password'
+import { updateSector } from '@/http/update-sector'
+import { updateUnit } from '@/http/update-unit'
+import { updateUser } from '@/http/update-user'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchUsersAction(params?: {
@@ -98,11 +105,6 @@ export async function createUserAction(data: FormData) {
   }
 }
 
-import { deleteSector } from '@/http/delete-sector'
-import { deleteUnit } from '@/http/delete-unit'
-import { updateSector } from '@/http/update-sector'
-import { updateUnit } from '@/http/update-unit'
-
 export async function deleteUnitAction(id: string) {
   const { token } = await auth()
   try {
@@ -149,9 +151,6 @@ export async function updateSectorAction(id: string, data: FormData) {
   }
 }
 
-import { deleteUser } from '@/http/delete-user'
-import { updateUser } from '@/http/update-user'
-
 export async function deleteUserAction(id: string) {
   const { token } = await auth()
   try {
@@ -173,6 +172,7 @@ export async function deleteUserAction(id: string) {
 export async function updateUserAction(id: string, data: FormData) {
   const { token } = await auth()
   const name = data.get('name') as string
+  const password = data.get('password') as string | undefined
   const role = data.get('role') as
     | 'ADMIN'
     | 'MANAGER'
@@ -189,11 +189,41 @@ export async function updateUserAction(id: string, data: FormData) {
       name: name || undefined,
       role: role || undefined,
       unitId: unitId || null,
+      password:
+        password && password.trim().length > 0 ? password.trim() : undefined,
     })
     revalidatePath('/settings')
     return { success: true, message: null }
   } catch (err: unknown) {
     let msg = 'Erro ao atualizar usuário.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function resetUserPasswordAction(
+  userId: string,
+  customPassword?: string
+) {
+  const { token } = await auth()
+  if (!token) return { success: false, message: 'Não autenticado' }
+
+  try {
+    await resetPassword(token, userId, {
+      password:
+        customPassword && customPassword.trim().length > 0
+          ? customPassword.trim()
+          : undefined,
+    })
+    revalidatePath('/settings')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao redefinir senha do usuário.'
     if (err && typeof err === 'object' && 'response' in err) {
       try {
         const e = await (err as any).response.clone().json()

@@ -2,6 +2,7 @@ import { api } from './api-client'
 
 interface UpdateUserRequest {
   name?: string
+  password?: string
   role?:
     | 'ADMIN'
     | 'MANAGER'

@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  KeyRound,
   Loader2,
   Pencil,
   Search,
@@ -37,6 +38,7 @@ import {
 import { CreateSectorDialog } from './create-sector-dialog'
 import { CreateUnitDialog } from './create-unit-dialog'
 import { CreateUserDialog } from './create-user-dialog'
+import { ResetPasswordDialog } from './reset-password-dialog'
 import { UpdateSectorDialog } from './update-sector-dialog'
 import { UpdateUnitDialog } from './update-unit-dialog'
 import { UpdateUserDialog } from './update-user-dialog'
@@ -79,6 +81,7 @@ export function SettingsContent({
 
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
+  const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null)
 
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
   const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null)
@@ -399,6 +402,16 @@ export function SettingsContent({
                                     <Button
                                       variant="ghost"
                                       size="icon"
+                                      title="Redefinir / Alterar Senha"
+                                      className="text-on-surface hover:text-amber-500 h-8 w-8 cursor-pointer"
+                                      onClick={() => setResettingPasswordUser(u)}
+                                    >
+                                      <KeyRound className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      title="Editar Usuário"
                                       className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
                                       onClick={() => setEditingUser(u)}
                                     >
@@ -407,6 +420,7 @@ export function SettingsContent({
                                     <Button
                                       variant="ghost"
                                       size="icon"
+                                      title="Excluir Usuário"
                                       className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
                                       onClick={() => setDeletingUser(u)}
                                     >
@@ -621,6 +635,14 @@ export function SettingsContent({
           activeUnitId={activeUnitId}
           currentUserRole={currentUserRole}
           onClose={() => setEditingUser(null)}
+        />
+      )}
+
+      {/* Reset User Password Dialog (Admin Only) */}
+      {resettingPasswordUser && (
+        <ResetPasswordDialog
+          user={resettingPasswordUser}
+          onClose={() => setResettingPasswordUser(null)}
         />
       )}
 

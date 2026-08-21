@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
+import { KeyRound } from 'lucide-react'
 import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { updateUserAction } from './actions'
@@ -59,7 +60,7 @@ export function UpdateUserDialog({
         <DialogHeader>
           <DialogTitle>Editar Usuário</DialogTitle>
           <DialogDescription>
-            Altere as informações, cargo ou unidade do usuário.
+            Altere as informações, cargo, unidade ou senha do usuário.
           </DialogDescription>
         </DialogHeader>
 
@@ -124,6 +125,27 @@ export function UpdateUserDialog({
               </select>
             </div>
           </div>
+
+          {currentUserRole === 'ADMIN' && (
+            <div className="space-y-2 border-t border-outline/20 pt-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4 text-primary" />
+                <Label htmlFor="update-user-password" className="font-medium text-sm">
+                  Alterar Senha do Usuário (Opcional)
+                </Label>
+              </div>
+              <Input
+                id="update-user-password"
+                name="password"
+                type="password"
+                placeholder="Digite para definir nova senha (mínimo 4 caracteres)"
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-on-surface-variant">
+                Deixe este campo em branco para manter a senha atual do usuário.
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button

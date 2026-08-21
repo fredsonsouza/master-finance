@@ -2,6 +2,7 @@ import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
 import { defineAbilityFor } from '@saas/auth'
+import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -24,6 +25,7 @@ export async function updateUser(app: FastifyInstance) {
           }),
           body: z.object({
             name: z.string().optional(),
+            password: z.string().min(4).optional(),
             role: z
               .enum([
                 'ADMIN',
@@ -73,7 +75,7 @@ export async function updateUser(app: FastifyInstance) {
           throw new BadRequestError('User not found.')
         }
 
-        const { name, role, unitId } = request.body
+        const { name, password, role, unitId } = request.body
 
         if (role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
           throw new UnauthorizedError('Only admins can assign the admin role.')
@@ -83,13 +85,26 @@ export async function updateUser(app: FastifyInstance) {
           throw new UnauthorizedError('You cannot update an admin user.')
         }
 
+        if (password && requestingUser.role !== 'ADMIN') {
+          throw new UnauthorizedError(
+            'Apenas administradores podem alterar a senha de outros usuários.'
+          )
+        }
+
+        const dataToUpdate: any = {
+          name: name !== undefined ? name : targetUser.name,
+          role: role !== undefined ? role : targetUser.role,
+          unitId: unitId !== undefined ? unitId : targetUser.unitId,
+        }
+
+        if (password) {
+          dataToUpdate.password_hash = await hash(password, 6)
+          dataToUpdate.forcePasswordChange = false
+        }
+
         const updated = await prisma.user.update({
           where: { id: targetUserId },
-          data: {
-            name: name !== undefined ? name : targetUser.name,
-            role: role !== undefined ? role : targetUser.role,
-            unitId: unitId !== undefined ? unitId : targetUser.unitId,
-          },
+          data: dataToUpdate,
         })
 
         await logAction({
@@ -97,7 +112,9 @@ export async function updateUser(app: FastifyInstance) {
           action: 'UPDATE',
           resource: 'USER',
           resourceId: targetUserId,
-          details: `Editou o usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`,
+          details: password
+            ? `Editou dados e redefiniu senha do usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`
+            : `Editou o usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`,
         })
 
         return reply.status(204).send(null)
