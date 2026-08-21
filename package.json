@@ -2,6 +2,7 @@
   "name": "master-admin",
   "private": true,
   "scripts": {
+    "postinstall": "pnpm --filter @saas/api env:load prisma generate",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "biome check .",

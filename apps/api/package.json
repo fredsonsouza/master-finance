@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "pnpm env:load tsx watch src/http/server.ts",
+    "build": "pnpm env:load prisma generate",
     "db:migrate": "pnpm env:load prisma migrate dev",
     "db:studio": "pnpm env:load prisma studio",
     "db:seed": "pnpm env:load tsx prisma/seed.ts ",
@@ -38,12 +39,11 @@
     "@types/supertest": "^7.2.0",
     "dayjs": "^1.11.20",
     "dotenv": "^17.4.2",
-    "dotenv-cli": "^11.0.0",
+    "dotenv-cli": "^10.2.0",
     "prisma": "^7.8.0",
-    "supertest": "^7.2.2",
-    "tsx": "^4.22.0",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.7",
-    "vitest-environment-prisma": "link:./prisma/vitest-environment-prisma"
+    "supertest": "^7.1.4",
+    "tsx": "^4.21.0",
+    "vite-tsconfig-paths": "^6.1.0",
+    "vitest": "^4.1.7"
   }
 }

@@ -41,26 +41,10 @@ export async function getCategories(app: FastifyInstance) {
         }
 
         let categories: any[] = []
-        try {
-          categories = await prisma.category.findMany({
-            orderBy: {
-              name: 'asc',
-            },
-          })
-        } catch (err) {
+
+        if ((prisma as any).category) {
           try {
-            await prisma.$executeRawUnsafe(`
-              CREATE TABLE IF NOT EXISTS "categories" (
-                "id" TEXT NOT NULL,
-                "name" TEXT NOT NULL,
-                "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
-              );
-              CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
-              ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
-            `)
-            categories = await prisma.category.findMany({
+            categories = await (prisma as any).category.findMany({
               orderBy: {
                 name: 'asc',
               },
@@ -70,7 +54,24 @@ export async function getCategories(app: FastifyInstance) {
           }
         }
 
-        return reply.status(200).send({ categories })
+        if (categories.length === 0) {
+          try {
+            categories = await prisma.$queryRawUnsafe<any[]>(
+              `SELECT "id", "name", "createdAt", "updatedAt" FROM "categories" ORDER BY "name" ASC;`
+            )
+          } catch {
+            categories = []
+          }
+        }
+
+        return reply.status(200).send({
+          categories: categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            createdAt: new Date(c.createdAt),
+            updatedAt: new Date(c.updatedAt),
+          })),
+        })
       }
     )
 }
