@@ -50,7 +50,13 @@ export function defineAbilityFor(user: User) {
 
   const ability = builder.build({
     detectSubjectType(subject) {
-      return subject.__typename
+      if (typeof subject === 'string') {
+        return subject
+      }
+      if (subject && typeof subject === 'object' && '__typename' in subject) {
+        return (subject as any).__typename
+      }
+      return (subject as any).constructor?.name ?? subject
     },
   })
 
