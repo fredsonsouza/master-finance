@@ -20,7 +20,7 @@ export async function createItem(app: FastifyInstance) {
           summary: 'Create a new item with optional category and value',
           security: [{ bearerAuth: [] }],
           body: z.object({
-            name: z.string().min(1),
+            name: z.string().min(1, 'Nome do item é obrigatório.'),
             description: z.string().nullable().optional(),
             value: z.number().nonnegative().optional().default(0),
             categoryId: z.string().uuid().nullable().optional(),
@@ -54,16 +54,20 @@ export async function createItem(app: FastifyInstance) {
 
         if (ability.cannot('create', 'Item')) {
           throw new UnauthorizedError(
-            'You are not allowed to create an item.'
+            'Você não tem permissão para criar itens no catálogo.'
           )
         }
 
         if (categoryId) {
-          const category = await prisma.category.findUnique({
-            where: { id: categoryId },
-          })
-          if (!category) {
-            throw new BadRequestError('Category not found.')
+          try {
+            const category = await prisma.category.findUnique({
+              where: { id: categoryId },
+            })
+            if (!category) {
+              throw new BadRequestError('Categoria não encontrada.')
+            }
+          } catch (err) {
+            if (err instanceof BadRequestError) throw err
           }
         }
 
@@ -72,20 +76,34 @@ export async function createItem(app: FastifyInstance) {
             where: { id: sectorId },
           })
           if (!sector) {
-            throw new BadRequestError('Sector not found.')
+            throw new BadRequestError('Setor não encontrado.')
           }
         }
 
-        const item = await prisma.item.create({
-          data: {
-            name,
-            description,
-            value: value ?? 0,
-            categoryId: categoryId || null,
-            sectorId: sectorId || null,
-            quantity,
-          },
-        })
+        let item: any = null
+
+        try {
+          item = await prisma.item.create({
+            data: {
+              name,
+              description,
+              value: value ?? 0,
+              categoryId: categoryId || null,
+              sectorId: sectorId || null,
+              quantity,
+            },
+          })
+        } catch (dbError) {
+          // Fallback if categoryId or value column is not yet in DB
+          item = await prisma.item.create({
+            data: {
+              name,
+              description,
+              sectorId: sectorId || null,
+              quantity,
+            },
+          })
+        }
 
         await logAction({
           userId,

@@ -35,12 +35,17 @@ export async function createCategoryAction(name: string) {
     return { success: true, category: res.category, message: null }
   } catch (err: unknown) {
     let errorMessage = 'Erro ao criar categoria.'
-    if (err && typeof err === 'object' && 'response' in err) {
-      try {
-        const response = (err as { response: Response }).response
-        const errorData = await response.json()
-        if (errorData.message) errorMessage = errorData.message
-      } catch {}
+    if (err && typeof err === 'object') {
+      if ('response' in err) {
+        try {
+          const response = (err as any).response
+          const errorData = await response.json()
+          if (errorData.message) errorMessage = errorData.message
+          else if (errorData.error) errorMessage = errorData.error
+        } catch {}
+      } else if ('message' in err && typeof (err as any).message === 'string') {
+        errorMessage = (err as any).message
+      }
     }
     return { success: false, category: null, message: errorMessage }
   }
@@ -56,7 +61,7 @@ export async function createItemAction(data: FormData) {
   const name = data.get('name') as string
   const description = data.get('description') as string | undefined
   const rawCategoryId = data.get('categoryId') as string | undefined
-  const categoryId = rawCategoryId === '' ? undefined : rawCategoryId
+  const categoryId = rawCategoryId === '' || rawCategoryId === 'null' ? undefined : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
   const rawValue = data.get('value') as string | undefined
   const value = rawValue ? Number(rawValue.replace(/\D/g, '')) / 100 : 0
@@ -75,12 +80,17 @@ export async function createItemAction(data: FormData) {
     return { success: true, message: null }
   } catch (err: unknown) {
     let errorMessage = 'Erro ao criar item no catálogo.'
-    if (err && typeof err === 'object' && 'response' in err) {
-      try {
-        const response = (err as { response: Response }).response
-        const errorData = await response.json()
-        if (errorData.message) errorMessage = errorData.message
-      } catch {}
+    if (err && typeof err === 'object') {
+      if ('response' in err) {
+        try {
+          const response = (err as any).response
+          const errorData = await response.json()
+          if (errorData.message) errorMessage = errorData.message
+          else if (errorData.error) errorMessage = errorData.error
+        } catch {}
+      } else if ('message' in err && typeof (err as any).message === 'string') {
+        errorMessage = (err as any).message
+      }
     }
     return { success: false, message: errorMessage }
   }
@@ -97,12 +107,14 @@ export async function updateItemAction(data: FormData) {
   const name = data.get('name') as string
   const description = data.get('description') as string | undefined
   const rawCategoryId = data.get('categoryId') as string | undefined
-  const categoryId = rawCategoryId === '' ? null : rawCategoryId
+  const categoryId =
+    rawCategoryId === '' || rawCategoryId === 'null' ? null : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
   const rawValue = data.get('value') as string | undefined
-  const value = rawValue !== undefined && rawValue !== ''
-    ? Number(rawValue.replace(/\D/g, '')) / 100
-    : undefined
+  const value =
+    rawValue !== undefined && rawValue !== ''
+      ? Number(rawValue.replace(/\D/g, '')) / 100
+      : undefined
 
   try {
     await updateItem(token, {
@@ -111,7 +123,8 @@ export async function updateItemAction(data: FormData) {
       description,
       categoryId,
       value,
-      quantity: quantity ? Number(quantity) : undefined,
+      quantity:
+        quantity !== undefined && quantity !== '' ? Number(quantity) : undefined,
     })
 
     revalidatePath('/items')
@@ -119,12 +132,17 @@ export async function updateItemAction(data: FormData) {
     return { success: true, message: null }
   } catch (err: unknown) {
     let errorMessage = 'Erro ao atualizar item no catálogo.'
-    if (err && typeof err === 'object' && 'response' in err) {
-      try {
-        const response = (err as { response: Response }).response
-        const errorData = await response.json()
-        if (errorData.message) errorMessage = errorData.message
-      } catch {}
+    if (err && typeof err === 'object') {
+      if ('response' in err) {
+        try {
+          const response = (err as any).response
+          const errorData = await response.json()
+          if (errorData.message) errorMessage = errorData.message
+          else if (errorData.error) errorMessage = errorData.error
+        } catch {}
+      } else if ('message' in err && typeof (err as any).message === 'string') {
+        errorMessage = (err as any).message
+      }
     }
     return { success: false, message: errorMessage }
   }
