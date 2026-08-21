@@ -1,11 +1,19 @@
+import { auth } from '@/auth/auth'
 import { Header } from '@/components/header'
 import { Sidebar } from '@/components/sidebar'
+import { redirect } from 'next/navigation'
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const { user } = await auth()
+
+  if (user.forcePasswordChange) {
+    redirect('/auth/change-password')
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />

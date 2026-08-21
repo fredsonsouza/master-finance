@@ -5,6 +5,8 @@ interface GetProfileResponse {
     id: string
     name: string | null
     username: string | null
+    avatarUrl?: string | null
+    forcePasswordChange: boolean
     role:
       | 'ADMIN'
       | 'MANAGER'
