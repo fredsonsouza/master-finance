@@ -74,14 +74,20 @@ export function downloadEvaluationsPdf({
         <style>
           @page {
             size: A4 portrait;
-            margin: 12mm 15mm 15mm 15mm;
+            margin: 0;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
           }
           body {
             font-family: Arial, Helvetica, sans-serif;
             color: #1e293b;
             line-height: 1.4;
-            margin: 0;
-            padding: 0;
+            padding: 12mm 15mm 15mm 15mm;
             background: #ffffff;
             font-size: 9.5pt;
           }

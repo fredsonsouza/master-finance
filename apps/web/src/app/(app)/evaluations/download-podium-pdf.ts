@@ -103,14 +103,20 @@ export function downloadPodiumPdf({
         <style>
           @page {
             size: A4 portrait;
-            margin: 15mm 20mm 20mm 20mm;
+            margin: 0;
+          }
+          * {
+            box-sizing: border-box;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
           }
           body {
             font-family: Arial, Helvetica, sans-serif;
             color: #1e293b;
             line-height: 1.4;
-            margin: 0;
-            padding: 0;
+            padding: 15mm 20mm 20mm 20mm;
             background: #ffffff;
             font-size: 10pt;
           }

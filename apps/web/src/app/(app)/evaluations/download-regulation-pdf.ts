@@ -12,18 +12,21 @@ export function downloadRegulationPdf() {
         <title>Regulamento do Programa de Avaliação de Atendimento - Masterclin</title>
         <style>
           @page {
-            size: A4;
-            margin: 12mm 18mm 15mm 18mm;
+            size: A4 portrait;
+            margin: 0;
           }
           * {
             box-sizing: border-box;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
           }
           body {
             font-family: Arial, Helvetica, sans-serif;
             color: #1e293b;
             line-height: 1.45;
-            margin: 0;
-            padding: 0;
+            padding: 12mm 18mm 15mm 18mm;
             background: #ffffff;
             font-size: 10pt;
           }
