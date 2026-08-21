@@ -34,10 +34,10 @@ export function downloadRegulationPdf() {
             margin-bottom: 14px;
           }
           .logo {
-            max-height: 60px;
-            max-width: 250px;
+            max-height: 95px;
+            max-width: 360px;
             width: auto;
-            margin: 0 auto 8px auto;
+            margin: 0 auto 10px auto;
             display: block;
             object-fit: contain;
           }
