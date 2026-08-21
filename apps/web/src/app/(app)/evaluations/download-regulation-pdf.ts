@@ -25,24 +25,24 @@ export function downloadRegulationPdf() {
             margin: 0;
             padding: 0;
             background: #ffffff;
-            font-size: 10.5pt;
+            font-size: 10pt;
           }
           .header {
             text-align: center;
             border-bottom: 2px solid #0284c7;
             padding-bottom: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
           }
           .logo {
-            max-height: 65px;
-            max-width: 260px;
+            max-height: 60px;
+            max-width: 250px;
             width: auto;
             margin: 0 auto 8px auto;
             display: block;
             object-fit: contain;
           }
           .title {
-            font-size: 14pt;
+            font-size: 13.5pt;
             font-weight: 800;
             color: #0f172a;
             margin: 0 0 4px 0;
@@ -50,43 +50,43 @@ export function downloadRegulationPdf() {
             letter-spacing: 0.5px;
           }
           .subtitle {
-            font-size: 9.5pt;
+            font-size: 9pt;
             color: #0284c7;
             font-weight: 700;
             margin: 0;
             text-transform: uppercase;
           }
           .section-title {
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-weight: 700;
             color: #0284c7;
             background-color: #f1f5f9;
-            padding: 5px 8px;
+            padding: 4px 8px;
             border-left: 4px solid #0284c7;
-            margin-top: 14px;
-            margin-bottom: 8px;
+            margin-top: 12px;
+            margin-bottom: 6px;
             text-transform: uppercase;
           }
           p {
             margin-top: 0;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             text-align: justify;
           }
           ul {
             margin-top: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             padding-left: 20px;
           }
           li {
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             text-align: justify;
           }
           .table-bonus {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
-            margin-bottom: 12px;
-            font-size: 10pt;
+            margin-top: 6px;
+            margin-bottom: 10px;
+            font-size: 9.5pt;
           }
           .table-bonus th {
             background-color: #0284c7;
@@ -103,27 +103,27 @@ export function downloadRegulationPdf() {
             border: 1.5px solid #0284c7;
             border-radius: 6px;
             padding: 12px;
-            margin-top: 16px;
+            margin-top: 14px;
             background-color: #fafafa;
             page-break-inside: avoid;
           }
           .termo-title {
-            font-size: 11pt;
+            font-size: 10.5pt;
             font-weight: 800;
             color: #0284c7;
             text-align: center;
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             text-transform: uppercase;
           }
           .fields-grid {
-            margin-top: 14px;
-            font-size: 10pt;
+            margin-top: 12px;
+            font-size: 9.5pt;
             line-height: 1.8;
           }
           .signatures-container {
             display: flex;
             justify-content: space-between;
-            margin-top: 35px;
+            margin-top: 30px;
             padding: 0 15px;
             page-break-inside: avoid;
           }
@@ -133,10 +133,10 @@ export function downloadRegulationPdf() {
           }
           .signature-line {
             border-top: 1.5px solid #334155;
-            margin-bottom: 6px;
+            margin-bottom: 5px;
           }
           .signature-label {
-            font-size: 9.5pt;
+            font-size: 9pt;
             font-weight: 700;
             color: #0f172a;
             text-transform: uppercase;
@@ -156,10 +156,23 @@ export function downloadRegulationPdf() {
           <p class="subtitle">DIRETRIZES DE ATENDIMENTO, ÉTICA, PARTICIPAÇÃO, APURAÇÃO E BONIFICAÇÃO</p>
         </div>
 
+        <div class="section-title">1. OBJETIVO DO PROGRAMA</div>
+        <p>
+          O presente regulamento estabelece as diretrizes institucionais, normas éticas e critérios de engajamento do 
+          <strong>Programa de Avaliação de Atendimento da Clínica Masterclin</strong>. O programa tem como objetivo mensurar a satisfação dos nossos clientes/pacientes, valorizar o bom atendimento e promover a melhoria contínua da experiência de recepção nas unidades.
+        </p>
+
         <div class="section-title">2. PARTICIPAÇÃO E CONDUTA ÉTICA</div>
         <ul>
           <li>A participação no programa não gera direito adquirido à bonificação, sendo a premiação condicionada ao cumprimento das regras deste Regulamento e à efetiva apuração dos resultados do respectivo período.</li>
           <li>A empresa poderá, a qualquer momento, mediante comunicação interna, alterar, suspender, modificar ou encerrar o programa, inclusive seus critérios, valores e condições de participação, conforme necessidade administrativa ou operacional.</li>
+        </ul>
+
+        <div class="section-title">3. USO DOS LINKS E QR CODES INDIVIDUALIZADOS</div>
+        <ul>
+          <li><strong>Caráter Pessoal e Intransferível:</strong> O QR Code e o link de avaliação fornecidos são de uso exclusivo e intransferível de cada recepcionista/atendente.</li>
+          <li><strong>Exposição Autorizada:</strong> O QR Code deve permanecer visível apenas no guichê de atendimento do próprio colaborador responsável.</li>
+          <li><strong>Compartilhamento Inadequado:</strong> É proibido utilizar o QR Code ou link próprio para coletar avaliações decorrentes do atendimento prestado por outro colega de trabalho.</li>
         </ul>
 
         <div class="section-title">4. PENALIDADES E SANÇÕES DISCIPLINARES</div>
@@ -171,7 +184,7 @@ export function downloadRegulationPdf() {
           <li><strong>d)</strong> Exclusão do Programa e perda do direito à bonificação do período;</li>
           <li><strong>e)</strong> Outras medidas administrativas e disciplinares legalmente cabíveis.</li>
         </ul>
-        <p style="font-size: 9.5pt; color: #475569; font-style: italic;">
+        <p style="font-size: 9pt; color: #475569; font-style: italic;">
           <strong>Parágrafo único:</strong> A existência deste Programa não limita o poder diretivo e disciplinar da empresa nem impede a aplicação das medidas previstas em outros regulamentos internos ou na legislação.
         </p>
 
