@@ -4,6 +4,7 @@ export interface Item {
   id: string
   name: string
   description: string | null
+  value: number
   quantity: number
   categoryId?: string | null
   sectorId?: string | null

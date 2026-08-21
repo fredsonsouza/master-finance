@@ -27,6 +27,7 @@ export async function getItem(app: FastifyInstance) {
                 id: z.string().uuid(),
                 name: z.string(),
                 description: z.string().nullable(),
+                value: z.number().default(0),
                 quantity: z.number().int(),
                 categoryId: z.string().uuid().nullable().optional(),
                 sectorId: z.string().uuid().nullable().optional(),
@@ -87,6 +88,7 @@ export async function getItem(app: FastifyInstance) {
             },
           })
           if (item) {
+            item.value = item.value ?? 0
             item.categoryId = null
             item.category = null
           }

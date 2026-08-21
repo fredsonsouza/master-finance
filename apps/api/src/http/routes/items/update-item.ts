@@ -25,6 +25,7 @@ export async function updateItem(app: FastifyInstance) {
           body: z.object({
             name: z.string().min(1).optional(),
             description: z.string().nullable().optional(),
+            value: z.number().nonnegative().optional(),
             categoryId: z.uuid().nullable().optional(),
             sectorId: z.uuid().nullable().optional(),
             quantity: z.number().int().min(0).optional(),
@@ -66,7 +67,7 @@ export async function updateItem(app: FastifyInstance) {
           )
         }
 
-        const { name, description, categoryId, sectorId, quantity } = request.body
+        const { name, description, value, categoryId, sectorId, quantity } = request.body
 
         if (categoryId) {
           const category = await prisma.category.findUnique({
@@ -92,6 +93,7 @@ export async function updateItem(app: FastifyInstance) {
             name: name ?? targetItem.name,
             description:
               description !== undefined ? description : targetItem.description,
+            value: value !== undefined ? value : targetItem.value,
             categoryId:
               categoryId !== undefined ? categoryId : targetItem.categoryId,
             sectorId: sectorId !== undefined ? sectorId : targetItem.sectorId,

@@ -14,20 +14,28 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   MANAGER(_, { can }) {
-    can('get', ['Item', 'User', 'Evaluation', 'Category'])
-    can('manage', [
-      'Sector',
-      'Unit',
-      'Transaction',
-      'Metric',
-      'CashClosure',
-      'Collection',
-    ])
+    can('get', 'Item')
+    can('get', 'User')
+    can('get', 'Evaluation')
+    can('get', 'Category')
+    can('manage', 'Category')
+    can('manage', 'Sector')
+    can('manage', 'Unit')
+    can('manage', 'Transaction')
+    can('manage', 'Metric')
+    can('manage', 'CashClosure')
+    can('manage', 'Collection')
   },
 
   FINANCIAL(_, { can }) {
-    can('manage', ['Transaction', 'Metric', 'CashClosure'])
-    can('get', ['Item', 'Sector', 'Unit', 'User', 'Category'])
+    can('manage', 'Transaction')
+    can('manage', 'Metric')
+    can('manage', 'CashClosure')
+    can('get', 'Item')
+    can('get', 'Sector')
+    can('get', 'Unit')
+    can('get', 'User')
+    can('get', 'Category')
   },
 
   EMPLOYEE(user, { can }) {
@@ -63,6 +71,10 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   INVENTORY(_, { can }) {
-    can('manage', ['Transaction', 'Item', 'Unit', 'Sector', 'Category'])
+    can('manage', 'Transaction')
+    can('manage', 'Item')
+    can('manage', 'Unit')
+    can('manage', 'Sector')
+    can('manage', 'Category')
   },
 }

@@ -201,6 +201,9 @@ export function ItemsContent({
                       <th className="px-6 py-3 font-semibold">Descrição</th>
                       <th className="px-6 py-3 font-semibold">Categoria</th>
                       <th className="px-6 py-3 text-right font-semibold">
+                        Valor Unit.
+                      </th>
+                      <th className="px-6 py-3 text-right font-semibold">
                         Qtd. Inicial
                       </th>
                       <th className="px-6 py-3 text-right font-semibold">
@@ -233,6 +236,14 @@ export function ItemsContent({
                               Sem Categoria
                             </span>
                           )}
+                        </td>
+                        <td className="px-6 py-4 text-right font-semibold text-emerald-600 dark:text-emerald-400">
+                          {item.value > 0
+                            ? new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              }).format(item.value)
+                            : 'R$ 0,00'}
                         </td>
                         <td className="px-6 py-4 text-right font-semibold">
                           {item.quantity}

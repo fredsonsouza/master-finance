@@ -147,8 +147,8 @@ export async function createTransaction(app: FastifyInstance) {
         const batchId = randomUUID()
         const monthString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
-        await prisma.$transaction(
-          items.map((itemReq) => {
+        await prisma.$transaction([
+          ...items.map((itemReq) => {
             return prisma.transaction.create({
               data: {
                 type,
@@ -163,8 +163,16 @@ export async function createTransaction(app: FastifyInstance) {
                 batchId,
               },
             })
-          })
-        )
+          }),
+          ...items.map((itemReq) => {
+            return prisma.item.update({
+              where: { id: itemReq.itemId },
+              data: {
+                value: itemReq.value,
+              },
+            })
+          }),
+        ])
 
         const itemsDetails = items
           .map((itemReq) => {

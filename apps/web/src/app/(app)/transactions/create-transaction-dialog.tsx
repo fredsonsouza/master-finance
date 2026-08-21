@@ -15,10 +15,19 @@ import { Label } from '@/components/ui/label'
 import type { Item } from '@/http/get-items'
 import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
-import { Plus, Trash2, Loader2, Search, Building2 } from 'lucide-react'
-import { useActionState, useEffect, useState, useRef } from 'react'
-import { createTransactionAction, getItemMetricsAction } from './actions'
+import {
+  DollarSign,
+  Edit2,
+  Info,
+  Loader2,
+  Plus,
+  Search,
+  Tag,
+  Trash2,
+} from 'lucide-react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { createTransactionAction, getItemMetricsAction } from './actions'
 
 interface Props {
   items: Item[]
@@ -30,6 +39,7 @@ interface Props {
 interface AddedItem {
   itemId: string
   name: string
+  categoryName?: string | null
   quantity: number
   unitValue: number
 }
@@ -75,7 +85,10 @@ export function CreateTransactionDialog({
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowItemDropdown(false)
       }
     }
@@ -93,7 +106,6 @@ export function CreateTransactionDialog({
       prevState: { success: boolean; message: string | null },
       formData: FormData
     ) => {
-      // Append itemsJson to form data
       formData.set('itemsJson', JSON.stringify(addedItems))
       const result = await createTransactionAction(formData)
       if (result.success) {
@@ -111,6 +123,63 @@ export function CreateTransactionDialog({
     { success: false, message: null }
   )
 
+  function openConfigureItemModal(item: Item, existingAddedItem?: AddedItem) {
+    setSubModalItem(item)
+    setStockValidationMsg('')
+
+    if (existingAddedItem) {
+      setSubQuantity(String(existingAddedItem.quantity))
+      setSubUnitValueMask(
+        new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(existingAddedItem.unitValue)
+      )
+    } else {
+      setSubQuantity('1')
+      const initialPrice = item.value ?? 0
+      setSubUnitValueMask(
+        initialPrice > 0
+          ? new Intl.NumberFormat('pt-BR', {
+              style: 'currency',
+              currency: 'BRL',
+            }).format(initialPrice)
+          : 'R$ 0,00'
+      )
+    }
+
+    if (type === 'EXIT') {
+      setCheckingStock(true)
+      getItemMetricsAction(item.id, selectedUnitId)
+        .then((metrics) => {
+          if (metrics) {
+            setSubStock(metrics.currentStock)
+            if (!existingAddedItem && item.value === 0 && metrics.lastPrice) {
+              setSubUnitValueMask(
+                new Intl.NumberFormat('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL',
+                }).format(metrics.lastPrice)
+              )
+            }
+          } else {
+            setSubStock(item.quantity)
+          }
+        })
+        .catch(() => {
+          setSubStock(item.quantity)
+        })
+        .finally(() => {
+          setCheckingStock(false)
+        })
+    } else {
+      setSubStock(null)
+    }
+
+    setShowItemDropdown(false)
+    setSubModalOpen(true)
+  }
+
   const handleConfirmSubModal = () => {
     if (!subModalItem) return
 
@@ -118,46 +187,41 @@ export function CreateTransactionDialog({
     const unitVal = Number(subUnitValueMask.replace(/\D/g, '')) / 100
 
     if (isNaN(qty) || qty <= 0) {
-      toast.error('Quantidade inválida.')
+      toast.error('Informe uma quantidade válida.')
       return
     }
 
     if (isNaN(unitVal) || unitVal < 0) {
-      toast.error('Valor unitário inválido.')
+      toast.error('Informe um valor unitário válido.')
       return
     }
 
     if (type === 'EXIT' && subStock !== null && qty > subStock) {
-      setStockValidationMsg(`Quantidade (${qty}) excede o estoque disponível (${subStock}).`)
+      setStockValidationMsg(
+        `Quantidade informada (${qty}) é maior que o estoque atual disponível (${subStock}).`
+      )
       return
     }
 
-    // Add to list
+    // Add or update item in list
     setAddedItems((prev) => {
-      // Check if already exists, overwrite or append
       const existingIdx = prev.findIndex((i) => i.itemId === subModalItem.id)
+      const newItemData: AddedItem = {
+        itemId: subModalItem.id,
+        name: subModalItem.name,
+        categoryName: subModalItem.category?.name,
+        quantity: qty,
+        unitValue: unitVal,
+      }
+
       if (existingIdx > -1) {
         const updated = [...prev]
-        updated[existingIdx] = {
-          itemId: subModalItem.id,
-          name: subModalItem.name,
-          quantity: qty,
-          unitValue: unitVal,
-        }
+        updated[existingIdx] = newItemData
         return updated
       }
-      return [
-        ...prev,
-        {
-          itemId: subModalItem.id,
-          name: subModalItem.name,
-          quantity: qty,
-          unitValue: unitVal,
-        },
-      ]
+      return [...prev, newItemData]
     })
 
-    // Reset sub-modal and search input
     setSubModalOpen(false)
     setSubModalItem(null)
     setItemSearchQuery('')
@@ -167,8 +231,11 @@ export function CreateTransactionDialog({
     setAddedItems((prev) => prev.filter((i) => i.itemId !== itemId))
   }
 
-  // Calculate sum of total values in local items list
-  const grandTotal = addedItems.reduce((acc, i) => acc + i.unitValue * i.quantity, 0)
+  // Grand total
+  const grandTotal = addedItems.reduce(
+    (acc, i) => acc + i.unitValue * i.quantity,
+    0
+  )
 
   return (
     <>
@@ -179,19 +246,23 @@ export function CreateTransactionDialog({
             Nova Transação
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Registrar Transações</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-primary">
+              Registrar Movimentação de Estoque
+            </DialogTitle>
             <DialogDescription>
-              Insira os detalhes de entrada ou saída para múltiplos itens do catálogo.
+              Lance entradas ou saídas de itens no estoque por unidade e setor.
             </DialogDescription>
           </DialogHeader>
 
-          <form action={formAction} className="relative space-y-4">
-            {/* Main unit/sector/type settings */}
+          <form action={formAction} className="space-y-6 pt-2">
+            {/* Top configuration parameters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Movimentação</Label>
+                <Label htmlFor="type" className="font-semibold text-xs text-on-surface">
+                  Tipo de Movimentação *
+                </Label>
                 <select
                   id="type"
                   name="type"
@@ -199,7 +270,7 @@ export function CreateTransactionDialog({
                   value={type}
                   onChange={(e) => {
                     setType(e.target.value as 'ENTRY' | 'EXIT')
-                    setAddedItems([]) // Clear items on type switch to prevent stock checking mismatch
+                    setAddedItems([])
                   }}
                   className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                 >
@@ -209,7 +280,9 @@ export function CreateTransactionDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unitId">Unidade</Label>
+                <Label htmlFor="unitId" className="font-semibold text-xs text-on-surface">
+                  Unidade *
+                </Label>
                 <select
                   id="unitId"
                   name="unitId"
@@ -217,7 +290,7 @@ export function CreateTransactionDialog({
                   value={selectedUnitId}
                   onChange={(e) => {
                     setSelectedUnitId(e.target.value)
-                    setAddedItems([]) // Clear items to prevent unit stock mismatch
+                    setAddedItems([])
                   }}
                   className="border-outline bg-surface text-on-surface focus-visible:border-primary focus-visible:ring-primary h-10 w-full cursor-pointer rounded-md border px-3 py-2 text-sm focus-visible:ring-1 focus-visible:outline-none"
                 >
@@ -229,10 +302,9 @@ export function CreateTransactionDialog({
                 </select>
               </div>
 
-              {/* Dynamic Sector field: Automatic "Estoque" for ENTRY, Required dropdown for EXIT */}
               <div className="space-y-2">
-                <Label htmlFor="sectorId">
-                  {type === 'ENTRY' ? 'Setor de Entrada' : 'Setor de Saída (Destino) *'}
+                <Label htmlFor="sectorId" className="font-semibold text-xs text-on-surface">
+                  {type === 'ENTRY' ? 'Setor Destino' : 'Setor Solicitante (Saída) *'}
                 </Label>
                 {type === 'ENTRY' ? (
                   <Input
@@ -265,7 +337,9 @@ export function CreateTransactionDialog({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Data (Opcional)</Label>
+                <Label htmlFor="date" className="font-semibold text-xs text-on-surface">
+                  Data da Movimentação (Opcional)
+                </Label>
                 <DatePicker
                   id="date"
                   name="date"
@@ -276,14 +350,21 @@ export function CreateTransactionDialog({
               </div>
             </div>
 
+            <hr className="border-surface-container" />
+
             {/* Autocomplete Search input */}
             <div ref={dropdownRef} className="relative space-y-2">
-              <Label>Adicionar Item ao Lote</Label>
+              <Label className="font-semibold text-xs text-on-surface flex items-center justify-between">
+                <span>Adicionar Item ao Lote</span>
+                <span className="text-[11px] font-normal text-on-surface-variant">
+                  Selecione o item para definir quantidade e valor
+                </span>
+              </Label>
               <div className="relative">
                 <Search className="text-on-surface-variant absolute top-3 left-3 h-4 w-4" />
                 <Input
-                  placeholder="Clique para buscar e selecionar um item..."
-                  className="bg-surface pl-10"
+                  placeholder="Buscar item pelo nome ou código..."
+                  className="bg-surface pl-10 h-10 text-sm"
                   value={itemSearchQuery}
                   onFocus={() => setShowItemDropdown(true)}
                   onChange={(e) => {
@@ -294,53 +375,39 @@ export function CreateTransactionDialog({
               </div>
 
               {showItemDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-surface border border-outline rounded-md max-h-48 overflow-y-auto shadow-lg">
+                <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-md max-h-56 overflow-y-auto shadow-xl">
                   {filteredItems.length === 0 ? (
-                    <div className="p-3 text-sm text-on-surface-variant italic">Nenhum item encontrado</div>
+                    <div className="p-4 text-sm text-on-surface-variant italic text-center">
+                      Nenhum item encontrado no catálogo.
+                    </div>
                   ) : (
                     filteredItems.map((item) => (
                       <button
                         key={item.id}
                         type="button"
-                        className="w-full text-left p-3 hover:bg-surface-container text-sm cursor-pointer border-b last:border-0 border-outline/30 text-on-surface font-medium"
-                        onClick={() => {
-                          setSubModalItem(item)
-                          setSubQuantity('1')
-                          setSubUnitValueMask('')
-                          setStockValidationMsg('')
-                          if (type === 'EXIT') {
-                            setCheckingStock(true)
-                            getItemMetricsAction(item.id, selectedUnitId)
-                              .then((metrics) => {
-                                if (metrics) {
-                                  setSubStock(metrics.currentStock)
-                                } else {
-                                  setSubStock(item.quantity)
-                                }
-                              })
-                              .catch(() => {
-                                setSubStock(item.quantity)
-                              })
-                              .finally(() => {
-                                setCheckingStock(false)
-                              })
-                          } else {
-                            setSubStock(null)
-                          }
-                          setShowItemDropdown(false)
-                          setSubModalOpen(true)
-                        }}
+                        className="w-full text-left p-3 hover:bg-surface-container text-sm cursor-pointer border-b last:border-0 border-outline/20 text-on-surface transition-colors"
+                        onClick={() => openConfigureItemModal(item)}
                       >
                         <div className="flex items-center justify-between">
-                          <span>{item.name}</span>
-                          {item.category?.name && (
-                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-normal">
-                              {item.category.name}
-                            </span>
-                          )}
+                          <span className="font-semibold text-sm">{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            {item.value > 0 && (
+                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                {new Intl.NumberFormat('pt-BR', {
+                                  style: 'currency',
+                                  currency: 'BRL',
+                                }).format(item.value)}
+                              </span>
+                            )}
+                            {item.category?.name && (
+                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                {item.category.name}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         {item.description && (
-                          <div className="text-xs text-on-surface-variant font-normal">
+                          <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
                             {item.description}
                           </div>
                         )}
@@ -351,64 +418,152 @@ export function CreateTransactionDialog({
               )}
             </div>
 
-            {/* Added items list preview */}
-            <div className="space-y-2 pt-2">
-              <Label>Itens Adicionados ({addedItems.length})</Label>
+            {/* Added items table/list */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="font-semibold text-xs text-on-surface">
+                  Itens Selecionados ({addedItems.length})
+                </Label>
+                {addedItems.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAddedItems([])}
+                    className="text-xs text-error hover:text-error/80 h-7 px-2"
+                  >
+                    Limpar todos
+                  </Button>
+                )}
+              </div>
+
               {addedItems.length === 0 ? (
-                <div className="border border-dashed border-outline rounded-md p-6 text-center text-sm text-on-surface-variant">
-                  Nenhum item selecionado. Busque acima para adicionar itens à movimentação.
+                <div className="border-2 border-dashed border-outline/50 rounded-lg p-6 text-center text-sm text-on-surface-variant bg-surface-container-lowest">
+                  Nenhum item adicionado ao lote ainda. Busque e clique em um item acima para adicioná-lo.
                 </div>
               ) : (
-                <div className="border border-outline rounded-md divide-y divide-outline/50 max-h-48 overflow-y-auto">
-                  {addedItems.map((item) => (
-                    <div key={item.itemId} className="p-3 flex items-center justify-between text-sm bg-surface">
-                      <div>
-                        <p className="font-semibold text-on-surface">{item.name}</p>
-                        <p className="text-xs text-on-surface-variant">
-                          Qtd: <span className="font-medium text-on-surface">{item.quantity}</span> |
-                          Valor Unit: <span className="font-medium text-on-surface">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.unitValue)}
-                          </span> |
-                          Subtotal: <span className="font-semibold text-primary">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.quantity * item.unitValue)}
-                          </span>
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-error hover:text-error/80 cursor-pointer"
-                        onClick={() => handleRemoveItem(item.itemId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                <div className="border border-outline rounded-lg overflow-hidden divide-y divide-outline/30">
+                  <div className="bg-surface-container-highest px-4 py-2 text-xs font-bold text-on-surface flex justify-between uppercase">
+                    <span>Item / Categoria</span>
+                    <div className="flex gap-8 text-right">
+                      <span className="w-16">Qtd.</span>
+                      <span className="w-24">Valor Unit.</span>
+                      <span className="w-24">Subtotal</span>
+                      <span className="w-14">Ações</span>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="max-h-52 overflow-y-auto divide-y divide-outline/20">
+                    {addedItems.map((item) => {
+                      const catalogItem = items.find((i) => i.id === item.itemId)
+                      return (
+                        <div
+                          key={item.itemId}
+                          className="px-4 py-3 flex items-center justify-between text-sm bg-surface hover:bg-surface-container-lowest transition-colors"
+                        >
+                          <div className="min-w-0 pr-4">
+                            <p className="font-semibold text-on-surface truncate">
+                              {item.name}
+                            </p>
+                            {item.categoryName && (
+                              <span className="inline-flex items-center text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium mt-0.5">
+                                {item.categoryName}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-8 text-right shrink-0">
+                            <span className="w-16 font-bold text-on-surface">
+                              {item.quantity}
+                            </span>
+                            <span className="w-24 text-xs font-semibold text-on-surface">
+                              {new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              }).format(item.unitValue)}
+                            </span>
+                            <span className="w-24 font-bold text-primary text-xs">
+                              {new Intl.NumberFormat('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                              }).format(item.quantity * item.unitValue)}
+                            </span>
+                            <div className="w-14 flex items-center justify-end gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-on-surface-variant hover:text-primary cursor-pointer"
+                                title="Editar Quantidade/Valor"
+                                onClick={() => {
+                                  if (catalogItem) {
+                                    openConfigureItemModal(catalogItem, item)
+                                  }
+                                }}
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-error hover:text-error/80 cursor-pointer"
+                                title="Remover Item"
+                                onClick={() => handleRemoveItem(item.itemId)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Summary total */}
+            {/* Grand Total Summary Box */}
             {addedItems.length > 0 && (
-              <div className="flex justify-between items-center py-2 px-3 bg-surface-container rounded-md">
-                <span className="text-sm font-semibold text-on-surface">Valor Total da Movimentação:</span>
-                <span className="text-base font-bold text-primary">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(grandTotal)}
+              <div className="flex justify-between items-center p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div>
+                  <span className="text-sm font-semibold text-on-surface block">
+                    Valor Total da Movimentação:
+                  </span>
+                  <span className="text-xs text-on-surface-variant">
+                    {addedItems.length} {addedItems.length === 1 ? 'item' : 'itens'} no lote
+                  </span>
+                </div>
+                <span className="text-xl font-bold text-primary">
+                  {new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(grandTotal)}
                 </span>
               </div>
             )}
 
-            <div className="flex justify-end gap-2 pt-4">
+            {state.message && !state.success && (
+              <div className="bg-error-container text-on-error-container rounded-md p-3 text-sm">
+                {state.message}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
                 disabled={isPending}
+                className="cursor-pointer"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending || addedItems.length === 0}>
+              <Button
+                type="submit"
+                disabled={isPending || addedItems.length === 0}
+                className="cursor-pointer font-semibold px-5"
+              >
                 {isPending ? 'Salvando...' : 'Salvar Transações'}
               </Button>
             </div>
@@ -416,12 +571,14 @@ export function CreateTransactionDialog({
         </DialogContent>
       </Dialog>
 
-      {/* Sub Modal: Configure Quantity and Value for Selected Item */}
+      {/* Sub Modal: Configure Quantity and Unit Value for Selected Item */}
       <Dialog open={subModalOpen} onOpenChange={setSubModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Configurar Item</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-lg font-bold text-primary">
+              Configurar Item no Lote
+            </DialogTitle>
+            <DialogDescription className="font-semibold text-on-surface text-sm">
               {subModalItem?.name}
             </DialogDescription>
           </DialogHeader>
@@ -435,7 +592,10 @@ export function CreateTransactionDialog({
                   </div>
                 ) : (
                   <p className="font-semibold text-on-surface">
-                    Estoque Atual nesta unidade: <span className="text-primary font-bold text-sm">{subStock ?? '-'}</span>
+                    Estoque Atual nesta unidade:{' '}
+                    <span className="text-primary font-bold text-sm">
+                      {subStock ?? '-'}
+                    </span>
                   </p>
                 )}
                 {stockValidationMsg && (
@@ -445,21 +605,33 @@ export function CreateTransactionDialog({
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="sub-quantity">Quantidade</Label>
+              <Label htmlFor="sub-quantity" className="font-semibold text-xs">
+                Quantidade *
+              </Label>
               <Input
                 id="sub-quantity"
                 type="number"
                 min="1"
+                required
                 value={subQuantity}
                 onChange={(e) => {
                   setSubQuantity(e.target.value)
                   setStockValidationMsg('')
                 }}
+                className="h-10 text-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sub-value">Valor Unitário (R$)</Label>
+              <Label htmlFor="sub-value" className="font-semibold text-xs flex items-center justify-between">
+                <span className="flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                  Valor Unitário (R$) *
+                </span>
+                <span className="text-[11px] font-normal text-on-surface-variant">
+                  Editável
+                </span>
+              </Label>
               <Input
                 id="sub-value"
                 value={subUnitValueMask}
@@ -474,7 +646,14 @@ export function CreateTransactionDialog({
                   )
                 }}
                 placeholder="R$ 0,00"
+                className="h-10 text-sm font-semibold"
               />
+              <div className="flex items-start gap-1.5 p-2 rounded bg-surface-container text-xs text-on-surface-variant">
+                <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                <span>
+                  O valor já vem preenchido com o preço cadastrado. Ao editar esse valor, o novo preço substituirá o valor base do item no catálogo para as próximas movimentações.
+                </span>
+              </div>
             </div>
           </div>
 
@@ -486,10 +665,15 @@ export function CreateTransactionDialog({
                 setSubModalOpen(false)
                 setSubModalItem(null)
               }}
+              className="cursor-pointer"
             >
               Cancelar
             </Button>
-            <Button type="button" onClick={handleConfirmSubModal}>
+            <Button
+              type="button"
+              onClick={handleConfirmSubModal}
+              className="cursor-pointer font-semibold"
+            >
               Confirmar Item
             </Button>
           </div>

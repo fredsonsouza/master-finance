@@ -19,9 +19,12 @@ vi.mock('@/lib/prisma', () => ({
     },
     sector: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
     },
     item: {
       findMany: vi.fn(),
+      update: vi.fn(),
     },
     transaction: {
       create: vi.fn(),
@@ -68,8 +71,9 @@ describe('Create Transaction Unit Test', () => {
       id: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
-    vi.mocked(prisma.sector.findUnique).mockResolvedValueOnce({
+    vi.mocked(prisma.sector.findFirst).mockResolvedValueOnce({
       id: '523e4567-e89b-12d3-a456-426614174005',
+      name: 'Estoque',
     } as any)
 
     vi.mocked(prisma.item.findMany).mockResolvedValueOnce([
@@ -120,20 +124,22 @@ describe('Create Transaction Unit Test', () => {
       url: '/transactions',
       payload: {
         type: 'ENTRY',
-        date: new Date().toISOString(),
-        unitId: '999e4567-e89b-12d3-a456-426614174000', // Mismatch!
+        date: new Date('2026-05-25T12:00:00Z').toISOString(),
+        unitId: '823e4567-e89b-12d3-a456-426614174008', // Different unit
         sectorId: '523e4567-e89b-12d3-a456-426614174005',
         items: [
           {
             itemId: '323e4567-e89b-12d3-a456-426614174002',
-            quantity: 1,
-            value: 100,
+            quantity: 10,
+            value: 100.5,
           },
         ],
       },
     })
 
     expect(response.statusCode).toBe(401)
-    expect(prisma.$transaction).not.toHaveBeenCalled()
+    expect(response.json()).toEqual({
+      message: 'You are not allowed to create a transaction in this unit.',
+    })
   })
 })

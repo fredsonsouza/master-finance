@@ -17,11 +17,12 @@ export async function createItem(app: FastifyInstance) {
       {
         schema: {
           tags: ['items'],
-          summary: 'Create a new item with optional category',
+          summary: 'Create a new item with optional category and value',
           security: [{ bearerAuth: [] }],
           body: z.object({
             name: z.string().min(1),
             description: z.string().nullable().optional(),
+            value: z.number().nonnegative().optional().default(0),
             categoryId: z.string().uuid().nullable().optional(),
             sectorId: z.string().uuid().nullable().optional(),
             quantity: z.number().int().min(0).optional().default(0),
@@ -49,7 +50,7 @@ export async function createItem(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const { name, description, categoryId, sectorId, quantity } = request.body
+        const { name, description, value, categoryId, sectorId, quantity } = request.body
 
         if (ability.cannot('create', 'Item')) {
           throw new UnauthorizedError(
@@ -79,6 +80,7 @@ export async function createItem(app: FastifyInstance) {
           data: {
             name,
             description,
+            value: value ?? 0,
             categoryId: categoryId || null,
             sectorId: sectorId || null,
             quantity,
@@ -90,7 +92,7 @@ export async function createItem(app: FastifyInstance) {
           action: 'CREATE',
           resource: 'ITEM',
           resourceId: item.id,
-          details: `Criou o item/procedimento ${name} com quantidade inicial ${quantity}`,
+          details: `Criou o item/procedimento ${name} no valor de R$ ${(value ?? 0).toFixed(2)} com quantidade inicial ${quantity}`,
         })
 
         return reply.status(201).send({ itemId: item.id })

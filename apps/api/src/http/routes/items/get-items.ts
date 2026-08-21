@@ -30,6 +30,7 @@ export async function getItems(app: FastifyInstance) {
                   id: z.string().uuid(),
                   name: z.string(),
                   description: z.string().nullable(),
+                  value: z.number().default(0),
                   quantity: z.number().int(),
                   categoryId: z.string().uuid().nullable().optional(),
                   sectorId: z.string().uuid().nullable().optional(),
@@ -132,6 +133,7 @@ export async function getItems(app: FastifyInstance) {
 
           items = rawItems.map((item) => ({
             ...item,
+            value: (item as any).value ?? 0,
             categoryId: null,
             category: null,
           }))

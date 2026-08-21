@@ -96,6 +96,7 @@ model Item {
   id          String  @id @default(uuid())
   name        String
   description String?
+  value       Float   @default(0)
   quantity    Int     @default(0)
 
   categoryId String?

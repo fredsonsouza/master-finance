@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Category } from '@/http/get-categories'
-import { Loader2, Plus, Tag } from 'lucide-react'
+import { DollarSign, Loader2, Plus, Tag } from 'lucide-react'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
 import { createCategoryAction, createItemAction } from './actions'
@@ -27,6 +27,7 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+  const [valueMask, setValueMask] = useState('')
 
   const [state, formAction, isPending] = useActionState(
     async (
@@ -34,12 +35,14 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
       formData: FormData
     ) => {
       formData.set('categoryId', selectedCategoryId)
+      formData.set('value', valueMask)
       const result = await createItemAction(formData)
       if (result.success) {
         toast.success('Item adicionado ao catálogo com sucesso!')
         setOpen(false)
         setSelectedCategoryId('')
         setNewCategoryName('')
+        setValueMask('')
       } else if (result.message) {
         toast.error(result.message)
       }
@@ -61,7 +64,6 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
     setIsCreatingCategory(true)
     const result = await createCategoryAction(name)
     if (result.success && result.category) {
-      // Check if already in list
       setCategories((prev) => {
         if (prev.some((c) => c.id === result.category!.id)) return prev
         return [...prev, result.category!]
@@ -75,6 +77,21 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
     setIsCreatingCategory(false)
   }
 
+  function handleValueChange(rawInput: string) {
+    const numericDigits = rawInput.replace(/\D/g, '')
+    if (!numericDigits) {
+      setValueMask('')
+      return
+    }
+    const numericValue = Number(numericDigits) / 100
+    setValueMask(
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(numericValue)
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -83,17 +100,17 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
           Novo Item
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Adicionar ao Catálogo</DialogTitle>
           <DialogDescription>
-            Crie um novo item, produto ou procedimento e defina sua categoria.
+            Crie um novo item, produto ou procedimento e defina seus dados base.
           </DialogDescription>
         </DialogHeader>
 
         <form action={formAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome do Item</Label>
+            <Label htmlFor="name">Nome do Item *</Label>
             <Input
               id="name"
               name="name"
@@ -104,12 +121,10 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
 
           {/* Category selection and inline quick creation */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="categoryId" className="flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5 text-primary" />
-                Categoria
-              </Label>
-            </div>
+            <Label htmlFor="categoryId" className="flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5 text-primary" />
+              Categoria
+            </Label>
 
             <select
               id="categoryId"
@@ -126,7 +141,7 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
             </select>
 
             {/* Inline Quick Add Category Input + Plus Button */}
-            <div className="pt-1.5">
+            <div className="pt-1">
               <Label className="text-[11px] text-on-surface-variant block mb-1">
                 Ou adicione uma nova categoria:
               </Label>
@@ -164,15 +179,33 @@ export function CreateItemDialog({ categories: initialCategories }: Props) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade Inicial (Opcional)</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              type="number"
-              min="0"
-              placeholder="Ex: 50"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Formatted Currency Value input */}
+            <div className="space-y-2">
+              <Label htmlFor="value" className="flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                Valor Base Unitário (R$)
+              </Label>
+              <Input
+                id="value"
+                name="value"
+                value={valueMask}
+                onChange={(e) => handleValueChange(e.target.value)}
+                placeholder="R$ 0,00"
+              />
+            </div>
+
+            {/* Initial Quantity input */}
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantidade Inicial</Label>
+              <Input
+                id="quantity"
+                name="quantity"
+                type="number"
+                min="0"
+                placeholder="Ex: 50"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

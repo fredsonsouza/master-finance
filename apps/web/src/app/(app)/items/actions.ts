@@ -58,12 +58,15 @@ export async function createItemAction(data: FormData) {
   const rawCategoryId = data.get('categoryId') as string | undefined
   const categoryId = rawCategoryId === '' ? undefined : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
+  const rawValue = data.get('value') as string | undefined
+  const value = rawValue ? Number(rawValue.replace(/\D/g, '')) / 100 : 0
 
   try {
     await createItem(token, {
       name,
       description,
       categoryId,
+      value,
       quantity: quantity ? Number(quantity) : 0,
     })
 
@@ -96,6 +99,10 @@ export async function updateItemAction(data: FormData) {
   const rawCategoryId = data.get('categoryId') as string | undefined
   const categoryId = rawCategoryId === '' ? null : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
+  const rawValue = data.get('value') as string | undefined
+  const value = rawValue !== undefined && rawValue !== ''
+    ? Number(rawValue.replace(/\D/g, '')) / 100
+    : undefined
 
   try {
     await updateItem(token, {
@@ -103,6 +110,7 @@ export async function updateItemAction(data: FormData) {
       name,
       description,
       categoryId,
+      value,
       quantity: quantity ? Number(quantity) : undefined,
     })
 

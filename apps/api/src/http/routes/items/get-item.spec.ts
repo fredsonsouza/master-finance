@@ -5,6 +5,7 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { BadRequestError } from '../_errors/bad-request-error'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 import { getItem } from './get-item'
@@ -41,6 +42,9 @@ describe('Get Item Unit Test', () => {
       if (error instanceof ResourceNotFoundError) {
         return reply.status(404).send({ message: error.message })
       }
+      if (error instanceof BadRequestError) {
+        return reply.status(400).send({ message: error.message })
+      }
       return reply.status(500).send({ message: error.message })
     })
 
@@ -60,6 +64,7 @@ describe('Get Item Unit Test', () => {
       id: '423e4567-e89b-12d3-a456-426614174003',
       name: 'Desk',
       description: null,
+      value: 0,
       quantity: 0,
       sectorId: null,
       createdAt: date,
@@ -77,6 +82,7 @@ describe('Get Item Unit Test', () => {
         id: '423e4567-e89b-12d3-a456-426614174003',
         name: 'Desk',
         description: null,
+        value: 0,
         quantity: 0,
         sectorId: null,
         createdAt: date.toISOString(),

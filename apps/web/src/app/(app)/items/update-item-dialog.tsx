@@ -13,8 +13,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Category } from '@/http/get-categories'
 import type { Item } from '@/http/get-items'
-import { Edit, Loader2, Plus, Tag } from 'lucide-react'
-import { useActionState, useState } from 'react'
+import { DollarSign, Edit, Loader2, Plus, Tag } from 'lucide-react'
+import { useActionState, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { createCategoryAction, updateItemAction } from './actions'
 
@@ -30,12 +30,34 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
 
+  const [valueMask, setValueMask] = useState(
+    item.value > 0
+      ? new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }).format(item.value)
+      : ''
+  )
+
+  useEffect(() => {
+    setSelectedCategoryId(item.categoryId || '')
+    setValueMask(
+      item.value > 0
+        ? new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          }).format(item.value)
+        : ''
+    )
+  }, [item])
+
   const [state, formAction, isPending] = useActionState(
     async (
       prevState: { success: boolean; message: string | null },
       formData: FormData
     ) => {
       formData.set('categoryId', selectedCategoryId)
+      formData.set('value', valueMask)
       const result = await updateItemAction(formData)
       if (result.success) {
         toast.success('Item atualizado com sucesso!')
@@ -75,6 +97,21 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
     setIsCreatingCategory(false)
   }
 
+  function handleValueChange(rawInput: string) {
+    const numericDigits = rawInput.replace(/\D/g, '')
+    if (!numericDigits) {
+      setValueMask('')
+      return
+    }
+    const numericValue = Number(numericDigits) / 100
+    setValueMask(
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      }).format(numericValue)
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -83,7 +120,7 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
           <span className="sr-only">Editar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Editar Item do Catálogo</DialogTitle>
           <DialogDescription>
@@ -95,7 +132,7 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
           <input type="hidden" name="id" value={item.id} />
 
           <div className="space-y-2">
-            <Label htmlFor="name">Nome do Item</Label>
+            <Label htmlFor="name">Nome do Item *</Label>
             <Input
               id="name"
               name="name"
@@ -125,7 +162,7 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
             </select>
 
             {/* Inline Quick Add Category Input + Plus Button */}
-            <div className="pt-1.5">
+            <div className="pt-1">
               <Label className="text-[11px] text-on-surface-variant block mb-1">
                 Ou adicione uma nova categoria:
               </Label>
@@ -163,16 +200,33 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="quantity">Quantidade (Estoque Inicial)</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              type="number"
-              min="0"
-              defaultValue={item.quantity}
-              placeholder="Ex: 50"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Formatted Currency Value input */}
+            <div className="space-y-2">
+              <Label htmlFor="value" className="flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                Valor Base Unitário (R$)
+              </Label>
+              <Input
+                id="value"
+                name="value"
+                value={valueMask}
+                onChange={(e) => handleValueChange(e.target.value)}
+                placeholder="R$ 0,00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantidade (Estoque Inicial)</Label>
+              <Input
+                id="quantity"
+                name="quantity"
+                type="number"
+                min="0"
+                defaultValue={item.quantity}
+                placeholder="Ex: 50"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
