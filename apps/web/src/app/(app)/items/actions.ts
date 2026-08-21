@@ -34,6 +34,7 @@ export async function createCategoryAction(name: string) {
     revalidatePath('/items')
     return { success: true, category: res.category, message: null }
   } catch (err: unknown) {
+    console.error('[createCategoryAction error]:', err)
     let errorMessage = 'Erro ao criar categoria.'
     if (err && typeof err === 'object') {
       if ('response' in err) {
@@ -79,6 +80,7 @@ export async function createItemAction(data: FormData) {
 
     return { success: true, message: null }
   } catch (err: unknown) {
+    console.error('[createItemAction error]:', err)
     let errorMessage = 'Erro ao criar item no catálogo.'
     if (err && typeof err === 'object') {
       if ('response' in err) {
@@ -131,6 +133,7 @@ export async function updateItemAction(data: FormData) {
 
     return { success: true, message: null }
   } catch (err: unknown) {
+    console.error('[updateItemAction error]:', err)
     let errorMessage = 'Erro ao atualizar item no catálogo.'
     if (err && typeof err === 'object') {
       if ('response' in err) {
