@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "postinstall": "pnpm --filter @saas/api env:load prisma generate",
-    "build": "turbo run build",
+    "build": "turbo run build --no-cache",
     "dev": "turbo run dev",
     "lint": "biome check .",
     "lint:fix": "biome check --write ."

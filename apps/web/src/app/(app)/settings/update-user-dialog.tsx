@@ -33,6 +33,7 @@ export function UpdateUserDialog({
   onClose,
 }: UpdateUserDialogProps) {
   const open = user !== null
+  const isAdmin = !currentUserRole || currentUserRole.toUpperCase() === 'ADMIN'
 
   const [state, formAction, isPending] = useActionState(
     async (
@@ -103,7 +104,7 @@ export function UpdateUserDialog({
                 <option value="COLLECTOR">Coletador</option>
                 <option value="FISCAL">Fiscal (Gerencia Coletas)</option>
                 <option value="INVENTORY">Estoque</option>
-                {currentUserRole === 'ADMIN' && (
+                {isAdmin && (
                   <option value="ADMIN">Administrador</option>
                 )}
               </select>
@@ -126,11 +127,11 @@ export function UpdateUserDialog({
             </div>
           </div>
 
-          {currentUserRole === 'ADMIN' && (
+          {isAdmin && (
             <div className="space-y-2 border-t border-outline/20 pt-4">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-primary" />
-                <Label htmlFor="update-user-password" className="font-medium text-sm">
+                <Label htmlFor="update-user-password" className="font-semibold text-sm text-primary">
                   Alterar Senha do Usuário (Opcional)
                 </Label>
               </div>
@@ -140,6 +141,7 @@ export function UpdateUserDialog({
                 type="password"
                 placeholder="Digite para definir nova senha (mínimo 4 caracteres)"
                 autoComplete="new-password"
+                className="bg-surface"
               />
               <p className="text-xs text-on-surface-variant">
                 Deixe este campo em branco para manter a senha atual do usuário.

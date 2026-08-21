@@ -60,6 +60,8 @@ export function SettingsContent({
   activeUnitId,
   currentUserRole,
 }: SettingsContentProps) {
+  const isAdmin = !currentUserRole || currentUserRole.toUpperCase() === 'ADMIN'
+
   const [usersState, setUsersState] = useState<User[]>(users)
   const [userPaginationState, setUserPaginationState] = useState<UserPagination>(
     userPagination || {
@@ -364,7 +366,7 @@ export function SettingsContent({
                           <th className="px-6 py-3 font-semibold">Username</th>
                           <th className="px-6 py-3 font-semibold">Cargo</th>
                           <th className="px-6 py-3 font-semibold">Unidade</th>
-                          {currentUserRole === 'ADMIN' && (
+                          {isAdmin && (
                             <th className="px-6 py-3 text-right font-semibold">
                               Ações
                             </th>
@@ -396,17 +398,17 @@ export function SettingsContent({
                               <td className="text-on-surface-variant px-6 py-4">
                                 {uUnit ? uUnit.name : 'Acesso Global'}
                               </td>
-                              {currentUserRole === 'ADMIN' && (
+                              {isAdmin && (
                                 <td className="px-6 py-4 text-right">
                                   <div className="flex justify-end gap-2">
                                     <Button
                                       variant="ghost"
                                       size="icon"
                                       title="Redefinir / Alterar Senha"
-                                      className="text-on-surface hover:text-amber-500 h-8 w-8 cursor-pointer"
+                                      className="text-on-surface hover:text-amber-500 hover:bg-amber-500/10 h-8 w-8 cursor-pointer"
                                       onClick={() => setResettingPasswordUser(u)}
                                     >
-                                      <KeyRound className="h-4 w-4" />
+                                      <KeyRound className="h-4 w-4 text-amber-500" />
                                     </Button>
                                     <Button
                                       variant="ghost"
