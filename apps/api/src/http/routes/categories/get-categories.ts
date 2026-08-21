@@ -48,8 +48,26 @@ export async function getCategories(app: FastifyInstance) {
             },
           })
         } catch (err) {
-          // Table doesn't exist yet
-          categories = []
+          try {
+            await prisma.$executeRawUnsafe(`
+              CREATE TABLE IF NOT EXISTS "categories" (
+                "id" TEXT NOT NULL,
+                "name" TEXT NOT NULL,
+                "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+              );
+              CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
+              ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
+            `)
+            categories = await prisma.category.findMany({
+              orderBy: {
+                name: 'asc',
+              },
+            })
+          } catch {
+            categories = []
+          }
         }
 
         return reply.status(200).send({ categories })

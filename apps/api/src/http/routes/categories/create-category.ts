@@ -58,22 +58,62 @@ export async function createCategory(app: FastifyInstance) {
 
         const rawName = request.body.name.trim()
 
-        // Check if category already exists (case insensitive)
-        let category = await prisma.category.findFirst({
-          where: {
-            name: {
-              equals: rawName,
-              mode: 'insensitive',
-            },
-          },
-        })
+        let category: any = null
 
-        if (!category) {
-          category = await prisma.category.create({
-            data: {
-              name: rawName,
+        // Check if category already exists (case insensitive)
+        try {
+          category = await prisma.category.findFirst({
+            where: {
+              name: {
+                equals: rawName,
+                mode: 'insensitive',
+              },
             },
           })
+        } catch (err) {
+          // If table does not exist in DB, auto-create it
+          try {
+            await prisma.$executeRawUnsafe(`
+              CREATE TABLE IF NOT EXISTS "categories" (
+                "id" TEXT NOT NULL,
+                "name" TEXT NOT NULL,
+                "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+              );
+              CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
+              ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
+            `)
+          } catch {}
+          category = null
+        }
+
+        if (!category) {
+          try {
+            category = await prisma.category.create({
+              data: {
+                name: rawName,
+              },
+            })
+          } catch (createErr) {
+            // Ensure table exists and retry
+            await prisma.$executeRawUnsafe(`
+              CREATE TABLE IF NOT EXISTS "categories" (
+                "id" TEXT NOT NULL,
+                "name" TEXT NOT NULL,
+                "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+              );
+              CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
+              ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
+            `)
+            category = await prisma.category.create({
+              data: {
+                name: rawName,
+              },
+            })
+          }
 
           await logAction({
             userId,
