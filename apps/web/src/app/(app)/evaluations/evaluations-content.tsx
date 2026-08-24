@@ -567,14 +567,14 @@ export function EvaluationsContent({
                         </div>
                       </div>
 
-                      {/* Score & Metrics Pill */}
+                      {/* Metrics Pill */}
                       <div className="flex items-center gap-4 sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-outline/20">
                         <div className="text-right">
                           <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
                             {item.satisfactionRate}% de Satisfação
                           </div>
                           <div className="text-xs text-on-surface-variant font-normal">
-                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas) • {item.score} pts
+                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas)
                           </div>
                         </div>
                       </div>

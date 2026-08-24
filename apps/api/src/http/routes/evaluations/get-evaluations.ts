@@ -312,19 +312,18 @@ export async function getEvaluations(app: FastifyInstance) {
             const sellerStats = Array.from(sellerStatsMap.values()).map((s) => {
               const positive = s.excellentCount + s.goodCount
               const sRate = s.totalEvaluations > 0 ? Math.round((positive / s.totalEvaluations) * 100) : 0
-              const score = s.excellentCount * 3 + s.goodCount * 2 + s.regularCount * 1
 
               return {
                 ...s,
                 satisfactionRate: sRate,
-                score,
+                score: 0,
               }
             })
 
             sellerStats.sort((a, b) => {
-              if (b.score !== a.score) return b.score - a.score
+              if (b.totalEvaluations !== a.totalEvaluations) return b.totalEvaluations - a.totalEvaluations
               if (b.satisfactionRate !== a.satisfactionRate) return b.satisfactionRate - a.satisfactionRate
-              return b.totalEvaluations - a.totalEvaluations
+              return b.excellentCount - a.excellentCount
             })
 
             podium = sellerStats.slice(0, 3).map((seller, index) => ({

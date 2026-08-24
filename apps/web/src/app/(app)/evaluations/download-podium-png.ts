@@ -233,8 +233,8 @@ export async function downloadPodiumPng({
         ctx.lineTo(cardStartX + cardWidth - 26, currentY + 125)
         ctx.stroke()
 
-        // 3 Metrics Columns
-        const colWidth = (cardWidth - 52) / 3
+        // 2 Metrics Columns
+        const colWidth = (cardWidth - 52) / 2
 
         // Col 1: Satisfaction
         ctx.fillStyle = '#059669'
@@ -242,7 +242,7 @@ export async function downloadPodiumPng({
         ctx.fillText(`${item.satisfactionRate}%`, cardStartX + 26, currentY + 172)
         ctx.fillStyle = '#64748b'
         ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('SATISFAÇÃO', cardStartX + 26, currentY + 195)
+        ctx.fillText('NÍVEL DE SATISFAÇÃO', cardStartX + 26, currentY + 195)
 
         // Col 2: Total Reviews
         ctx.fillStyle = '#0284c7'
@@ -250,15 +250,7 @@ export async function downloadPodiumPng({
         ctx.fillText(`${item.totalEvaluations}`, cardStartX + 26 + colWidth, currentY + 172)
         ctx.fillStyle = '#64748b'
         ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('AVALIAÇÕES', cardStartX + 26 + colWidth, currentY + 195)
-
-        // Col 3: Score
-        ctx.fillStyle = '#d97706'
-        ctx.font = 'bold 30px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item.score} pts`, cardStartX + 26 + colWidth * 2, currentY + 172)
-        ctx.fillStyle = '#64748b'
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('PONTUAÇÃO', cardStartX + 26 + colWidth * 2, currentY + 195)
+        ctx.fillText('TOTAL DE AVALIAÇÕES', cardStartX + 26 + colWidth, currentY + 195)
 
         // Breakdown note
         ctx.fillStyle = '#475569'

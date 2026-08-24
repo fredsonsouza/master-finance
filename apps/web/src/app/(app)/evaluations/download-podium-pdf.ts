@@ -76,7 +76,7 @@ export function downloadPodiumPdf({
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 8.5pt; color: #334155;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 8.5pt; color: #334155;">
           <div>
             <span style="color: #64748b;">Nível de Satisfação:</span>
             <strong style="color: #059669; font-size: 9.5pt;"> ${item.satisfactionRate}%</strong>
@@ -84,10 +84,6 @@ export function downloadPodiumPdf({
           <div>
             <span style="color: #64748b;">Total de Avaliações:</span>
             <strong> ${item.totalEvaluations}</strong> (${item.excellentCount} ótimas, ${item.goodCount} boas)
-          </div>
-          <div>
-            <span style="color: #64748b;">Pontuação Acumulada:</span>
-            <strong style="color: #0284c7;"> ${item.score} pts</strong>
           </div>
         </div>
       </div>
@@ -251,30 +247,28 @@ export function downloadPodiumPdf({
             : cardsHtml
         }
 
-        <div class="section-title">Resumo Geral de Pontuação</div>
+        <div class="section-title">Resumo Geral do Pódio</div>
 
         <table class="table-podium">
           <thead>
             <tr>
               <th style="width: 80px;">Posição</th>
               <th>Colaborador(a)</th>
-              <th style="width: 100px;">Avaliações</th>
+              <th style="width: 140px;">Avaliações</th>
               <th style="width: 100px;">Satisfação</th>
-              <th style="width: 90px;">Pontos</th>
               <th style="width: 110px;">Bonificação</th>
             </tr>
           </thead>
           <tbody>
             ${
               podium.length === 0
-                ? '<tr><td colspan="6" style="text-align: center; padding: 12px; color: #94a3b8;">Sem registros para o período.</td></tr>'
+                ? '<tr><td colspan="5" style="text-align: center; padding: 12px; color: #94a3b8;">Sem registros para o período.</td></tr>'
                 : podium.map((item) => `
                     <tr>
                       <td style="font-weight: 800; text-align: center;">${item.position}º</td>
                       <td style="font-weight: 600;">${item.sellerName}</td>
                       <td>${item.totalEvaluations} (${item.excellentCount} ótimas, ${item.goodCount} boas)</td>
                       <td style="font-weight: 700; color: #059669;">${item.satisfactionRate}%</td>
-                      <td style="font-weight: 700; color: #0284c7;">${item.score} pts</td>
                       <td style="font-weight: 800; color: #059669;">${bonusMap[item.position] || 'R$ 0,00'}</td>
                     </tr>
                   `).join('')
