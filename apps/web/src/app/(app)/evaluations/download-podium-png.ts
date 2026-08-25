@@ -57,10 +57,11 @@ export async function downloadPodiumPng({
     const width = 1080
     const cardHeight = 440
     const cardGap = 32
-    const headerHeight = 310
+    const headerHeight = 330
     const bottomPadding = 60
     const count = Math.max(1, podium.length)
-    const height = headerHeight + count * cardHeight + (count - 1) * cardGap + bottomPadding
+    const height =
+      headerHeight + count * cardHeight + (count - 1) * cardGap + bottomPadding
 
     const canvas = document.createElement('canvas')
     canvas.width = width
@@ -73,10 +74,10 @@ export async function downloadPodiumPng({
     ctx.fillStyle = '#f0f4f8'
     ctx.fillRect(0, 0, width, height)
 
-    // 2. Logo Centralizada no Topo
+    // 2. Logo Centralizada no Topo (Tamanho Ampliado)
     if (logo.complete && logo.naturalHeight > 0) {
-      const maxLogoH = 80
-      const maxLogoW = 340
+      const maxLogoH = 120
+      const maxLogoW = 440
       let logoW = logo.width
       let logoH = logo.height
       if (logoH > maxLogoH) {
@@ -88,7 +89,7 @@ export async function downloadPodiumPng({
         logoW = maxLogoW
       }
       const logoX = (width - logoW) / 2
-      const logoY = 45
+      const logoY = 35
       ctx.drawImage(logo, logoX, logoY, logoW, logoH)
     }
 
@@ -96,7 +97,7 @@ export async function downloadPodiumPng({
     ctx.textAlign = 'center'
     ctx.fillStyle = '#0056b3'
     ctx.font = '800 34px "Inter", system-ui, -apple-system, sans-serif'
-    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 175)
+    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 195)
 
     // 4. Subtitle Badge (Pill)
     const subtitleText = `UNIDADE ${unitName.toUpperCase()} • ${capitalizedMonth.toUpperCase()}`
@@ -105,7 +106,7 @@ export async function downloadPodiumPng({
     const pillWidth = ctx.measureText(subtitleText).width + pillPaddingX * 2
     const pillHeight = 38
     const pillX = (width - pillWidth) / 2
-    const pillY = 200
+    const pillY = 220
 
     ctx.fillStyle = '#e6f0fa'
     roundRect(ctx, pillX, pillY, pillWidth, pillHeight, 19)
@@ -120,12 +121,12 @@ export async function downloadPodiumPng({
     // 5. Renderização dos Cards do Pódio
     const cardWidth = 960
     const cardX = (width - cardWidth) / 2
-    let currentY = 280
+    let currentY = 300
 
     if (podium.length === 0) {
       // Estado Vazio
       ctx.fillStyle = '#ffffff'
-      roundRect(ctx, cardX, currentY, cardWidth, 200, 20)
+      roundRect(ctx, cardX, currentY, cardWidth, 200, 24)
       ctx.fill()
       ctx.strokeStyle = '#b3d4f5'
       ctx.lineWidth = 2
@@ -143,19 +144,19 @@ export async function downloadPodiumPng({
         const medal = medalMap[item.position] || '🏅'
         const bonus = bonusMap[item.position] || 'R$ 0,00'
 
-        // --- Card Container (Fundo Branco com Borda Azul e Sombra Suave) ---
+        // --- Card Container (Fundo Branco com Borda Azul e Border Radius) ---
         ctx.save()
         ctx.shadowColor = 'rgba(0, 86, 179, 0.12)'
         ctx.shadowBlur = 25
         ctx.shadowOffsetY = 10
         ctx.fillStyle = '#ffffff'
-        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 22)
+        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 28)
         ctx.fill()
         ctx.restore()
 
         ctx.strokeStyle = '#0056b3'
         ctx.lineWidth = 3
-        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 22)
+        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 28)
         ctx.stroke()
 
         // --- Topo do Card: Posição e Bonificação ---
@@ -218,7 +219,7 @@ export async function downloadPodiumPng({
         // Caixa 1: Nível de Satisfação (Highlight / Destaque)
         const box1X = cardX + innerPaddingX
         ctx.fillStyle = '#e6f0fa'
-        roundRect(ctx, box1X, gridY, statBoxW, statBoxH, 16)
+        roundRect(ctx, box1X, gridY, statBoxW, statBoxH, 18)
         ctx.fill()
         ctx.strokeStyle = '#0056b3'
         ctx.lineWidth = 1.5
@@ -235,7 +236,7 @@ export async function downloadPodiumPng({
         // Caixa 2: Total de Avaliações
         const box2X = box1X + statBoxW + statGap
         ctx.fillStyle = '#fafcfd'
-        roundRect(ctx, box2X, gridY, statBoxW, statBoxH, 16)
+        roundRect(ctx, box2X, gridY, statBoxW, statBoxH, 18)
         ctx.fill()
         ctx.strokeStyle = '#b3d4f5'
         ctx.lineWidth = 1.5
@@ -249,12 +250,12 @@ export async function downloadPodiumPng({
         ctx.font = '600 15px "Inter", system-ui, -apple-system, sans-serif'
         ctx.fillText('TOTAL DE AVALIAÇÕES', box2X + 28, gridY + 108)
 
-        // --- Rodapé do Card ---
+        // --- Rodapé do Card (Sem ícone de brilho) ---
         const footerY = currentY + 368
         ctx.fillStyle = '#4a5568'
         ctx.font = '600 17px "Inter", system-ui, -apple-system, sans-serif'
         ctx.fillText(
-          `✨ ${item.excellentCount} avaliações Ótimas • ${item.goodCount} avaliações Boas`,
+          `${item.excellentCount} avaliações Ótimas • ${item.goodCount} avaliações Boas`,
           cardX + innerPaddingX,
           footerY
         )
