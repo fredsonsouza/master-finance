@@ -15,7 +15,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Master Admin SaaS',
+  title: 'Master Admin',
   description: 'Sistema Financeiro e Clínico Avançado',
 }
 

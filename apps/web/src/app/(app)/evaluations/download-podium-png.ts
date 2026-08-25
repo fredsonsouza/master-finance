@@ -15,20 +15,26 @@ export async function downloadPodiumPng({
   unitName,
   podiumMonth,
 }: ExportPodiumPngParams) {
-  const canvas = document.createElement('canvas')
-  // Standard Instagram & Social Media High-Res Portrait Ratio (4:5) - 1080 x 1350 px
-  const width = 1080
-  const height = 1350
-  canvas.width = width
-  canvas.height = height
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
   // Format month name (e.g., "Agosto de 2026")
   const formattedMonth = dayjs(podiumMonth).format('MMMM [de] YYYY')
   const capitalizedMonth =
     formattedMonth.charAt(0).toUpperCase() + formattedMonth.slice(1)
+
+  const logo = new Image()
+  logo.crossOrigin = 'anonymous'
+  logo.src = '/images/masterclin-logo.png'
+
+  const bonusMap: Record<number, string> = {
+    1: 'R$ 400,00',
+    2: 'R$ 300,00',
+    3: 'R$ 200,00',
+  }
+
+  const medalMap: Record<number, string> = {
+    1: '🥇',
+    2: '🥈',
+    3: '🥉',
+  }
 
   function roundRect(
     c: CanvasRenderingContext2D,
@@ -47,56 +53,30 @@ export async function downloadPodiumPng({
     c.closePath()
   }
 
-  // 1. Deep Modern Luxury Gradient Background
-  const bgGradient = ctx.createLinearGradient(0, 0, 0, height)
-  bgGradient.addColorStop(0, '#091326')
-  bgGradient.addColorStop(0.4, '#0f172a')
-  bgGradient.addColorStop(1, '#080d1a')
-  ctx.fillStyle = bgGradient
-  ctx.fillRect(0, 0, width, height)
+  const drawAndExport = () => {
+    const width = 1080
+    const cardHeight = 440
+    const cardGap = 32
+    const headerHeight = 310
+    const bottomPadding = 60
+    const count = Math.max(1, podium.length)
+    const height = headerHeight + count * cardHeight + (count - 1) * cardGap + bottomPadding
 
-  // 2. Ambient Golden / Cyan Glowing Orbs
-  const glow1 = ctx.createRadialGradient(width / 2, 420, 20, width / 2, 420, 480)
-  glow1.addColorStop(0, 'rgba(245, 158, 11, 0.14)')
-  glow1.addColorStop(1, 'rgba(245, 158, 11, 0)')
-  ctx.fillStyle = glow1
-  ctx.fillRect(0, 0, width, height)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
 
-  const glow2 = ctx.createRadialGradient(width / 2, 1000, 20, width / 2, 1000, 420)
-  glow2.addColorStop(0, 'rgba(2, 132, 199, 0.10)')
-  glow2.addColorStop(1, 'rgba(2, 132, 199, 0)')
-  ctx.fillStyle = glow2
-  ctx.fillRect(0, 0, width, height)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-  // Subtle border outline for the whole canvas
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'
-  ctx.lineWidth = 2
-  roundRect(ctx, 20, 20, width - 40, height - 40, 32)
-  ctx.stroke()
+    // 1. Background (Fundo cinza claro / azulado)
+    ctx.fillStyle = '#f0f4f8'
+    ctx.fillRect(0, 0, width, height)
 
-  // 3. Load Masterclin Logo
-  const logo = new Image()
-  logo.crossOrigin = 'anonymous'
-  logo.src = '/images/masterclin-logo.png'
-
-  const drawContent = () => {
-    // 4. Logo in floating frosted white capsule
-    const logoCardW = 340
-    const logoCardH = 86
-    const logoCardX = (width - logoCardW) / 2
-    const logoCardY = 48
-
-    ctx.fillStyle = '#ffffff'
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'
-    ctx.shadowBlur = 18
-    ctx.shadowOffsetY = 6
-    roundRect(ctx, logoCardX, logoCardY, logoCardW, logoCardH, 20)
-    ctx.fill()
-    ctx.shadowColor = 'transparent'
-
+    // 2. Logo Centralizada no Topo
     if (logo.complete && logo.naturalHeight > 0) {
-      const maxLogoH = 68
-      const maxLogoW = 300
+      const maxLogoH = 80
+      const maxLogoW = 340
       let logoW = logo.width
       let logoH = logo.height
       if (logoH > maxLogoH) {
@@ -107,365 +87,181 @@ export async function downloadPodiumPng({
         logoH = (maxLogoW / logoW) * logoH
         logoW = maxLogoW
       }
-      const logoX = logoCardX + (logoCardW - logoW) / 2
-      const logoY = logoCardY + (logoCardH - logoH) / 2
+      const logoX = (width - logoW) / 2
+      const logoY = 45
       ctx.drawImage(logo, logoX, logoY, logoW, logoH)
     }
 
-    // 5. Title & Unit Badge
+    // 3. Título Principal
     ctx.textAlign = 'center'
+    ctx.fillStyle = '#0056b3'
+    ctx.font = '800 34px "Inter", system-ui, -apple-system, sans-serif'
+    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 175)
 
-    // Main Title with slight gold glow
-    ctx.fillStyle = '#ffffff'
-    ctx.font = '900 32px system-ui, -apple-system, sans-serif'
-    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 182)
-
-    // Pill with Unit and Month
-    const pillText = `UNIDADE ${unitName.toUpperCase()}  •  ${capitalizedMonth.toUpperCase()}`
-    ctx.font = 'bold 17px system-ui, -apple-system, sans-serif'
-    const pillWidth = ctx.measureText(pillText).width + 44
-    const pillHeight = 36
+    // 4. Subtitle Badge (Pill)
+    const subtitleText = `UNIDADE ${unitName.toUpperCase()} • ${capitalizedMonth.toUpperCase()}`
+    ctx.font = '600 16px "Inter", system-ui, -apple-system, sans-serif'
+    const pillPaddingX = 22
+    const pillWidth = ctx.measureText(subtitleText).width + pillPaddingX * 2
+    const pillHeight = 38
     const pillX = (width - pillWidth) / 2
     const pillY = 200
 
-    ctx.fillStyle = 'rgba(2, 132, 199, 0.18)'
-    roundRect(ctx, pillX, pillY, pillWidth, pillHeight, 18)
+    ctx.fillStyle = '#e6f0fa'
+    roundRect(ctx, pillX, pillY, pillWidth, pillHeight, 19)
     ctx.fill()
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)'
+    ctx.strokeStyle = '#b3d4f5'
     ctx.lineWidth = 1.5
     ctx.stroke()
 
-    ctx.fillStyle = '#38bdf8'
-    ctx.fillText(pillText, width / 2, pillY + 24)
+    ctx.fillStyle = '#0056b3'
+    ctx.fillText(subtitleText, width / 2, pillY + 24)
 
-    const bonusMap: Record<number, string> = {
-      1: 'R$ 400,00',
-      2: 'R$ 300,00',
-      3: 'R$ 200,00',
-    }
+    // 5. Renderização dos Cards do Pódio
+    const cardWidth = 960
+    const cardX = (width - cardWidth) / 2
+    let currentY = 280
 
     if (podium.length === 0) {
-      // Empty state
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.8)'
-      roundRect(ctx, 80, 450, width - 160, 240, 24)
+      // Estado Vazio
+      ctx.fillStyle = '#ffffff'
+      roundRect(ctx, cardX, currentY, cardWidth, 200, 20)
       ctx.fill()
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'
+      ctx.strokeStyle = '#b3d4f5'
       ctx.lineWidth = 2
       ctx.stroke()
 
-      ctx.fillStyle = '#94a3b8'
-      ctx.font = '500 24px system-ui, -apple-system, sans-serif'
+      ctx.fillStyle = '#4a5568'
+      ctx.font = '600 22px "Inter", system-ui, -apple-system, sans-serif'
       ctx.fillText(
         'Nenhuma avaliação apurada para esta unidade no período.',
         width / 2,
-        580
+        currentY + 110
       )
     } else {
-      const item1 = podium.find((p) => p.position === 1)
-      const item2 = podium.find((p) => p.position === 2)
-      const item3 = podium.find((p) => p.position === 3)
+      podium.forEach((item) => {
+        const medal = medalMap[item.position] || '🏅'
+        const bonus = bonusMap[item.position] || 'R$ 0,00'
 
-      // ==========================================
-      // 6. HERO CARD - 1º LUGAR (CAMPEÃ / CAMPEÃO)
-      // ==========================================
-      if (item1) {
-        const cX = 60
-        const cY = 265
-        const cW = width - 120
-        const cH = 360
-
-        // Card Glow Shadow
-        ctx.shadowColor = 'rgba(245, 158, 11, 0.35)'
-        ctx.shadowBlur = 24
-        ctx.shadowOffsetY = 8
-
-        // Gold Gradient Background
-        const goldCardBg = ctx.createLinearGradient(cX, cY, cX + cW, cY + cH)
-        goldCardBg.addColorStop(0, '#1c1917')
-        goldCardBg.addColorStop(0.5, '#292014')
-        goldCardBg.addColorStop(1, '#1f1910')
-        ctx.fillStyle = goldCardBg
-        roundRect(ctx, cX, cY, cW, cH, 28)
+        // --- Card Container (Fundo Branco com Borda Azul e Sombra Suave) ---
+        ctx.save()
+        ctx.shadowColor = 'rgba(0, 86, 179, 0.12)'
+        ctx.shadowBlur = 25
+        ctx.shadowOffsetY = 10
+        ctx.fillStyle = '#ffffff'
+        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 22)
         ctx.fill()
+        ctx.restore()
 
-        // Gold Border
-        const goldBorder = ctx.createLinearGradient(cX, cY, cX + cW, cY + cH)
-        goldBorder.addColorStop(0, '#fbbf24')
-        goldBorder.addColorStop(0.5, '#f59e0b')
-        goldBorder.addColorStop(1, '#d97706')
-        ctx.strokeStyle = goldBorder
-        ctx.lineWidth = 3.5
+        ctx.strokeStyle = '#0056b3'
+        ctx.lineWidth = 3
+        roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 22)
         ctx.stroke()
-        ctx.shadowColor = 'transparent'
 
-        // Badge: 1º Lugar Header inside Card
+        // --- Topo do Card: Posição e Bonificação ---
+        const innerPaddingX = 36
+        const topY = currentY + 48
+
+        // Rank Info (Esquerda)
         ctx.textAlign = 'left'
-        ctx.fillStyle = '#fbbf24'
-        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif'
-        ctx.fillText('🥇 1º LUGAR — ATENDENTE DESTAQUE', cX + 32, cY + 48)
+        ctx.fillStyle = '#0056b3'
+        ctx.font = '800 20px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText(
+          `${medal} ${item.position}º LUGAR — ATENDENTE DESTAQUE`,
+          cardX + innerPaddingX,
+          topY
+        )
 
-        // Bonus Tag Top Right
-        const bText = `BONIFICAÇÃO: ${bonusMap[1]}`
-        ctx.font = '800 18px system-ui, -apple-system, sans-serif'
-        const bWidth = ctx.measureText(bText).width + 36
-        const bX = cX + cW - bWidth - 28
-        const bY = cY + 24
-        const goldPill = ctx.createLinearGradient(bX, bY, bX + bWidth, bY + 38)
-        goldPill.addColorStop(0, '#f59e0b')
-        goldPill.addColorStop(1, '#d97706')
-        ctx.fillStyle = goldPill
-        roundRect(ctx, bX, bY, bWidth, 38, 19)
+        // Bonus Badge (Direita)
+        const bonusText = `BONIFICAÇÃO: ${bonus}`
+        ctx.font = '800 17px "Inter", system-ui, -apple-system, sans-serif'
+        const bPaddingX = 18
+        const bWidth = ctx.measureText(bonusText).width + bPaddingX * 2
+        const bHeight = 36
+        const bX = cardX + cardWidth - innerPaddingX - bWidth
+        const bY = currentY + 24
+
+        ctx.save()
+        ctx.shadowColor = 'rgba(245, 158, 11, 0.25)'
+        ctx.shadowBlur = 8
+        ctx.shadowOffsetY = 4
+        ctx.fillStyle = '#f59e0b'
+        roundRect(ctx, bX, bY, bWidth, bHeight, 18)
         ctx.fill()
+        ctx.restore()
 
         ctx.fillStyle = '#ffffff'
-        ctx.fillText(bText, bX + 18, bY + 25)
+        ctx.textAlign = 'center'
+        ctx.fillText(bonusText, bX + bWidth / 2, bY + 23)
 
-        // Seller Name (Giant, Bold & High Contrast)
-        ctx.fillStyle = '#ffffff'
-        ctx.font = '800 38px system-ui, -apple-system, sans-serif'
-        ctx.fillText(item1.sellerName, cX + 32, cY + 118)
+        // --- Nome do Atendente ---
+        ctx.textAlign = 'left'
+        ctx.fillStyle = '#1a202c'
+        ctx.font = '800 42px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText(item.sellerName, cardX + innerPaddingX, currentY + 115)
 
-        // Divider Line
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.25)'
+        // --- Divisor Suave ---
+        ctx.strokeStyle = '#e6f0fa'
         ctx.lineWidth = 1.5
         ctx.beginPath()
-        ctx.moveTo(cX + 32, cY + 145)
-        ctx.lineTo(cX + cW - 32, cY + 145)
+        ctx.moveTo(cardX + innerPaddingX, currentY + 145)
+        ctx.lineTo(cardX + cardWidth - innerPaddingX, currentY + 145)
         ctx.stroke()
 
-        // 2 Key Metric Blocks inside Gold Card
-        const metricBoxW = (cW - 84) / 2
-        const metricBoxH = 120
-        const mY = cY + 165
+        // --- Grid de Estatísticas (2 Caixas Lado a Lado) ---
+        const gridY = currentY + 172
+        const gridWidth = cardWidth - innerPaddingX * 2
+        const statGap = 20
+        const statBoxW = (gridWidth - statGap) / 2
+        const statBoxH = 150
 
-        // Metric 1: Satisfaction
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
-        roundRect(ctx, cX + 32, mY, metricBoxW, metricBoxH, 18)
+        // Caixa 1: Nível de Satisfação (Highlight / Destaque)
+        const box1X = cardX + innerPaddingX
+        ctx.fillStyle = '#e6f0fa'
+        roundRect(ctx, box1X, gridY, statBoxW, statBoxH, 16)
         ctx.fill()
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'
+        ctx.strokeStyle = '#0056b3'
         ctx.lineWidth = 1.5
         ctx.stroke()
 
-        ctx.fillStyle = '#34d399'
-        ctx.font = '900 44px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item1.satisfactionRate}%`, cX + 52, mY + 58)
+        ctx.fillStyle = '#0056b3'
+        ctx.font = '800 52px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText(`${item.satisfactionRate}%`, box1X + 28, gridY + 68)
 
-        ctx.fillStyle = '#a7f3d0'
-        ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
-        ctx.fillText('NÍVEL DE SATISFAÇÃO', cX + 52, mY + 90)
+        ctx.fillStyle = '#4a5568'
+        ctx.font = '600 15px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText('NÍVEL DE SATISFAÇÃO', box1X + 28, gridY + 108)
 
-        // Metric 2: Total Reviews
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
-        roundRect(ctx, cX + 32 + metricBoxW + 20, mY, metricBoxW, metricBoxH, 18)
+        // Caixa 2: Total de Avaliações
+        const box2X = box1X + statBoxW + statGap
+        ctx.fillStyle = '#fafcfd'
+        roundRect(ctx, box2X, gridY, statBoxW, statBoxH, 16)
         ctx.fill()
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)'
+        ctx.strokeStyle = '#b3d4f5'
         ctx.lineWidth = 1.5
         ctx.stroke()
 
-        ctx.fillStyle = '#38bdf8'
-        ctx.font = '900 44px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item1.totalEvaluations}`, cX + 52 + metricBoxW + 20, mY + 58)
+        ctx.fillStyle = '#0056b3'
+        ctx.font = '800 52px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText(`${item.totalEvaluations}`, box2X + 28, gridY + 68)
 
-        ctx.fillStyle = '#bae6fd'
-        ctx.font = 'bold 15px system-ui, -apple-system, sans-serif'
-        ctx.fillText('TOTAL DE AVALIAÇÕES', cX + 52 + metricBoxW + 20, mY + 90)
+        ctx.fillStyle = '#4a5568'
+        ctx.font = '600 15px "Inter", system-ui, -apple-system, sans-serif'
+        ctx.fillText('TOTAL DE AVALIAÇÕES', box2X + 28, gridY + 108)
 
-        // Breakdown Footer inside 1st Card
-        ctx.fillStyle = '#fde68a'
-        ctx.font = '600 15px system-ui, -apple-system, sans-serif'
+        // --- Rodapé do Card ---
+        const footerY = currentY + 368
+        ctx.fillStyle = '#4a5568'
+        ctx.font = '600 17px "Inter", system-ui, -apple-system, sans-serif'
         ctx.fillText(
-          `✨ ${item1.excellentCount} avaliações Ótimas  •  ${item1.goodCount} avaliações Boas`,
-          cX + 36,
-          cY + 322
+          `✨ ${item.excellentCount} avaliações Ótimas • ${item.goodCount} avaliações Boas`,
+          cardX + innerPaddingX,
+          footerY
         )
-      }
 
-      // =======================================================
-      // 7. CARDS 2º E 3º LUGAR (SIDE-BY-SIDE DUAL PODIUM GRID)
-      // =======================================================
-      const sideCardsY = 650
-      const sideCardW = (width - 145) / 2
-      const sideCardH = 430
-
-      // Card 2º Lugar (Silver)
-      if (item2) {
-        const c2X = 60
-        const c2Y = sideCardsY
-
-        // Silver Gradient Background
-        const silverBg = ctx.createLinearGradient(c2X, c2Y, c2X + sideCardW, c2Y + sideCardH)
-        silverBg.addColorStop(0, '#1e293b')
-        silverBg.addColorStop(1, '#0f172a')
-        ctx.fillStyle = silverBg
-        roundRect(ctx, c2X, c2Y, sideCardW, sideCardH, 24)
-        ctx.fill()
-
-        ctx.strokeStyle = '#94a3b8'
-        ctx.lineWidth = 2.5
-        ctx.stroke()
-
-        // Badge 2º Lugar
-        ctx.textAlign = 'left'
-        ctx.fillStyle = '#cbd5e1'
-        ctx.font = 'bold 17px system-ui, -apple-system, sans-serif'
-        ctx.fillText('🥈 2º LUGAR', c2X + 24, c2Y + 40)
-
-        // Bonus Pill
-        ctx.textAlign = 'right'
-        ctx.fillStyle = '#34d399'
-        ctx.font = 'bold 17px system-ui, -apple-system, sans-serif'
-        ctx.fillText(bonusMap[2], c2X + sideCardW - 24, c2Y + 40)
-
-        // Name
-        ctx.textAlign = 'left'
-        ctx.fillStyle = '#ffffff'
-        ctx.font = '800 25px system-ui, -apple-system, sans-serif'
-        ctx.fillText(item2.sellerName, c2X + 24, c2Y + 92)
-
-        // Divider
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.moveTo(c2X + 24, c2Y + 115)
-        ctx.lineTo(c2X + sideCardW - 24, c2Y + 115)
-        ctx.stroke()
-
-        // Metric 1: Satisfaction
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-        roundRect(ctx, c2X + 24, c2Y + 135, sideCardW - 48, 90, 16)
-        ctx.fill()
-
-        ctx.fillStyle = '#34d399'
-        ctx.font = '900 36px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item2.satisfactionRate}%`, c2X + 42, c2Y + 180)
-
-        ctx.fillStyle = '#94a3b8'
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('NÍVEL DE SATISFAÇÃO', c2X + 42, c2Y + 205)
-
-        // Metric 2: Total Reviews
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-        roundRect(ctx, c2X + 24, c2Y + 240, sideCardW - 48, 90, 16)
-        ctx.fill()
-
-        ctx.fillStyle = '#38bdf8'
-        ctx.font = '900 36px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item2.totalEvaluations}`, c2X + 42, c2Y + 285)
-
-        ctx.fillStyle = '#94a3b8'
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('TOTAL DE AVALIAÇÕES', c2X + 42, c2Y + 310)
-
-        // Breakdown note
-        ctx.fillStyle = '#cbd5e1'
-        ctx.font = '500 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText(
-          `✨ ${item2.excellentCount} Ótimas • ${item2.goodCount} Boas`,
-          c2X + 26,
-          c2Y + 380
-        )
-      }
-
-      // Card 3º Lugar (Bronze)
-      if (item3) {
-        const c3X = 60 + sideCardW + 25
-        const c3Y = sideCardsY
-
-        // Bronze Gradient Background
-        const bronzeBg = ctx.createLinearGradient(c3X, c3Y, c3X + sideCardW, c3Y + sideCardH)
-        bronzeBg.addColorStop(0, '#1c1512')
-        bronzeBg.addColorStop(1, '#0f172a')
-        ctx.fillStyle = bronzeBg
-        roundRect(ctx, c3X, c3Y, sideCardW, sideCardH, 24)
-        ctx.fill()
-
-        ctx.strokeStyle = '#ea580c'
-        ctx.lineWidth = 2.5
-        ctx.stroke()
-
-        // Badge 3º Lugar
-        ctx.textAlign = 'left'
-        ctx.fillStyle = '#fdba74'
-        ctx.font = 'bold 17px system-ui, -apple-system, sans-serif'
-        ctx.fillText('🥉 3º LUGAR', c3X + 24, c3Y + 40)
-
-        // Bonus Pill
-        ctx.textAlign = 'right'
-        ctx.fillStyle = '#34d399'
-        ctx.font = 'bold 17px system-ui, -apple-system, sans-serif'
-        ctx.fillText(bonusMap[3], c3X + sideCardW - 24, c3Y + 40)
-
-        // Name
-        ctx.textAlign = 'left'
-        ctx.fillStyle = '#ffffff'
-        ctx.font = '800 25px system-ui, -apple-system, sans-serif'
-        ctx.fillText(item3.sellerName, c3X + 24, c3Y + 92)
-
-        // Divider
-        ctx.strokeStyle = 'rgba(234, 88, 12, 0.25)'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.moveTo(c3X + 24, c3Y + 115)
-        ctx.lineTo(c3X + sideCardW - 24, c3Y + 115)
-        ctx.stroke()
-
-        // Metric 1: Satisfaction
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-        roundRect(ctx, c3X + 24, c3Y + 135, sideCardW - 48, 90, 16)
-        ctx.fill()
-
-        ctx.fillStyle = '#34d399'
-        ctx.font = '900 36px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item3.satisfactionRate}%`, c3X + 42, c3Y + 180)
-
-        ctx.fillStyle = '#94a3b8'
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('NÍVEL DE SATISFAÇÃO', c3X + 42, c3Y + 205)
-
-        // Metric 2: Total Reviews
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'
-        roundRect(ctx, c3X + 24, c3Y + 240, sideCardW - 48, 90, 16)
-        ctx.fill()
-
-        ctx.fillStyle = '#38bdf8'
-        ctx.font = '900 36px system-ui, -apple-system, sans-serif'
-        ctx.fillText(`${item3.totalEvaluations}`, c3X + 42, c3Y + 285)
-
-        ctx.fillStyle = '#94a3b8'
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText('TOTAL DE AVALIAÇÕES', c3X + 42, c3Y + 310)
-
-        // Breakdown note
-        ctx.fillStyle = '#fed7aa'
-        ctx.font = '500 13px system-ui, -apple-system, sans-serif'
-        ctx.fillText(
-          `✨ ${item3.excellentCount} Ótimas • ${item3.goodCount} Boas`,
-          c3X + 26,
-          c3Y + 380
-        )
-      }
+        currentY += cardHeight + cardGap
+      })
     }
-
-    // ==========================================
-    // 8. LUXURY BOTTOM FOOTER
-    // ==========================================
-    ctx.textAlign = 'center'
-
-    ctx.fillStyle = '#f8fafc'
-    ctx.font = 'bold 20px system-ui, -apple-system, sans-serif'
-    ctx.fillText(
-      '⭐ Parabéns aos recepcionistas pelo atendimento de excelência! ⭐',
-      width / 2,
-      1210
-    )
-
-    ctx.fillStyle = '#94a3b8'
-    ctx.font = '500 15px system-ui, -apple-system, sans-serif'
-    ctx.fillText(
-      'Clínica Masterclin • Gestão da Qualidade & Experiência do Paciente',
-      width / 2,
-      1242
-    )
 
     // Trigger Download
     const dataUrl = canvas.toDataURL('image/png')
@@ -476,9 +272,9 @@ export async function downloadPodiumPng({
   }
 
   if (logo.complete) {
-    drawContent()
+    drawAndExport()
   } else {
-    logo.onload = () => drawContent()
-    logo.onerror = () => drawContent()
+    logo.onload = () => drawAndExport()
+    logo.onerror = () => drawAndExport()
   }
 }
