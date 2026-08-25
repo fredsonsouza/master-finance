@@ -159,7 +159,7 @@ export async function downloadPodiumPng({
         roundRect(ctx, cardX, currentY, cardWidth, cardHeight, 28)
         ctx.stroke()
 
-        // --- Topo do Card: Posição e Bonificação ---
+        // --- Topo do Card: Posição e Premiação ---
         const innerPaddingX = 36
         const topY = currentY + 48
 
@@ -173,8 +173,8 @@ export async function downloadPodiumPng({
           topY
         )
 
-        // Bonus Badge (Direita)
-        const bonusText = `BONIFICAÇÃO: ${bonus}`
+        // Premiação Badge (Direita)
+        const bonusText = `PREMIAÇÃO: ${bonus}`
         ctx.font = '800 17px "Inter", system-ui, -apple-system, sans-serif'
         const bPaddingX = 18
         const bWidth = ctx.measureText(bonusText).width + bPaddingX * 2

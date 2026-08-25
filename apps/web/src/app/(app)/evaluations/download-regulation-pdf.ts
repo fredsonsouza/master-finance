@@ -173,7 +173,7 @@ export function downloadRegulationPdf() {
         <div class="header">
           <img src="${logoUrl}" class="logo" alt="Masterclin Logo" />
           <h1 class="title">REGULAMENTO DO PROGRAMA DE AVALIAÇÃO DE ATENDIMENTO</h1>
-          <p class="subtitle">DIRETRIZES DE ATENDIMENTO, ÉTICA, PARTICIPAÇÃO, APURAÇÃO E BONIFICAÇÃO</p>
+          <p class="subtitle">DIRETRIZES DE ATENDIMENTO, ÉTICA, PARTICIPAÇÃO, APURAÇÃO E PREMIAÇÃO</p>
         </div>
 
         <div class="section-title">1. OBJETIVO DO PROGRAMA</div>
@@ -187,7 +187,7 @@ export function downloadRegulationPdf() {
           <li><strong>Espontaneidade Obrigatória:</strong> Cada avaliação deve refletir o feedback espontâneo e legítimo do cliente/paciente que foi efetivamente atendido na unidade.</li>
           <li><strong>Vedação de Autoavaliação:</strong> É estritamente proibido ao colaborador realizar autoavaliações, solicitar que colegas, familiares ou amigos simulem atendimentos fictícios para gerar avaliações positivas.</li>
           <li><strong>Proibição de Coação:</strong> É vedado induzir, coagir ou direcionar o cliente a atribuir notas específicas durante o processo de coleta de opinião.</li>
-          <li>A participação no programa não gera direito adquirido à bonificação, sendo a premiação condicionada ao cumprimento das regras deste Regulamento e à efetiva apuração dos resultados do respectivo período.</li>
+          <li>A participação no programa não gera direito adquirido à premiação, sendo a premiação condicionada ao cumprimento das regras deste Regulamento e à efetiva apuração dos resultados do respectivo período.</li>
           <li>A empresa poderá, a qualquer momento, mediante comunicação interna, alterar, suspender, modificar ou encerrar o programa, inclusive seus critérios, valores e condições de participação, conforme necessidade administrativa ou operacional.</li>
         </ul>
 
@@ -200,18 +200,18 @@ export function downloadRegulationPdf() {
 
         <div class="section-title">4. PENALIDADES E SANÇÕES DISCIPLINARES</div>
         <p>
-          A violação deste Regulamento poderá resultar na perda da bonificação e na aplicação das medidas disciplinares cabíveis, de acordo com a natureza, gravidade, consequências, circunstâncias e eventual reincidência da conduta, observada a legislação aplicável.
+          A violação deste Regulamento poderá resultar na perda da premiação e na aplicação das medidas disciplinares cabíveis, de acordo com a natureza, gravidade, consequências, circunstâncias e eventual reincidência da conduta, observada a legislação aplicável.
         </p>
         <ul>
           <li><strong>a)</strong> Orientação formal, quando cabível;</li>
-          <li><strong>d)</strong> Exclusão do Programa e perda do direito à bonificação do período;</li>
+          <li><strong>d)</strong> Exclusão do Programa e perda do direito à premiação do período;</li>
           <li><strong>e)</strong> Outras medidas administrativas e disciplinares legalmente cabíveis.</li>
         </ul>
         <p style="font-size: 8.5pt; color: #475569; font-style: italic;">
           <strong>Parágrafo único:</strong> A existência deste Programa não limita o poder diretivo e disciplinar da empresa nem impede a aplicação das medidas previstas em outros regulamentos internos ou na legislação.
         </p>
 
-        <div class="section-title">5. PÓDIO DA RECEPÇÃO E CRITÉRIOS DE BONIFICAÇÃO</div>
+        <div class="section-title">5. PÓDIO DA RECEPÇÃO E CRITÉRIOS DE PREMIAÇÃO</div>
         <p>
           O reconhecimento do desempenho da equipe será apurado mensalmente e aplicado individualmente para cada unidade da Masterclin, não havendo ranking geral entre unidades distintas.
         </p>
@@ -224,7 +224,7 @@ export function downloadRegulationPdf() {
             <tr>
               <th>Posição do Pódio</th>
               <th>Reconhecimento</th>
-              <th>Bonificação (R$)</th>
+              <th>Premiação (R$)</th>
             </tr>
           </thead>
           <tbody>
@@ -247,7 +247,7 @@ export function downloadRegulationPdf() {
         </table>
 
         <p>
-          A eventual bonificação está condicionada ao cumprimento integral deste Regulamento e aos resultados validados pela empresa. O recebimento em determinado período não assegura recebimento em períodos futuros.
+          A eventual premiação está condicionada ao cumprimento integral deste Regulamento e aos resultados validados pela empresa. O recebimento em determinado período não assegura recebimento em períodos futuros.
         </p>
         <p>
           Os valores, critérios, quantidade de premiados e demais condições poderão ser revistos pela Administração mediante comunicação interna.
@@ -290,13 +290,13 @@ export function downloadRegulationPdf() {
         <div class="termo-box">
           <div class="termo-title">9. TERMO DE CIÊNCIA E CONCORDÂNCIA</div>
           <p>
-            Declaro que recebi, li e compreendi o Regulamento do Programa de Avaliação de Atendimento da Masterclin, estando ciente das regras de participação, conduta, utilização dos mecanismos de avaliação, critérios de apuração, auditoria, classificação e condições para eventual concessão de bonificação.
+            Declaro que recebi, li e compreendi o Regulamento do Programa de Avaliação de Atendimento da Masterclin, estando ciente das regras de participação, conduta, utilização dos mecanismos de avaliação, critérios de apuração, auditoria, classificação e condições para eventual concessão de premiação.
           </p>
           <p>
-            Declaro, ainda, estar ciente de que eventual bonificação está condicionada ao cumprimento integral das regras e aos resultados validados pela empresa, não constituindo garantia de recebimento em períodos futuros.
+            Declaro, ainda, estar ciente de que eventual premiação está condicionada ao cumprimento integral das regras e aos resultados validados pela empresa, não constituindo garantia de recebimento em períodos futuros.
           </p>
           <p>
-            Comprometo-me a agir de forma ética, transparente e em conformidade com este Regulamento, reconhecendo que o descumprimento das regras poderá resultar na perda do direito à bonificação e na adoção das medidas administrativas e disciplinares cabíveis.
+            Comprometo-me a agir de forma ética, transparente e em conformidade com este Regulamento, reconhecendo que o descumprimento das regras poderá resultar na perda do direito à premiação e na adoção das medidas administrativas e disciplinares cabíveis.
           </p>
 
           <div class="fields-grid">

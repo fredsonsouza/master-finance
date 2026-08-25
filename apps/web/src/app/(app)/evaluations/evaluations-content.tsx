@@ -395,7 +395,7 @@ export function EvaluationsContent({
                   Pódio dos Recepcionistas Mais Bem Avaliados
                 </CardTitle>
                 <p className="text-xs text-on-surface-variant">
-                  Classificação mensal por unidade baseada no nível de satisfação dos clientes e bonificações.
+                  Classificação mensal por unidade baseada no nível de satisfação dos clientes e premiações.
                 </p>
               </div>
 
@@ -454,7 +454,7 @@ export function EvaluationsContent({
                   variant="outline"
                   size="sm"
                   className="h-9 gap-1.5 text-xs cursor-pointer"
-                  title="Exportar pódio e bonificações em PDF"
+                  title="Exportar pódio e premiações em PDF"
                 >
                   {isExportingPodiumPdf ? (
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -561,7 +561,7 @@ export function EvaluationsContent({
                               </span>
                             )}
                             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                              • Bonificação: {bonusText}
+                              • Premiação: {bonusText}
                             </span>
                           </div>
                         </div>

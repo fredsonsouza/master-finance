@@ -71,7 +71,7 @@ export function downloadPodiumPdf({
             </span>
           </div>
           <div style="text-align: right;">
-            <span style="font-size: 8pt; color: #64748b; font-weight: 600; text-transform: uppercase;">Bonificação Oficial:</span>
+            <span style="font-size: 8pt; color: #64748b; font-weight: 600; text-transform: uppercase;">Premiação Oficial:</span>
             <span style="font-size: 11pt; font-weight: 800; color: #059669; margin-left: 4px;">${bonus}</span>
           </div>
         </div>
@@ -228,7 +228,7 @@ export function downloadPodiumPdf({
           <img src="${logoUrl}" class="logo" alt="Masterclin Logo" />
           <div class="header-info">
             <h1 class="title">Pódio da Recepção</h1>
-            <p class="subtitle">Destaques do Mês e Bonificações</p>
+            <p class="subtitle">Destaques do Mês e Premiações</p>
           </div>
         </div>
 
@@ -256,7 +256,7 @@ export function downloadPodiumPdf({
               <th>Colaborador(a)</th>
               <th style="width: 140px;">Avaliações</th>
               <th style="width: 100px;">Satisfação</th>
-              <th style="width: 110px;">Bonificação</th>
+              <th style="width: 110px;">Premiação</th>
             </tr>
           </thead>
           <tbody>
