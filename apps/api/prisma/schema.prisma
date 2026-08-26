@@ -24,14 +24,14 @@ enum TransactionType {
 }
 
 model User {
-  id            String  @id @default(uuid())
-  name          String
-  username      String  @unique
+  id                  String  @id @default(uuid())
+  name                String
+  username            String  @unique
   password_hash       String  @map("password_hash")
   recoveryEmail       String? @unique
   forcePasswordChange Boolean @default(false)
   avatarUrl           String?
-  role          Role    @default(EMPLOYEE)
+  role                Role    @default(EMPLOYEE)
 
   unitId String?
   unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
@@ -70,7 +70,7 @@ model Sector {
   id   String @id @default(uuid())
   name String
 
-  items Item[]
+  items        Item[]
   cashClosures CashClosure[]
   transactions Transaction[]
 
@@ -118,26 +118,32 @@ model Transaction {
   type     TransactionType
   date     DateTime // Data do registro (ex: quando o item entrou/saiu)
   month    String // Referência para o relatório mensal (ex: "2026-05")
-  value    Float // Valor monetário
+  value    Float // Valor monetário unitário
   quantity Int // Quantidade
 
   itemId String
-  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
   unitId String
-  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
   sectorId String?
   sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   batchId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([unitId, month, type])
+  @@index([itemId, unitId, date])
+  @@index([unitId, date, id])
+  @@index([sectorId])
+  @@index([userId])
+  @@index([batchId])
   @@map("transactions")
 }
 
@@ -154,10 +160,10 @@ model CashClosure {
   status      CashClosureStatus @default(OPEN)
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   unitId String
-  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
   sectorId String?
   sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
@@ -165,47 +171,55 @@ model CashClosure {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([unitId, status, cashDate])
+  @@index([sectorId])
+  @@index([userId])
   @@map("cash_closures")
 }
 
 model Collection {
-  id              String   @id @default(uuid())
-  requestDate     DateTime
-  patientCode     String
-  patientName     String
-  exams           String[]
-  reason          String   @db.VarChar(120)
+  id          String   @id @default(uuid())
+  requestDate DateTime
+  patientCode String
+  patientName String
+  exams       String[]
+  reason      String   @db.VarChar(120)
 
-  collectorId     String
-  collector       User     @relation("CollectionCollector", fields: [collectorId], references: [id])
+  collectorId String
+  collector   User     @relation("CollectionCollector", fields: [collectorId], references: [id], onDelete: Restrict)
 
-  pendingBy       String
-  notifiedBy      String
+  pendingBy  String
+  notifiedBy String
 
-  unitId          String
-  unit            Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
-  userId          String
-  user            User     @relation("CollectionCreator", fields: [userId], references: [id])
+  userId String
+  user   User   @relation("CollectionCreator", fields: [userId], references: [id], onDelete: Restrict)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@index([unitId, requestDate])
+  @@index([collectorId])
+  @@index([userId])
   @@map("collections")
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  action     String   // e.g., "CREATE", "UPDATE", "DELETE"
-  resource   String   // e.g., "USER", "UNIT", "SECTOR", "ITEM", "TRANSACTION", "CASH_CLOSURE", "COLLECTION", "AUTH"
+  id         String  @id @default(uuid())
+  action     String // e.g., "CREATE", "UPDATE", "DELETE"
+  resource   String // e.g., "USER", "UNIT", "SECTOR", "ITEM", "TRANSACTION", "CASH_CLOSURE", "COLLECTION", "AUTH"
   resourceId String?
   details    String
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
 
+  @@index([userId, createdAt])
+  @@index([resource, action, createdAt])
   @@map("audit_logs")
 }
 
@@ -217,19 +231,21 @@ enum EvaluationRating {
 }
 
 model Evaluation {
-  id            String           @id @default(uuid())
-  sellerId      String
-  seller        User             @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  sellerId String
+  seller   User   @relation(fields: [sellerId], references: [id], onDelete: Restrict)
 
-  unitId        String?
-  unit          Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   clientName    String?
   rating        EvaluationRating
   presetComment String?
   observation   String?
 
-  createdAt     DateTime         @default(now())
+  createdAt DateTime @default(now())
 
+  @@index([sellerId, createdAt])
+  @@index([unitId, createdAt])
   @@map("evaluations")
 }
