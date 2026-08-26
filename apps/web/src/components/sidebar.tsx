@@ -15,13 +15,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
 import { auth } from '@/auth/auth'
-
-async function logout() {
-  'use server'
-  const cookieStore = await cookies()
-  cookieStore.delete('token')
-  redirect('/auth/sign-in')
-}
+import { signOutAction } from '@/app/auth/sign-out-action'
 
 export async function Sidebar() {
   const { user } = await auth()
@@ -135,10 +129,10 @@ export async function Sidebar() {
             <span className="font-medium">Configurações</span>
           </Link>
         )}
-        <form action={logout}>
+        <form action={signOutAction}>
           <button
             type="submit"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-error hover:bg-error-container transition-colors"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-error hover:bg-error-container transition-colors cursor-pointer"
           >
             <LogOut className="h-5 w-5" />
             <span className="font-medium">Sair</span>
