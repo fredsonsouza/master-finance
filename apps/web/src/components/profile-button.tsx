@@ -15,6 +15,7 @@ import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
+import { signOutAction } from '@/app/auth/sign-out-action'
 import { updateProfileAction } from './profile-actions'
 
 interface ProfileButtonProps {
@@ -61,9 +62,7 @@ export function ProfileButton({ user }: ProfileButtonProps) {
   )
 
   async function handleSignOut() {
-    // Apaga o cookie via API route ou simplesmente forçando a expiração no client
-    document.cookie = 'token=; Max-Age=0; path=/;'
-    window.location.href = '/auth/sign-in'
+    await signOutAction()
   }
 
   return (

@@ -69,6 +69,7 @@ export async function getDailyFlow(app: FastifyInstance) {
           select: {
             type: true,
             value: true,
+            quantity: true,
             date: true,
           },
         })
@@ -83,11 +84,13 @@ export async function getDailyFlow(app: FastifyInstance) {
 
         transactions.forEach((t) => {
           const dayString = dayjs(t.date).format('DD')
+          const qty = t.quantity ?? 1
+          const totalVal = t.value * qty
           if (dailyFlow[dayString]) {
             if (t.type === 'ENTRY') {
-              dailyFlow[dayString].entries += t.value
+              dailyFlow[dayString].entries += totalVal
             } else if (t.type === 'EXIT') {
-              dailyFlow[dayString].exits += t.value
+              dailyFlow[dayString].exits += totalVal
             }
           }
         })
@@ -95,8 +98,8 @@ export async function getDailyFlow(app: FastifyInstance) {
         const flowArray = Object.entries(dailyFlow)
           .map(([day, data]) => ({
             day,
-            entries: data.entries,
-            exits: data.exits,
+            entries: Number(data.entries.toFixed(2)),
+            exits: Number(data.exits.toFixed(2)),
           }))
           .sort((a, b) => a.day.localeCompare(b.day))
 

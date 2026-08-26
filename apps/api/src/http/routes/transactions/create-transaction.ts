@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
@@ -7,7 +8,6 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { BadRequestError } from '../_errors/bad-request-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
-import { randomUUID } from 'node:crypto'
 
 export async function createTransaction(app: FastifyInstance) {
   app
@@ -74,82 +74,91 @@ export async function createTransaction(app: FastifyInstance) {
           throw new BadRequestError('Unit not found.')
         }
 
-        // Resolve sector: ENTRY automatically goes to 'Estoque', EXIT requires specified sector
-        let finalSectorId: string
-        let sectorName = 'Estoque'
-
-        if (type === 'ENTRY') {
-          let estoqueSector = await prisma.sector.findFirst({
-            where: {
-              name: {
-                equals: 'Estoque',
-                mode: 'insensitive',
-              },
-            },
-          })
-
-          if (!estoqueSector) {
-            estoqueSector = await prisma.sector.create({
-              data: {
-                name: 'Estoque',
-              },
-            })
-          }
-
-          finalSectorId = estoqueSector.id
-          sectorName = estoqueSector.name
-        } else {
-          if (!sectorId) {
-            throw new BadRequestError('O setor é obrigatório para transações de saída.')
-          }
-
-          const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
-          if (!sector) {
-            throw new BadRequestError('Sector not found.')
-          }
-
-          finalSectorId = sector.id
-          sectorName = sector.name
-        }
-
-        // Validate items exist
-        const dbItems = await prisma.item.findMany({
-          where: { id: { in: items.map((i) => i.itemId) } },
-        })
-
-        if (dbItems.length !== Array.from(new Set(items.map((i) => i.itemId))).length) {
-          throw new BadRequestError('One or more items not found.')
-        }
-
-        // Validate stock for EXIT transactions
-        if (type === 'EXIT') {
-          for (const itemReq of items) {
-            const pastTransactions = await prisma.transaction.findMany({
-              where: { itemId: itemReq.itemId, unitId },
-              select: { type: true, quantity: true },
-            })
-
-            const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
-            let currentStock = itemDb?.quantity || 0
-            for (const tx of pastTransactions) {
-              if (tx.type === 'ENTRY') currentStock += tx.quantity
-              else if (tx.type === 'EXIT') currentStock -= tx.quantity
-            }
-
-            if (itemReq.quantity > currentStock) {
-              throw new BadRequestError(
-                `Estoque insuficiente para o item ${itemDb?.name || itemReq.itemId}.`
-              )
-            }
-          }
-        }
-
         const batchId = randomUUID()
         const monthString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 
-        await prisma.$transaction([
-          ...items.map((itemReq) => {
-            return prisma.transaction.create({
+        // Group total requested quantities by itemId to prevent duplicate item overselling in a batch
+        const requestedQuantitiesByItem = new Map<string, number>()
+        for (const itemReq of items) {
+          const current = requestedQuantitiesByItem.get(itemReq.itemId) || 0
+          requestedQuantitiesByItem.set(itemReq.itemId, current + itemReq.quantity)
+        }
+
+        await prisma.$transaction(async (tx) => {
+          // Resolve sector: ENTRY automatically goes to 'Estoque', EXIT requires specified sector
+          let finalSectorId: string
+          let sectorName = 'Estoque'
+
+          if (type === 'ENTRY') {
+            let estoqueSector = await tx.sector.findFirst({
+              where: {
+                name: {
+                  equals: 'Estoque',
+                  mode: 'insensitive',
+                },
+              },
+            })
+
+            if (!estoqueSector) {
+              estoqueSector = await tx.sector.create({
+                data: {
+                  name: 'Estoque',
+                },
+              })
+            }
+
+            finalSectorId = estoqueSector.id
+            sectorName = estoqueSector.name
+          } else {
+            if (!sectorId) {
+              throw new BadRequestError('O setor é obrigatório para transações de saída.')
+            }
+
+            const sector = await tx.sector.findUnique({ where: { id: sectorId } })
+            if (!sector) {
+              throw new BadRequestError('Sector not found.')
+            }
+
+            finalSectorId = sector.id
+            sectorName = sector.name
+          }
+
+          // Validate items exist
+          const uniqueItemIds = Array.from(requestedQuantitiesByItem.keys())
+          const dbItems = await tx.item.findMany({
+            where: { id: { in: uniqueItemIds } },
+          })
+
+          if (dbItems.length !== uniqueItemIds.length) {
+            throw new BadRequestError('One or more items not found.')
+          }
+
+          // Validate stock for EXIT transactions inside transaction lock
+          if (type === 'EXIT') {
+            for (const [itemId, requestedQty] of requestedQuantitiesByItem.entries()) {
+              const pastTransactions = await tx.transaction.findMany({
+                where: { itemId, unitId },
+                select: { type: true, quantity: true },
+              })
+
+              const itemDb = dbItems.find((i) => i.id === itemId)
+              let currentStock = itemDb?.quantity || 0
+              for (const pastTx of pastTransactions) {
+                if (pastTx.type === 'ENTRY') currentStock += pastTx.quantity
+                else if (pastTx.type === 'EXIT') currentStock -= pastTx.quantity
+              }
+
+              if (requestedQty > currentStock) {
+                throw new BadRequestError(
+                  `Estoque insuficiente para o item ${itemDb?.name || itemId}. Estoque atual: ${currentStock}, Solicitado: ${requestedQty}`
+                )
+              }
+            }
+          }
+
+          // Create transactions
+          for (const itemReq of items) {
+            await tx.transaction.create({
               data: {
                 type,
                 date,
@@ -163,30 +172,30 @@ export async function createTransaction(app: FastifyInstance) {
                 batchId,
               },
             })
-          }),
-          ...items.map((itemReq) => {
-            return prisma.item.update({
+
+            await tx.item.update({
               where: { id: itemReq.itemId },
               data: {
                 value: itemReq.value,
               },
             })
-          }),
-        ])
+          }
 
-        const itemsDetails = items
-          .map((itemReq) => {
-            const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
-            return `${itemReq.quantity}x ${itemDb?.name || ''} (R$ ${itemReq.value.toFixed(2)}/un)`
+          const itemsDetails = items
+            .map((itemReq) => {
+              const itemDb = dbItems.find((i) => i.id === itemReq.itemId)
+              return `${itemReq.quantity}x ${itemDb?.name || ''} (R$ ${itemReq.value.toFixed(2)}/un)`
+            })
+            .join(', ')
+
+          await logAction({
+            userId,
+            action: 'CREATE',
+            resource: 'TRANSACTION',
+            resourceId: batchId,
+            details: `Registrou movimentação de ${type === 'ENTRY' ? 'ENTRADA' : 'SAÍDA'} em lote na unidade ${unit.name} e setor ${sectorName}. Itens: ${itemsDetails}`,
+            tx,
           })
-          .join(', ')
-
-        await logAction({
-          userId,
-          action: 'CREATE',
-          resource: 'TRANSACTION',
-          resourceId: batchId,
-          details: `Registrou movimentação de ${type === 'ENTRY' ? 'ENTRADA' : 'SAÍDA'} em lote na unidade ${unit.name} e setor ${sectorName}. Itens: ${itemsDetails}`,
         })
 
         return reply.status(201).send({ batchId })

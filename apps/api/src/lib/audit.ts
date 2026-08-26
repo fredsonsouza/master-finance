@@ -6,6 +6,7 @@ export async function logAction({
   resource,
   resourceId,
   details,
+  tx,
 }: {
   userId: string
   action: 'CREATE' | 'UPDATE' | 'DELETE'
@@ -20,9 +21,11 @@ export async function logAction({
     | 'AUTH'
   resourceId?: string
   details: string
+  tx?: any
 }) {
   try {
-    await prisma.auditLog.create({
+    const client = tx || prisma
+    await client.auditLog.create({
       data: {
         userId,
         action,

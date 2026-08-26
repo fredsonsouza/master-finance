@@ -14,7 +14,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     transaction: {
-      groupBy: vi.fn(),
+      findMany: vi.fn(),
     },
     item: {
       findMany: vi.fn(),
@@ -52,23 +52,26 @@ describe('Get Top Items Metrics Unit Test', () => {
       role: 'MANAGER',
     } as any)
 
-    vi.mocked(prisma.transaction.groupBy).mockResolvedValueOnce([
-      { itemId: '323e4567-e89b-12d3-a456-426614174001', _sum: { value: 500 } },
-      { itemId: '323e4567-e89b-12d3-a456-426614174002', _sum: { value: 200 } },
-    ] as any)
-
-    vi.mocked(prisma.item.findMany).mockResolvedValueOnce([
-      { id: '323e4567-e89b-12d3-a456-426614174001', name: 'Item Alpha' },
-      { id: '323e4567-e89b-12d3-a456-426614174002', name: 'Item Beta' },
+    vi.mocked(prisma.transaction.findMany).mockResolvedValueOnce([
+      {
+        itemId: '323e4567-e89b-12d3-a456-426614174001',
+        value: 100,
+        quantity: 5,
+        item: { name: 'Item Alpha' },
+      },
+      {
+        itemId: '323e4567-e89b-12d3-a456-426614174002',
+        value: 200,
+        quantity: 1,
+        item: { name: 'Item Beta' },
+      },
     ] as any)
 
     const response = await app.inject({
       method: 'GET',
       url: '/metrics/top-items?month=2026-05&type=EXIT',
     })
-    if (response.statusCode !== 200) {
-      console.error(response.json())
-    }
+
     expect(response.statusCode).toBe(200)
     expect(response.json()).toEqual({
       items: [

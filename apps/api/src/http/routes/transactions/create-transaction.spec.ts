@@ -28,6 +28,10 @@ vi.mock('@/lib/prisma', () => ({
     },
     transaction: {
       create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -69,25 +73,40 @@ describe('Create Transaction Unit Test', () => {
 
     vi.mocked(prisma.unit.findUnique).mockResolvedValueOnce({
       id: '223e4567-e89b-12d3-a456-426614174001',
+      name: 'Unidade Centro',
     } as any)
 
-    vi.mocked(prisma.sector.findFirst).mockResolvedValueOnce({
-      id: '523e4567-e89b-12d3-a456-426614174005',
-      name: 'Estoque',
-    } as any)
-
-    vi.mocked(prisma.item.findMany).mockResolvedValueOnce([
-      {
-        id: '323e4567-e89b-12d3-a456-426614174002',
-        name: 'Syringe',
-      },
-    ] as any)
-
-    vi.mocked(prisma.$transaction).mockResolvedValueOnce([
-      {
-        id: '423e4567-e89b-12d3-a456-426614174003',
-      },
-    ] as any)
+    vi.mocked(prisma.$transaction).mockImplementation(async (arg: any) => {
+      if (typeof arg === 'function') {
+        return arg({
+          sector: {
+            findFirst: vi.fn().mockResolvedValue({
+              id: '523e4567-e89b-12d3-a456-426614174005',
+              name: 'Estoque',
+            }),
+            create: vi.fn(),
+            findUnique: vi.fn(),
+          },
+          item: {
+            findMany: vi.fn().mockResolvedValue([
+              {
+                id: '323e4567-e89b-12d3-a456-426614174002',
+                name: 'Syringe',
+              },
+            ]),
+            update: vi.fn(),
+          },
+          transaction: {
+            findMany: vi.fn().mockResolvedValue([]),
+            create: vi.fn(),
+          },
+          auditLog: {
+            create: vi.fn(),
+          },
+        })
+      }
+      return arg
+    })
 
     const response = await app.inject({
       method: 'POST',

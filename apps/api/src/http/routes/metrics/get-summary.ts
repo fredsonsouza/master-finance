@@ -71,7 +71,7 @@ export async function getSummary(app: FastifyInstance) {
             month,
             ...(unitId ? { unitId } : {}),
           },
-          select: { type: true, value: true },
+          select: { type: true, value: true, quantity: true },
         })
 
         const previousMonthTransactions = await prisma.transaction.findMany({
@@ -79,19 +79,23 @@ export async function getSummary(app: FastifyInstance) {
             month: previousMonth,
             ...(unitId ? { unitId } : {}),
           },
-          select: { type: true, value: true },
+          select: { type: true, value: true, quantity: true },
         })
 
         const calculateTotals = (
-          transactions: { type: 'ENTRY' | 'EXIT'; value: number }[]
+          transactions: { type: 'ENTRY' | 'EXIT'; value: number; quantity: number }[]
         ) => {
           let entries = 0
           let exits = 0
           transactions.forEach((t) => {
-            if (t.type === 'ENTRY') entries += t.value
-            else if (t.type === 'EXIT') exits += t.value
+            const qty = t.quantity ?? 1
+            const totalVal = t.value * qty
+            if (t.type === 'ENTRY') entries += totalVal
+            else if (t.type === 'EXIT') exits += totalVal
           })
-          return { entries, exits, balance: entries - exits }
+          entries = Number(entries.toFixed(2))
+          exits = Number(exits.toFixed(2))
+          return { entries, exits, balance: Number((entries - exits).toFixed(2)) }
         }
 
         const current = calculateTotals(currentMonthTransactions as any)

@@ -61,33 +61,51 @@ export async function getTopItems(app: FastifyInstance) {
           )
         }
 
-        const topTransactions = await prisma.transaction.groupBy({
-          by: ['itemId'],
-          _sum: { value: true },
+        const transactions = await prisma.transaction.findMany({
           where: {
             month,
             type,
             ...(unitId ? { unitId } : {}),
           },
-          orderBy: { _sum: { value: 'desc' } },
-          take: 5,
+          select: {
+            itemId: true,
+            value: true,
+            quantity: true,
+            item: {
+              select: {
+                name: true,
+              },
+            },
+          },
         })
 
-        const itemIds = topTransactions.map((t) => t.itemId)
-        const items = await prisma.item.findMany({
-          where: { id: { in: itemIds } },
-          select: { id: true, name: true },
-        })
+        const itemTotalsMap = new Map<
+          string,
+          { itemId: string; itemName: string; totalValue: number }
+        >()
 
-        const itemsMap = new Map(items.map((i) => [i.id, i.name]))
+        for (const tx of transactions) {
+          const val = tx.value * tx.quantity
+          if (!itemTotalsMap.has(tx.itemId)) {
+            itemTotalsMap.set(tx.itemId, {
+              itemId: tx.itemId,
+              itemName: tx.item?.name || 'Unknown Item',
+              totalValue: 0,
+            })
+          }
+          itemTotalsMap.get(tx.itemId)!.totalValue += val
+        }
 
-        const result = topTransactions.map((t) => ({
-          itemId: t.itemId,
-          itemName: itemsMap.get(t.itemId) || 'Unknown Item',
-          totalValue: t._sum.value || 0,
-        }))
+        const sortedItems = Array.from(itemTotalsMap.values())
+          .sort((a, b) => b.totalValue - a.totalValue)
+          .slice(0, 5)
+          .map((item) => ({
+            itemId: item.itemId,
+            itemName: item.itemName,
+            totalValue: Number(item.totalValue.toFixed(2)),
+          }))
 
-        return reply.status(200).send({ items: result })
+        return reply.status(200).send({ items: sortedItems })
       }
     )
 }
