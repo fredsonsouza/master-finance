@@ -62,7 +62,9 @@ export function CreateTransactionDialog({
   // Search/Autocomplete states
   const [showItemDropdown, setShowItemDropdown] = useState(false)
   const [itemSearchQuery, setItemSearchQuery] = useState('')
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   // Sub-modal states
   const [subModalOpen, setSubModalOpen] = useState(false)
@@ -90,6 +92,7 @@ export function CreateTransactionDialog({
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowItemDropdown(false)
+        setHighlightedIndex(-1)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -100,6 +103,59 @@ export function CreateTransactionDialog({
   const filteredItems = items.filter((item) =>
     item.name.toLowerCase().includes(itemSearchQuery.toLowerCase())
   )
+
+  // Adjust highlighted index on query change or dropdown toggle
+  useEffect(() => {
+    if (showItemDropdown && filteredItems.length > 0) {
+      setHighlightedIndex(0)
+    } else {
+      setHighlightedIndex(-1)
+    }
+  }, [itemSearchQuery, showItemDropdown, filteredItems.length])
+
+  // Auto-scroll the highlighted item into view
+  useEffect(() => {
+    if (highlightedIndex >= 0 && listRef.current) {
+      const optionButtons =
+        listRef.current.querySelectorAll<HTMLButtonElement>('button')
+      if (optionButtons[highlightedIndex]) {
+        optionButtons[highlightedIndex].scrollIntoView({
+          block: 'nearest',
+          behavior: 'smooth',
+        })
+      }
+    }
+  }, [highlightedIndex])
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showItemDropdown || filteredItems.length === 0) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        setShowItemDropdown(true)
+      }
+      return
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightedIndex((prev) =>
+        prev < filteredItems.length - 1 ? prev + 1 : 0
+      )
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredItems.length - 1
+      )
+    } else if (e.key === 'Enter') {
+      if (highlightedIndex >= 0 && highlightedIndex < filteredItems.length) {
+        e.preventDefault()
+        openConfigureItemModal(filteredItems[highlightedIndex])
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      setShowItemDropdown(false)
+      setHighlightedIndex(-1)
+    }
+  }
 
   const [state, formAction, isPending] = useActionState(
     async (
@@ -177,6 +233,7 @@ export function CreateTransactionDialog({
     }
 
     setShowItemDropdown(false)
+    setHighlightedIndex(-1)
     setSubModalOpen(true)
   }
 
@@ -371,48 +428,66 @@ export function CreateTransactionDialog({
                     setItemSearchQuery(e.target.value)
                     setShowItemDropdown(true)
                   }}
+                  onKeyDown={handleSearchKeyDown}
                 />
               </div>
 
               {showItemDropdown && (
-                <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-md max-h-56 overflow-y-auto shadow-xl">
+                <div
+                  ref={listRef}
+                  className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-md max-h-56 overflow-y-auto shadow-xl"
+                >
                   {filteredItems.length === 0 ? (
                     <div className="p-4 text-sm text-on-surface-variant italic text-center">
                       Nenhum item encontrado no catálogo.
                     </div>
                   ) : (
-                    filteredItems.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className="w-full text-left p-3 hover:bg-surface-container text-sm cursor-pointer border-b last:border-0 border-outline/20 text-on-surface transition-colors"
-                        onClick={() => openConfigureItemModal(item)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sm">{item.name}</span>
-                          <div className="flex items-center gap-2">
-                            {item.value > 0 && (
-                              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                                {new Intl.NumberFormat('pt-BR', {
-                                  style: 'currency',
-                                  currency: 'BRL',
-                                }).format(item.value)}
-                              </span>
-                            )}
-                            {item.category?.name && (
-                              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                                {item.category.name}
-                              </span>
-                            )}
+                    filteredItems.map((item, index) => {
+                      const isHighlighted = index === highlightedIndex
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`w-full text-left p-3 text-sm cursor-pointer border-b last:border-0 border-outline/20 text-on-surface transition-colors ${
+                            isHighlighted
+                              ? 'bg-primary/10 text-primary font-medium'
+                              : 'hover:bg-surface-container'
+                          }`}
+                          onMouseEnter={() => setHighlightedIndex(index)}
+                          onClick={() => openConfigureItemModal(item)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-sm ${
+                                isHighlighted ? 'font-bold' : 'font-semibold'
+                              }`}
+                            >
+                              {item.name}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {item.value > 0 && (
+                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                  {new Intl.NumberFormat('pt-BR', {
+                                    style: 'currency',
+                                    currency: 'BRL',
+                                  }).format(item.value)}
+                                </span>
+                              )}
+                              {item.category?.name && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                  {item.category.name}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        {item.description && (
-                          <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
-                            {item.description}
-                          </div>
-                        )}
-                      </button>
-                    ))
+                          {item.description && (
+                            <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                              {item.description}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })
                   )}
                 </div>
               )}
