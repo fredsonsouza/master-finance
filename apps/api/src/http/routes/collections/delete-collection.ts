@@ -5,6 +5,7 @@ import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function deleteCollection(app: FastifyInstance) {
@@ -57,9 +58,7 @@ export async function deleteCollection(app: FastifyInstance) {
         })
 
         if (!collection) {
-          return reply
-            .status(404)
-            .send({ message: 'Recoleta não encontrada.' } as any)
+          throw new ResourceNotFoundError('Recoleta não encontrada.')
         }
 
         await prisma.collection.delete({
@@ -74,7 +73,7 @@ export async function deleteCollection(app: FastifyInstance) {
           details: `Excluiu recoleta do paciente ${collection.patientName} (Código: ${collection.patientCode}) na unidade ${collection.unit?.name ?? ''}`,
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

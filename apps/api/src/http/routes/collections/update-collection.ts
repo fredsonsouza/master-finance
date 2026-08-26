@@ -99,7 +99,7 @@ export async function updateCollection(app: FastifyInstance) {
           details: `Editou recoleta do paciente ${patientName} (Código: ${patientCode}) na unidade ${collection.unit?.name ?? ''}`,
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

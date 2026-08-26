@@ -1,9 +1,11 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function changeCashClosureStatus(app: FastifyInstance) {
@@ -35,7 +37,7 @@ export async function changeCashClosureStatus(app: FastifyInstance) {
         const userId = await request.getCurrentUserId()
         const user = await prisma.user.findUnique({ where: { id: userId } })
 
-        if (user?.role === 'SELLER' || user?.role === 'EMPLOYEE') {
+        if (!user) {
           throw new UnauthorizedError()
         }
 
@@ -44,9 +46,27 @@ export async function changeCashClosureStatus(app: FastifyInstance) {
         })
 
         if (!closure) {
-          return reply
-            .status(404)
-            .send({ message: 'Lançamento não encontrado.' } as any)
+          throw new ResourceNotFoundError('Lançamento não encontrado.')
+        }
+
+        const ability = defineAbilityFor({
+          id: user.id,
+          role: user.role,
+          unitId: user.unitId,
+        } as any)
+
+        if (
+          ability.cannot(
+            'update',
+            {
+              __typename: 'CashClosure',
+              ...closure,
+            } as any
+          )
+        ) {
+          throw new UnauthorizedError(
+            'You are not allowed to update this cash closure.'
+          )
         }
 
         const updated = await prisma.cashClosure.update({
@@ -71,7 +91,7 @@ export async function changeCashClosureStatus(app: FastifyInstance) {
           details: `Alterou status do fechamento de caixa do dia ${updated.cashDate.toLocaleDateString('pt-BR')} (Unidade: ${updated.unit?.name ?? ''}) para: ${status === 'CLOSED' ? 'FECHADO' : 'ABERTO'}`,
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

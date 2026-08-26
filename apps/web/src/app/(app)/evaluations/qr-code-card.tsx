@@ -151,17 +151,31 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
     }
   }
 
+  function escapeHtml(str: string | null | undefined): string {
+    if (!str) return ''
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
   function handlePrint() {
     const printWindow = window.open('', '_blank')
     if (!printWindow || !evaluationUrl) return
 
+    const qrCanvas = canvasRef.current?.querySelector('canvas')
+    const qrDataUrl = qrCanvas ? qrCanvas.toDataURL('image/png') : ''
+
     const logoUrl = `${window.location.origin}/images/masterclin-logo.png`
+    const safeSellerName = escapeHtml(sellerName)
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Crachá QR Code - ${sellerName}</title>
+          <title>Crachá QR Code - ${safeSellerName}</title>
           <style>
             @page {
               size: 54mm 86mm;
@@ -224,9 +238,10 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
               margin: 0.5mm 0 2mm 0;
               display: block;
             }
-            #qr {
-              display: flex;
-              justify-content: center;
+            .qr-image {
+              width: 38mm;
+              height: 38mm;
+              display: block;
               margin: 0 auto;
             }
             .footer-tag {
@@ -248,19 +263,12 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
               <div class="badge-hole"></div>
               <img src="${logoUrl}" class="clinic-logo" alt="Logo Masterclin" />
               <p class="title">Avalie meu Atendimento</p>
-              <span class="seller-name">${sellerName}</span>
+              <span class="seller-name">${safeSellerName}</span>
             </div>
-            <div id="qr"></div>
+            ${qrDataUrl ? `<img src="${qrDataUrl}" class="qr-image" alt="QR Code" />` : ''}
             <div class="footer-tag">Escaneie com a Câmera</div>
           </div>
-          <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
           <script>
-            var typeNumber = 0;
-            var errorCorrectionLevel = 'L';
-            var qr = qrcode(typeNumber, errorCorrectionLevel);
-            qr.addData('${evaluationUrl}');
-            qr.make();
-            document.getElementById('qr').innerHTML = qr.createImgTag(4);
             window.onload = function() { window.print(); }
           </script>
         </body>

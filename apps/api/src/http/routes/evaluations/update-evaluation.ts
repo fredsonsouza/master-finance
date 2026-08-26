@@ -73,7 +73,7 @@ export async function updateEvaluation(app: FastifyInstance) {
           },
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

@@ -1,9 +1,12 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { BadRequestError } from '../_errors/bad-request-error'
+import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function updateCashClosure(app: FastifyInstance) {
@@ -37,28 +40,42 @@ export async function updateCashClosure(app: FastifyInstance) {
         const userId = await request.getCurrentUserId()
         const user = await prisma.user.findUnique({ where: { id: userId } })
 
+        if (!user) {
+          throw new UnauthorizedError()
+        }
+
         const closure = await prisma.cashClosure.findUnique({
           where: { id },
         })
 
         if (!closure) {
-          return reply
-            .status(404)
-            .send({ message: 'Lançamento não encontrado.' } as any)
+          throw new ResourceNotFoundError('Lançamento não encontrado.')
         }
 
-        // Validação de regras de negócio
-        if (user?.role === 'SELLER' || user?.role === 'EMPLOYEE') {
-          // Só pode editar o próprio lançamento
-          if (closure.userId !== userId) {
-            throw new UnauthorizedError()
-          }
-          // Só pode editar se estiver OPEN
-          if (closure.status !== 'OPEN') {
-            return reply.status(403).send({
-              message: 'Não é possível editar lançamentos já fechados.',
-            } as any)
-          }
+        const ability = defineAbilityFor({
+          id: user.id,
+          role: user.role,
+          unitId: user.unitId,
+        } as any)
+
+        if (
+          ability.cannot(
+            'update',
+            {
+              __typename: 'CashClosure',
+              ...closure,
+            } as any
+          )
+        ) {
+          throw new UnauthorizedError(
+            'You are not allowed to update this cash closure.'
+          )
+        }
+
+        if (closure.status !== 'OPEN' && user.role !== 'ADMIN' && user.role !== 'MANAGER' && user.role !== 'FINANCIAL') {
+          throw new UnauthorizedError(
+            'Não é possível editar lançamentos já fechados.'
+          )
         }
 
         const dateObj = new Date(cashDate)
@@ -66,9 +83,9 @@ export async function updateCashClosure(app: FastifyInstance) {
         today.setHours(0, 0, 0, 0)
 
         if (dateObj >= today) {
-          return reply.status(400).send({
-            message: 'A data do caixa deve ser anterior à data de hoje.',
-          } as any)
+          throw new BadRequestError(
+            'A data do caixa deve ser anterior à data de hoje.'
+          )
         }
 
         const updated = await prisma.cashClosure.update({
@@ -95,7 +112,7 @@ export async function updateCashClosure(app: FastifyInstance) {
           details: `Editou fechamento de caixa do dia ${dateObj.toLocaleDateString('pt-BR')} no valor de R$ ${value.toFixed(2)} (Unidade: ${updated.unit?.name ?? ''})`,
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

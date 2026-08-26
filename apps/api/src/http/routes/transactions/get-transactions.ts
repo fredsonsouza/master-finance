@@ -15,37 +15,31 @@ export async function getTransactions(app: FastifyInstance) {
       {
         schema: {
           tags: ['transactions'],
-          summary: 'Get all transactions',
+          summary: 'Get all transactions with filtering',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             unitId: z.string().uuid().optional(),
             itemId: z.string().uuid().optional(),
-            month: z.string().optional(), // Expected YYYY-MM
+            month: z.string().optional(),
             type: z.enum(['ENTRY', 'EXIT']).optional(),
           }),
           response: {
             200: z.object({
               transactions: z.array(
                 z.object({
-                  id: z.string().uuid(),
+                  id: z.uuid(),
                   type: z.enum(['ENTRY', 'EXIT']),
                   date: z.date(),
-                  month: z.string(),
                   value: z.number(),
                   quantity: z.number(),
-                  itemId: z.string().uuid(),
-                  unitId: z.string().uuid(),
-                  sectorId: z.string().uuid().nullable().optional(),
-                  userId: z.string().uuid(),
-                  batchId: z.string().uuid().nullable().optional(),
-                  createdAt: z.date(),
-                  updatedAt: z.date(),
+                  month: z.string(),
+                  batchId: z.uuid().nullable(),
                   item: z.object({
-                    id: z.string().uuid(),
+                    id: z.uuid(),
                     name: z.string(),
+                    description: z.string().nullable(),
                     sector: z
                       .object({
-                        id: z.string().uuid(),
                         name: z.string(),
                       })
                       .nullable()
@@ -53,7 +47,7 @@ export async function getTransactions(app: FastifyInstance) {
                   }),
                   sector: z
                     .object({
-                      id: z.string().uuid(),
+                      id: z.uuid(),
                       name: z.string(),
                     })
                     .nullable()
@@ -79,9 +73,24 @@ export async function getTransactions(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
+        const ability = defineAbilityFor({
+          id: requestingUser.id,
+          role: requestingUser.role,
+          unitId: requestingUser.unitId,
+        } as any)
+
+        if (ability.cannot('get', 'Transaction')) {
+          throw new UnauthorizedError(
+            'You are not allowed to view transactions.'
+          )
+        }
+
         let { unitId, itemId, month, type } = request.query
 
-        if (requestingUser.role === 'EMPLOYEE') {
+        if (
+          requestingUser.role === 'EMPLOYEE' ||
+          requestingUser.role === 'SELLER'
+        ) {
           if (!requestingUser.unitId) {
             return reply.status(200).send({ transactions: [] })
           }
@@ -89,7 +98,7 @@ export async function getTransactions(app: FastifyInstance) {
         }
 
         const transactions = await prisma.transaction.findMany({
-          take: 100, // Limita a 100 para não estourar a memória no acesso global
+          take: 100,
           where: {
             unitId,
             itemId,
@@ -113,13 +122,6 @@ export async function getTransactions(app: FastifyInstance) {
             date: 'desc',
           },
         })
-
-        if (transactions.length > 0) {
-          console.log(
-            'DEBUG FIRST TX ITEM:',
-            JSON.stringify(transactions[0].item, null, 2)
-          )
-        }
 
         return reply.status(200).send({ transactions })
       }

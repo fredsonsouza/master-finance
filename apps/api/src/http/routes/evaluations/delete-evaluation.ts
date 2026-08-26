@@ -60,7 +60,7 @@ export async function deleteEvaluation(app: FastifyInstance) {
           where: { id },
         })
 
-        return reply.status(204).send()
+        return reply.status(204).send(null)
       }
     )
 }

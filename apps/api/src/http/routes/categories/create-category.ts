@@ -58,90 +58,21 @@ export async function createCategory(app: FastifyInstance) {
 
         const rawName = request.body.name.trim()
 
-        let category: any = null
-
-        // Check if category already exists
-        if ((prisma as any).category) {
-          try {
-            category = await (prisma as any).category.findFirst({
-              where: {
-                name: {
-                  equals: rawName,
-                  mode: 'insensitive',
-                },
-              },
-            })
-          } catch {
-            category = null
-          }
-        } else {
-          try {
-            const existing = await prisma.$queryRawUnsafe<any[]>(
-              `SELECT * FROM "categories" WHERE LOWER("name") = LOWER($1) LIMIT 1;`,
-              rawName
-            )
-            if (existing && existing.length > 0) {
-              category = existing[0]
-            }
-          } catch {
-            category = null
-          }
-        }
+        let category = await prisma.category.findFirst({
+          where: {
+            name: {
+              equals: rawName,
+              mode: 'insensitive',
+            },
+          },
+        })
 
         if (!category) {
-          if ((prisma as any).category) {
-            try {
-              category = await (prisma as any).category.create({
-                data: {
-                  name: rawName,
-                },
-              })
-            } catch {
-              // Ensure table exists and create via raw SQL
-              await prisma.$executeRawUnsafe(`
-                CREATE TABLE IF NOT EXISTS "categories" (
-                  "id" TEXT NOT NULL,
-                  "name" TEXT NOT NULL,
-                  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                  CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
-                );
-                CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
-                ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
-              `)
-
-              const inserted = await prisma.$queryRawUnsafe<any[]>(
-                `INSERT INTO "categories" ("id", "name", "createdAt", "updatedAt") 
-                 VALUES (gen_random_uuid()::text, $1, NOW(), NOW()) 
-                 ON CONFLICT ("name") DO UPDATE SET "updatedAt" = NOW() 
-                 RETURNING "id", "name", "createdAt", "updatedAt";`,
-                rawName
-              )
-              category = inserted[0]
-            }
-          } else {
-            // Raw SQL fallback when prisma client was not regenerated
-            await prisma.$executeRawUnsafe(`
-              CREATE TABLE IF NOT EXISTS "categories" (
-                "id" TEXT NOT NULL,
-                "name" TEXT NOT NULL,
-                "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
-              );
-              CREATE UNIQUE INDEX IF NOT EXISTS "categories_name_key" ON "categories"("name");
-              ALTER TABLE "items" ADD COLUMN IF NOT EXISTS "categoryId" TEXT;
-            `)
-
-            const inserted = await prisma.$queryRawUnsafe<any[]>(
-              `INSERT INTO "categories" ("id", "name", "createdAt", "updatedAt") 
-               VALUES (gen_random_uuid()::text, $1, NOW(), NOW()) 
-               ON CONFLICT ("name") DO UPDATE SET "updatedAt" = NOW() 
-               RETURNING "id", "name", "createdAt", "updatedAt";`,
-              rawName
-            )
-            category = inserted[0]
-          }
+          category = await prisma.category.create({
+            data: {
+              name: rawName,
+            },
+          })
 
           await logAction({
             userId,
@@ -157,8 +88,8 @@ export async function createCategory(app: FastifyInstance) {
           category: {
             id: category.id,
             name: category.name,
-            createdAt: new Date(category.createdAt),
-            updatedAt: new Date(category.updatedAt),
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
           },
         })
       }

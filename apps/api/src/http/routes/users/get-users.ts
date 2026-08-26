@@ -88,8 +88,25 @@ export async function getUsers(app: FastifyInstance) {
 
         const { search, unitId, role, page, perPage } = request.query
 
+        let scopedUnitId = unitId || undefined
+
+        if (requestingUser.role === 'FISCAL') {
+          if (!requestingUser.unitId) {
+            return reply.status(200).send({
+              users: [],
+              pagination: {
+                page,
+                perPage,
+                totalCount: 0,
+                totalPages: 1,
+              },
+            })
+          }
+          scopedUnitId = requestingUser.unitId
+        }
+
         const where = {
-          unitId: unitId || undefined,
+          unitId: scopedUnitId,
           role: role || undefined,
           OR: search?.trim()
             ? [

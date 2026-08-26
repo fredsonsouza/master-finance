@@ -79,28 +79,30 @@ app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 app.setErrorHandler(errorHandler)
-app.register(fastifySwagger, {
-  openapi: {
-    info: {
-      title: 'Master Admin',
-      description: 'Full-stack app with multi-tenant & RBAC',
-      version: '1.0.0',
-    },
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+  app.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: 'Master Admin',
+        description: 'Full-stack app with multi-tenant & RBAC',
+        version: '1.0.0',
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
         },
       },
     },
-  },
-  transform: jsonSchemaTransform,
-}),
+    transform: jsonSchemaTransform,
+  })
   app.register(fastifySwaggerUi, {
     routePrefix: '/docs',
   })
+}
 app.register(fastifyJwt, {
   secret: env.JWT_SECRET,
 })

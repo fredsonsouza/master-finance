@@ -50,7 +50,8 @@ export async function createItem(app: FastifyInstance) {
           unitId: requestingUser.unitId,
         } as any)
 
-        const { name, description, value, categoryId, sectorId, quantity } = request.body
+        const { name, description, value, categoryId, sectorId, quantity } =
+          request.body
 
         if (ability.cannot('create', 'Item')) {
           throw new UnauthorizedError(
@@ -59,15 +60,11 @@ export async function createItem(app: FastifyInstance) {
         }
 
         if (categoryId) {
-          try {
-            const category = await prisma.category.findUnique({
-              where: { id: categoryId },
-            })
-            if (!category) {
-              throw new BadRequestError('Categoria não encontrada.')
-            }
-          } catch (err) {
-            if (err instanceof BadRequestError) throw err
+          const category = await prisma.category.findUnique({
+            where: { id: categoryId },
+          })
+          if (!category) {
+            throw new BadRequestError('Categoria não encontrada.')
           }
         }
 
@@ -80,30 +77,16 @@ export async function createItem(app: FastifyInstance) {
           }
         }
 
-        let item: any = null
-
-        try {
-          item = await prisma.item.create({
-            data: {
-              name,
-              description,
-              value: value ?? 0,
-              categoryId: categoryId || null,
-              sectorId: sectorId || null,
-              quantity,
-            },
-          })
-        } catch (dbError) {
-          // Fallback if categoryId or value column is not yet in DB
-          item = await prisma.item.create({
-            data: {
-              name,
-              description,
-              sectorId: sectorId || null,
-              quantity,
-            },
-          })
-        }
+        const item = await prisma.item.create({
+          data: {
+            name,
+            description,
+            value: value ?? 0,
+            categoryId: categoryId || null,
+            sectorId: sectorId || null,
+            quantity,
+          },
+        })
 
         await logAction({
           userId,

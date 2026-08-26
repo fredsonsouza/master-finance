@@ -1,9 +1,11 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { BadRequestError } from '../_errors/bad-request-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function createCashClosure(app: FastifyInstance) {
@@ -51,14 +53,34 @@ export async function createCashClosure(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
+        const ability = defineAbilityFor({
+          id: user.id,
+          role: user.role,
+          unitId: user.unitId,
+        } as any)
+
+        if (
+          ability.cannot(
+            'create',
+            {
+              __typename: 'CashClosure',
+              unitId,
+            } as any
+          )
+        ) {
+          throw new UnauthorizedError(
+            'You are not allowed to create cash closures in this unit.'
+          )
+        }
+
         const dateObj = new Date(cashDate)
         const today = new Date()
         today.setHours(0, 0, 0, 0) // Start of today
 
         if (dateObj >= today) {
-          return reply.status(201).send({
-            message: 'A data do caixa deve ser anterior à data de hoje.',
-          } as any)
+          throw new BadRequestError(
+            'A data do caixa deve ser anterior à data de hoje.'
+          )
         }
 
         const finalUserId =

@@ -8,6 +8,16 @@ interface ExportEvaluationsPdfParams {
   period?: string
 }
 
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 export function downloadEvaluationsPdf({
   evaluations,
   metrics,
@@ -35,35 +45,36 @@ export function downloadEvaluationsPdf({
       case 'BAD':
         return '<span class="badge badge-bad">Ruim</span>'
       default:
-        return `<span class="badge">${rating}</span>`
+        return `<span class="badge">${escapeHtml(rating)}</span>`
     }
   }
 
-  const tableRowsHtml = evaluations.map((ev) => {
-    const formattedDate = new Date(ev.createdAt).toLocaleString('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    })
+  const tableRowsHtml = evaluations
+    .map((ev) => {
+      const formattedDate = new Date(ev.createdAt).toLocaleString('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+      })
 
-    const comment = ev.observation
-      ? ev.observation
-      : ev.presetComment
-        ? ev.presetComment
+      const rawComment = ev.observation || ev.presetComment
+      const commentHtml = rawComment
+        ? escapeHtml(rawComment)
         : '<em style="color: #94a3b8;">Sem comentário</em>'
 
-    return `
+      return `
       <tr>
         <td style="white-space: nowrap; font-family: monospace; font-size: 8.5pt;">${formattedDate}</td>
         <td>${getRatingBadge(ev.rating)}</td>
-        <td style="font-weight: 600;">${ev.clientName || 'Anônimo'}</td>
+        <td style="font-weight: 600;">${escapeHtml(ev.clientName) || 'Anônimo'}</td>
         <td>
-          <div style="font-weight: 600;">${ev.seller.name}</div>
-          ${ev.unit?.name ? `<div style="font-size: 8pt; color: #64748b;">${ev.unit.name}</div>` : ''}
+          <div style="font-weight: 600;">${escapeHtml(ev.seller.name)}</div>
+          ${ev.unit?.name ? `<div style="font-size: 8pt; color: #64748b;">${escapeHtml(ev.unit.name)}</div>` : ''}
         </td>
-        <td style="font-size: 8.5pt; color: #334155; line-height: 1.3;">${comment}</td>
+        <td style="font-size: 8.5pt; color: #334155; line-height: 1.3;">${commentHtml}</td>
       </tr>
     `
-  }).join('')
+    })
+    .join('')
 
   printWindow.document.write(`
     <!DOCTYPE html>
@@ -100,8 +111,7 @@ export function downloadEvaluationsPdf({
             margin-bottom: 14px;
           }
           .logo {
-            max-height: 60px;
-            max-width: 220px;
+            height: 48px;
             width: auto;
             object-fit: contain;
           }
@@ -109,18 +119,17 @@ export function downloadEvaluationsPdf({
             text-align: right;
           }
           .title {
-            font-size: 14pt;
+            font-size: 16pt;
             font-weight: 800;
-            color: #0f172a;
-            margin: 0 0 2px 0;
-            text-transform: uppercase;
-          }
-          .subtitle {
-            font-size: 8.5pt;
-            color: #0284c7;
-            font-weight: 700;
+            color: #0369a1;
             margin: 0;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .subtitle {
+            font-size: 9pt;
+            color: #64748b;
+            margin: 2px 0 0 0;
           }
           .filter-box {
             background-color: #f8fafc;
@@ -130,62 +139,67 @@ export function downloadEvaluationsPdf({
             margin-bottom: 14px;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
+            gap: 16px;
             font-size: 8.5pt;
-            gap: 8px;
-          }
-          .filter-item {
-            color: #475569;
           }
           .filter-item strong {
-            color: #0f172a;
+            color: #334155;
           }
           .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 16px;
           }
           .metric-card {
-            background-color: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 8px 12px;
             text-align: center;
+            background: #ffffff;
           }
           .metric-val {
-            font-size: 13pt;
+            font-size: 14pt;
             font-weight: 800;
-            color: #0284c7;
+            color: #0f172a;
+            line-height: 1.2;
           }
           .metric-lbl {
             font-size: 7.5pt;
-            color: #475569;
             text-transform: uppercase;
-            font-weight: 600;
+            font-weight: 700;
+            color: #64748b;
             margin-top: 2px;
+            letter-spacing: 0.3px;
           }
           .table-eval {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8.5pt;
             margin-bottom: 20px;
+            page-break-inside: auto;
+          }
+          .table-eval tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
           }
           .table-eval th {
-            background-color: #0284c7;
-            color: #ffffff;
-            padding: 6px 8px;
-            text-align: left;
+            background-color: #f1f5f9;
+            color: #475569;
             font-weight: 700;
-            font-size: 8pt;
             text-transform: uppercase;
+            font-size: 8pt;
+            letter-spacing: 0.5px;
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 2px solid #cbd5e1;
+            border-top: 1px solid #e2e8f0;
           }
           .table-eval td {
+            padding: 7px 10px;
             border-bottom: 1px solid #e2e8f0;
-            padding: 6px 8px;
             vertical-align: top;
           }
-          .table-eval tr:nth-child(even) {
+          .table-eval tbody tr:nth-child(even) {
             background-color: #f8fafc;
           }
           .badge {
@@ -197,45 +211,61 @@ export function downloadEvaluationsPdf({
             text-transform: uppercase;
           }
           .badge-excellent {
-            background-color: #d1fae5;
-            color: #065f46;
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
           }
           .badge-good {
-            background-color: #dbeafe;
-            color: #1e40af;
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
           }
           .badge-regular {
-            background-color: #fef3c7;
-            color: #92400e;
+            background-color: #fef9c3;
+            color: #a16207;
+            border: 1px solid #fef08a;
           }
           .badge-bad {
             background-color: #fee2e2;
-            color: #991b1b;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
           }
           .signature-section {
-            margin-top: 30px;
-            text-align: center;
+            margin-top: 24px;
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             page-break-inside: avoid;
           }
           .signature-line {
-            width: 220px;
-            border-top: 1.5px solid #334155;
-            margin: 0 auto 6px auto;
+            width: 200px;
+            border-top: 1px solid #94a3b8;
+            margin-bottom: 4px;
           }
           .signature-name {
-            font-size: 10pt;
             font-weight: 700;
-            color: #0f172a;
+            font-size: 9pt;
+            color: #1e293b;
             margin: 0;
           }
           .signature-role {
-            font-size: 8.5pt;
-            color: #475569;
-            font-weight: 600;
-            margin-top: 1px;
+            font-size: 8pt;
+            color: #64748b;
+            margin: 0;
           }
           @media print {
-            body { background: transparent; }
+            body {
+              padding: 0;
+            }
+            .table-eval {
+              page-break-inside: auto;
+            }
+            .table-eval tr {
+              page-break-inside: avoid;
+              page-break-after: auto;
+            }
           }
         </style>
       </head>
@@ -249,9 +279,9 @@ export function downloadEvaluationsPdf({
         </div>
 
         <div class="filter-box">
-          <div class="filter-item"><strong>Unidade:</strong> ${unitName}</div>
-          <div class="filter-item"><strong>Atendente:</strong> ${sellerName}</div>
-          <div class="filter-item"><strong>Período:</strong> ${period}</div>
+          <div class="filter-item"><strong>Unidade:</strong> ${escapeHtml(unitName)}</div>
+          <div class="filter-item"><strong>Atendente:</strong> ${escapeHtml(sellerName)}</div>
+          <div class="filter-item"><strong>Período:</strong> ${escapeHtml(period)}</div>
           <div class="filter-item"><strong>Emissão:</strong> ${now}</div>
           <div class="filter-item"><strong>Total de Registros:</strong> ${evaluations.length}</div>
         </div>

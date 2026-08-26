@@ -19,7 +19,7 @@ export const errorHandler: FastifyErrorHandler = (error, request, reply) => {
   if (fastifyError.code === 'FST_ERR_VALIDATION') {
     return reply.status(400).send({
       message: 'Validation error',
-      errors: (error as any).validation,
+      errors: (error as Record<string, unknown>).validation,
     })
   }
 
@@ -46,15 +46,9 @@ export const errorHandler: FastifyErrorHandler = (error, request, reply) => {
       message: fastifyError.message,
     })
   }
-  console.error(error)
-  import('node:fs').then((fs) =>
-    fs.writeFileSync(
-      '/tmp/api-error.txt',
-      `${String(error.stack || error.message)}\n${JSON.stringify(error, null, 2)}`
-    )
-  )
-  // TODO: Send error to an external observability platform (e.g. Sentry, Datadog)
-  reply
-    .status(500)
-    .send({ message: 'Internal server error', error: error.message })
+
+  // Safe server logging without leaking to response or writing to /tmp
+  request.log.error(error as any)
+
+  return reply.status(500).send({ message: 'Internal server error' })
 }

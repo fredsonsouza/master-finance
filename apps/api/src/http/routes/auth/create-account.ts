@@ -35,7 +35,7 @@ export async function createAccount(app: FastifyInstance) {
         throw new BadRequestError('Username already taken!')
       }
 
-      const password_hash = await hash(password, 6)
+      const password_hash = await hash(password, 10)
 
       const user = await prisma.user.create({
         data: {
