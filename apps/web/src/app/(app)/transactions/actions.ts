@@ -184,3 +184,17 @@ export async function getItemMetricsAction(itemId: string, unitId?: string) {
     return null
   }
 }
+
+export async function fetchAllItemsAction() {
+  const { token } = await auth()
+  if (!token) return { success: false, items: [], message: 'Não autenticado' }
+
+  try {
+    const { getAllItems } = await import('@/http/get-items')
+    const items = await getAllItems(token)
+    return { success: true, items, message: null }
+  } catch (err) {
+    console.error('[fetchAllItemsAction error]:', err)
+    return { success: false, items: [], message: 'Erro ao buscar catálogo completo de itens.' }
+  }
+}

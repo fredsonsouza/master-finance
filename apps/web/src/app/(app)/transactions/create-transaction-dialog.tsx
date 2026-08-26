@@ -27,7 +27,11 @@ import {
 } from 'lucide-react'
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { createTransactionAction, getItemMetricsAction } from './actions'
+import {
+  createTransactionAction,
+  fetchAllItemsAction,
+  getItemMetricsAction,
+} from './actions'
 
 interface Props {
   items: Item[]
@@ -55,6 +59,27 @@ export function CreateTransactionDialog({
   const [type, setType] = useState<'ENTRY' | 'EXIT'>('ENTRY')
   const [selectedUnitId, setSelectedUnitId] = useState('')
   const [selectedSectorId, setSelectedSectorId] = useState('')
+
+  // Full catalog items (initialized from props, refreshed on dialog open)
+  const [catalogItems, setCatalogItems] = useState<Item[]>(items || [])
+
+  // Sync props changes
+  useEffect(() => {
+    if (items && items.length > 0) {
+      setCatalogItems(items)
+    }
+  }, [items])
+
+  // Refresh full catalog dynamically whenever dialog is opened
+  useEffect(() => {
+    if (open) {
+      fetchAllItemsAction().then((res) => {
+        if (res.success && res.items && res.items.length > 0) {
+          setCatalogItems(res.items)
+        }
+      })
+    }
+  }, [open])
 
   // Selected items list
   const [addedItems, setAddedItems] = useState<AddedItem[]>([])
@@ -100,7 +125,7 @@ export function CreateTransactionDialog({
   }, [])
 
   // Filter items by search query (accent-insensitive, case-insensitive, searching name, description and category)
-  const filteredItems = items.filter((item) => {
+  const filteredItems = catalogItems.filter((item) => {
     if (!itemSearchQuery.trim()) return true
     const normalize = (str: string) =>
       str
@@ -546,7 +571,7 @@ export function CreateTransactionDialog({
 
                   <div className="max-h-52 overflow-y-auto divide-y divide-outline/20">
                     {addedItems.map((item) => {
-                      const catalogItem = items.find((i) => i.id === item.itemId)
+                      const catalogItem = catalogItems.find((i) => i.id === item.itemId)
                       return (
                         <div
                           key={item.itemId}

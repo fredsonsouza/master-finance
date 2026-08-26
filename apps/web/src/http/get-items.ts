@@ -67,17 +67,33 @@ export async function getItems(
 
 export async function getAllItems(token: string): Promise<Item[]> {
   try {
-    const firstPage = await getItems(token, { page: 1, perPage: 1000 })
-    let allItems = [...firstPage.items]
-    if (firstPage.pagination && firstPage.pagination.totalPages > 1) {
-      for (let p = 2; p <= firstPage.pagination.totalPages; p++) {
-        const nextPage = await getItems(token, { page: p, perPage: 1000 })
-        allItems = allItems.concat(nextPage.items)
+    // 1. Fetch page 1 with perPage: 100 (compatible with all API versions)
+    const firstPage = await getItems(token, { page: 1, perPage: 100 })
+    let allItems = [...(firstPage.items || [])]
+    const totalPages = firstPage.pagination?.totalPages ?? 1
+
+    // 2. If there are more pages, fetch all remaining pages in parallel
+    if (totalPages > 1) {
+      const pagePromises = []
+      for (let p = 2; p <= totalPages; p++) {
+        pagePromises.push(getItems(token, { page: p, perPage: 100 }))
+      }
+      const results = await Promise.all(pagePromises)
+      for (const res of results) {
+        if (res.items && res.items.length > 0) {
+          allItems = allItems.concat(res.items)
+        }
       }
     }
     return allItems
   } catch (err) {
-    console.error('Error fetching all items:', err)
-    return []
+    console.error('[getAllItems error]:', err)
+    // Safe fallback to default
+    try {
+      const fallback = await getItems(token)
+      return fallback.items || []
+    } catch {
+      return []
+    }
   }
 }
