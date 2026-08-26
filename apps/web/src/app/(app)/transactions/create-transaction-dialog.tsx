@@ -246,7 +246,7 @@ export function CreateTransactionDialog({
             Nova Transação
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] md:w-[70vw] md:max-w-[70vw] max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-primary">
               Registrar Movimentação de Estoque
