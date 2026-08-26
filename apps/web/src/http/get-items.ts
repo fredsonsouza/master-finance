@@ -64,3 +64,20 @@ export async function getItems(
 
   return result
 }
+
+export async function getAllItems(token: string): Promise<Item[]> {
+  try {
+    const firstPage = await getItems(token, { page: 1, perPage: 1000 })
+    let allItems = [...firstPage.items]
+    if (firstPage.pagination && firstPage.pagination.totalPages > 1) {
+      for (let p = 2; p <= firstPage.pagination.totalPages; p++) {
+        const nextPage = await getItems(token, { page: p, perPage: 1000 })
+        allItems = allItems.concat(nextPage.items)
+      }
+    }
+    return allItems
+  } catch (err) {
+    console.error('Error fetching all items:', err)
+    return []
+  }
+}

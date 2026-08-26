@@ -99,10 +99,26 @@ export function CreateTransactionDialog({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Filter items by search query
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(itemSearchQuery.toLowerCase())
-  )
+  // Filter items by search query (accent-insensitive, case-insensitive, searching name, description and category)
+  const filteredItems = items.filter((item) => {
+    if (!itemSearchQuery.trim()) return true
+    const normalize = (str: string) =>
+      str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+
+    const q = normalize(itemSearchQuery)
+    const nameMatch = normalize(item.name).includes(q)
+    const descMatch = item.description
+      ? normalize(item.description).includes(q)
+      : false
+    const catMatch = item.category?.name
+      ? normalize(item.category.name).includes(q)
+      : false
+
+    return nameMatch || descMatch || catMatch
+  })
 
   // Adjust highlighted index on query change or dropdown toggle
   useEffect(() => {

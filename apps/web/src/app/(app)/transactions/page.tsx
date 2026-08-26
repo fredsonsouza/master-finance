@@ -1,5 +1,5 @@
 import { auth } from '@/auth/auth'
-import { getItems, type Item } from '@/http/get-items'
+import { getAllItems, type Item } from '@/http/get-items'
 import { getSectors, type Sector } from '@/http/get-sectors'
 import { getTransactions, type Transaction } from '@/http/get-transactions'
 import { getUnits, type Unit } from '@/http/get-units'
@@ -15,18 +15,15 @@ export default async function TransactionsPage() {
   let units: Unit[] = []
 
   try {
-    const [txRes, itemsRes, sectorsRes, unitsRes] = await Promise.all([
+    const [txRes, allItemsList, sectorsRes, unitsRes] = await Promise.all([
       getTransactions(token).catch(() => ({ transactions: [] })),
-      getItems(token, { page: 1, perPage: 100 }).catch(() => ({
-        items: [],
-        pagination: { page: 1, perPage: 100, totalCount: 0, totalPages: 1 },
-      })),
+      getAllItems(token).catch(() => []),
       getSectors(token).catch(() => ({ sectors: [] })),
       getUnits(token).catch(() => ({ units: [] })),
     ])
 
     transactions = txRes.transactions || []
-    items = itemsRes.items || []
+    items = allItemsList || []
     sectors = sectorsRes.sectors || []
     units = unitsRes.units || []
   } catch (err) {

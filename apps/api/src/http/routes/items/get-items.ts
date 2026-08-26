@@ -21,7 +21,7 @@ export async function getItems(app: FastifyInstance) {
             categoryId: z.string().uuid().optional(),
             sectorId: z.string().uuid().optional(),
             page: z.coerce.number().int().min(1).default(1),
-            perPage: z.coerce.number().int().min(1).max(100).default(20),
+            perPage: z.coerce.number().int().min(1).max(5000).default(20),
           }),
           response: {
             200: z.object({
