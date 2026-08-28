@@ -18,6 +18,7 @@ import { updatePassword } from './routes/auth/update-password'
 import { updateProfile } from './routes/auth/update-profile'
 import { createCategory } from './routes/categories/create-category'
 import { getCategories } from './routes/categories/get-categories'
+import { updateCategory } from './routes/categories/update-category'
 import { createItem } from './routes/items/create-item'
 import { deleteItem } from './routes/items/delete-item'
 import { getItem } from './routes/items/get-item'
@@ -135,6 +136,7 @@ app.register(deleteSector)
 
 app.register(createCategory)
 app.register(getCategories)
+app.register(updateCategory)
 
 app.register(createItem)
 app.register(getItems)

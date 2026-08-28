@@ -40,36 +40,18 @@ export async function getCategories(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        let categories: any[] = []
-
-        if ((prisma as any).category) {
-          try {
-            categories = await (prisma as any).category.findMany({
-              orderBy: {
-                name: 'asc',
-              },
-            })
-          } catch {
-            categories = []
-          }
-        }
-
-        if (categories.length === 0) {
-          try {
-            categories = await prisma.$queryRawUnsafe<any[]>(
-              `SELECT "id", "name", "createdAt", "updatedAt" FROM "categories" ORDER BY "name" ASC;`
-            )
-          } catch {
-            categories = []
-          }
-        }
+        const categories = await prisma.category.findMany({
+          orderBy: {
+            name: 'asc',
+          },
+        })
 
         return reply.status(200).send({
           categories: categories.map((c) => ({
             id: c.id,
             name: c.name,
-            createdAt: new Date(c.createdAt),
-            updatedAt: new Date(c.updatedAt),
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
           })),
         })
       }
