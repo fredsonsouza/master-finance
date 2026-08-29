@@ -1,6 +1,7 @@
 'use server'
 
 import { auth } from '@/auth/auth'
+import { createCategory } from '@/http/create-category'
 import { createSector } from '@/http/create-sector'
 import { createUnit } from '@/http/create-unit'
 import { createUser } from '@/http/create-user'
@@ -9,6 +10,7 @@ import { deleteUnit } from '@/http/delete-unit'
 import { deleteUser } from '@/http/delete-user'
 import { getUsers } from '@/http/get-users'
 import { resetPassword } from '@/http/reset-password'
+import { updateCategory } from '@/http/update-category'
 import { updateSector } from '@/http/update-sector'
 import { updateUnit } from '@/http/update-unit'
 import { updateUser } from '@/http/update-user'
@@ -224,6 +226,48 @@ export async function resetUserPasswordAction(
     return { success: true, message: null }
   } catch (err: unknown) {
     let msg = 'Erro ao redefinir senha do usuário.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function createCategoryAction(data: FormData) {
+  const { token } = await auth()
+  const name = data.get('name') as string
+
+  try {
+    await createCategory(token, { name })
+    revalidatePath('/settings')
+    revalidatePath('/items')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao criar categoria.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function updateCategoryAction(id: string, data: FormData) {
+  const { token } = await auth()
+  const name = data.get('name') as string
+
+  try {
+    await updateCategory(token, id, { name })
+    revalidatePath('/settings')
+    revalidatePath('/items')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao editar categoria.'
     if (err && typeof err === 'object' && 'response' in err) {
       try {
         const e = await (err as any).response.clone().json()

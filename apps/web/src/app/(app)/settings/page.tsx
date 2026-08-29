@@ -1,4 +1,5 @@
 import { auth } from '@/auth/auth'
+import { getCategories, type Category } from '@/http/get-categories'
 import { getSectors, type Sector } from '@/http/get-sectors'
 import { getUnits, type Unit } from '@/http/get-units'
 import { getUsers, type User, type UserPagination } from '@/http/get-users'
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
 
   let units: Unit[] = []
   let sectors: Sector[] = []
+  let categories: Category[] = []
   let users: User[] = []
   let userPagination: UserPagination = {
     page: 1,
@@ -31,9 +33,10 @@ export default async function SettingsPage() {
   }
 
   try {
-    const [unitsRes, sectorsRes, usersRes] = await Promise.all([
+    const [unitsRes, sectorsRes, categoriesRes, usersRes] = await Promise.all([
       getUnits(token).catch(() => ({ units: [] })),
       getSectors(token).catch(() => ({ sectors: [] })),
+      getCategories(token).catch(() => ({ categories: [] })),
       getUsers(token, null, null, null, 1, 20).catch(() => ({
         users: [],
         pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
@@ -41,6 +44,7 @@ export default async function SettingsPage() {
     ])
     units = unitsRes.units
     sectors = sectorsRes.sectors
+    categories = categoriesRes.categories
     users = usersRes.users
     if (usersRes.pagination) {
       userPagination = usersRes.pagination
@@ -65,6 +69,7 @@ export default async function SettingsPage() {
         userPagination={userPagination}
         units={units}
         sectors={sectors}
+        categories={categories}
         activeUnitId={activeUnitId}
         currentUserRole={user.role}
       />

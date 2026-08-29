@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { Category } from '@/http/get-categories'
 import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import type { User, UserPagination } from '@/http/get-users'
@@ -23,6 +24,7 @@ import {
   Loader2,
   Pencil,
   Search,
+  Tag,
   Trash2,
   UserCheck,
   X,
@@ -35,10 +37,12 @@ import {
   deleteUserAction,
   fetchUsersAction,
 } from './actions'
+import { CreateCategoryDialog } from './create-category-dialog'
 import { CreateSectorDialog } from './create-sector-dialog'
 import { CreateUnitDialog } from './create-unit-dialog'
 import { CreateUserDialog } from './create-user-dialog'
 import { ResetPasswordDialog } from './reset-password-dialog'
+import { UpdateCategoryDialog } from './update-category-dialog'
 import { UpdateSectorDialog } from './update-sector-dialog'
 import { UpdateUnitDialog } from './update-unit-dialog'
 import { UpdateUserDialog } from './update-user-dialog'
@@ -48,6 +52,7 @@ interface SettingsContentProps {
   userPagination?: UserPagination
   units: Unit[]
   sectors: Sector[]
+  categories?: Category[]
   activeUnitId: string | null
   currentUserRole: string
 }
@@ -57,6 +62,7 @@ export function SettingsContent({
   userPagination,
   units,
   sectors,
+  categories = [],
   activeUnitId,
   currentUserRole,
 }: SettingsContentProps) {
@@ -80,6 +86,7 @@ export function SettingsContent({
 
   const [searchUnits, setSearchUnits] = useState('')
   const [searchSectors, setSearchSectors] = useState('')
+  const [searchCategories, setSearchCategories] = useState('')
 
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
@@ -91,7 +98,13 @@ export function SettingsContent({
   const [editingSector, setEditingSector] = useState<Sector | null>(null)
   const [deletingSector, setDeletingSector] = useState<Sector | null>(null)
 
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchCategories.toLowerCase())
+  )
 
   async function loadUsersPage(
     page: number,
@@ -219,6 +232,7 @@ export function SettingsContent({
         )}
         <TabsTrigger value="units">Unidades</TabsTrigger>
         <TabsTrigger value="sectors">Setores</TabsTrigger>
+        <TabsTrigger value="categories">Categorias</TabsTrigger>
       </TabsList>
 
       {currentUserRole !== 'INVENTORY' && (
@@ -629,6 +643,91 @@ export function SettingsContent({
         </Card>
       </TabsContent>
 
+      <TabsContent value="categories">
+        <Card className="border-surface-container shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div>
+              <CardTitle className="text-xl font-bold text-primary">
+                Categorias de Itens
+              </CardTitle>
+              <p className="text-xs text-on-surface-variant font-medium mt-1">
+                Classificações para organizar e filtrar o catálogo de produtos e insumos.
+              </p>
+            </div>
+            <CreateCategoryDialog />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+              <Input
+                placeholder="Buscar categoria..."
+                className="bg-surface pl-8 h-9 text-xs"
+                value={searchCategories}
+                onChange={(e) => setSearchCategories(e.target.value)}
+              />
+              {searchCategories && (
+                <button
+                  type="button"
+                  onClick={() => setSearchCategories('')}
+                  className="absolute right-2.5 top-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {filteredCategories.length === 0 ? (
+              <div className="py-8 text-center text-sm text-on-surface-variant">
+                Nenhuma categoria encontrada.
+              </div>
+            ) : (
+              <div className="border-surface-container overflow-hidden rounded-md border">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-surface-container-highest/50 text-xs font-semibold uppercase text-on-surface-variant">
+                    <tr>
+                      <th className="px-6 py-3">Nome da Categoria</th>
+                      <th className="px-6 py-3">Criado em</th>
+                      <th className="px-6 py-3 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container">
+                    {filteredCategories.map((category) => (
+                      <tr
+                        key={category.id}
+                        className="hover:bg-surface-container/50 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-medium text-on-surface">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-primary" />
+                            <span>{category.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-on-surface-variant">
+                          {new Date(category.createdAt).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                              onClick={() => setEditingCategory(category)}
+                              title="Editar Categoria"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       {/* Edit User Dialog */}
       {editingUser && (
         <UpdateUserDialog
@@ -661,6 +760,15 @@ export function SettingsContent({
         <UpdateSectorDialog
           sector={editingSector}
           onClose={() => setEditingSector(null)}
+        />
+      )}
+
+      {/* Edit Category Dialog */}
+      {editingCategory && (
+        <UpdateCategoryDialog
+          category={editingCategory}
+          open={!!editingCategory}
+          onOpenChange={(open) => !open && setEditingCategory(null)}
         />
       )}
 
