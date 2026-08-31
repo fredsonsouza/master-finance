@@ -73,6 +73,7 @@ export async function saveHrReportAction(data: {
       return { success: true, report: result.report, message: null }
     }
   } catch (err: unknown) {
+    console.error('saveHrReportAction error:', err)
     let msg = 'Erro ao salvar relatório.'
     if (err && typeof err === 'object' && 'response' in err) {
       try {
