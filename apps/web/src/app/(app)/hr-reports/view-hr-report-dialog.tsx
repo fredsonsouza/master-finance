@@ -114,7 +114,7 @@ export function ViewHrReportDialog({
         <div class="header">
           <div>
             <h1 class="title">${report.title}</h1>
-            <div style="font-size: 13px; color: #64748b;">Master Finance — Relatório Operacional de Setor / RH</div>
+            <div style="font-size: 13px; color: #64748b;">Master Admin — Relatório Operacional de Setor / RH</div>
           </div>
           <div style="text-align: right; font-size: 12px; color: #0284c7; font-weight: 600;">
             Status: ${report.status === 'SENT' ? 'OFICIAL / ENVIADO' : 'RASCUNHO'}
@@ -133,7 +133,7 @@ export function ViewHrReportDialog({
         <div class="content-box">${report.content}</div>
 
         <div class="footer">
-          Documento gerado eletronicamente pelo sistema Master Finance em ${new Date().toLocaleString('pt-BR')}.
+          Documento gerado eletronicamente pelo sistema Master Admin em ${new Date().toLocaleString('pt-BR')}.
         </div>
       </body>
       </html>
