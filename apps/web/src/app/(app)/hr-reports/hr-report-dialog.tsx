@@ -95,13 +95,18 @@ export function HrReportDialog({
       setIsSending(true)
     }
 
+    const finalUnitId =
+      selectedUnitId && selectedUnitId.trim() !== ''
+        ? selectedUnitId.trim()
+        : defaultUnitId || null
+
     const result = await saveHrReportAction({
       id: report?.id,
       title: title.trim(),
       content: content.trim(),
       reportDate: new Date(reportDate).toISOString(),
       status,
-      unitId: selectedUnitId || null,
+      unitId: finalUnitId,
       sector: sector.trim() || null,
     })
 

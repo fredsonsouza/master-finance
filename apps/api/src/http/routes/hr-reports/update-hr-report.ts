@@ -28,7 +28,7 @@ export async function updateHrReport(app: FastifyInstance) {
             content: z.string().min(1).optional(),
             reportDate: z.coerce.date().optional(),
             status: z.enum(['DRAFT', 'SENT']).optional(),
-            unitId: z.string().uuid().optional().nullable(),
+            unitId: z.union([z.string().uuid(), z.literal(''), z.null()]).optional(),
             sector: z.string().optional().nullable(),
           }),
           response: {
@@ -112,8 +112,18 @@ export async function updateHrReport(app: FastifyInstance) {
             reportDate: reportDate !== undefined ? reportDate : undefined,
             status: status !== undefined ? status : undefined,
             sentAt: isBecomingSent ? new Date() : undefined,
-            unitId: unitId !== undefined ? unitId : undefined,
-            sector: sector !== undefined ? (sector ? sector.trim() : null) : undefined,
+            unitId:
+              unitId !== undefined
+                ? unitId && unitId !== ''
+                  ? unitId
+                  : null
+                : undefined,
+            sector:
+              sector !== undefined
+                ? sector && sector.trim() !== ''
+                  ? sector.trim()
+                  : null
+                : undefined,
           },
         })
 

@@ -26,7 +26,19 @@ export default async function HrReportsPage() {
 
     reports = reportsRes.reports
     pagination = reportsRes.pagination
-    units = unitsRes.units
+    units = unitsRes.units || []
+
+    // If non-global role has no access to list all units, fallback to their assigned unit
+    if (units.length === 0 && user.unit) {
+      units = [
+        {
+          id: user.unit.id,
+          name: user.unit.name,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as any,
+      ]
+    }
   } catch (err) {
     console.error('Error fetching HR reports page data:', err)
   }

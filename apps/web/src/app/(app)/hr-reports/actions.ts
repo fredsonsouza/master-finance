@@ -41,6 +41,11 @@ export async function saveHrReportAction(data: {
   const { token } = await auth()
   if (!token) return { success: false, report: null, message: 'Não autenticado' }
 
+  const formattedUnitId =
+    data.unitId && data.unitId.trim() !== '' ? data.unitId.trim() : null
+  const formattedSector =
+    data.sector && data.sector.trim() !== '' ? data.sector.trim() : null
+
   try {
     if (data.id) {
       // Update existing report
@@ -49,8 +54,8 @@ export async function saveHrReportAction(data: {
         content: data.content,
         reportDate: data.reportDate,
         status: data.status,
-        unitId: data.unitId,
-        sector: data.sector,
+        unitId: formattedUnitId,
+        sector: formattedSector,
       })
       revalidatePath('/hr-reports')
       return { success: true, report: result.report, message: null }
@@ -61,8 +66,8 @@ export async function saveHrReportAction(data: {
         content: data.content,
         reportDate: data.reportDate,
         status: data.status,
-        unitId: data.unitId,
-        sector: data.sector,
+        unitId: formattedUnitId,
+        sector: formattedSector,
       })
       revalidatePath('/hr-reports')
       return { success: true, report: result.report, message: null }
