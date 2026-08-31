@@ -294,7 +294,7 @@ export function HrReportsContent({
             <div className="relative flex-1">
               <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
               <Input
-                placeholder="Buscar por título, conteúdo, setor ou autor..."
+                placeholder="Buscar por título, conteúdo, setor ou colaborador..."
                 className="bg-surface pl-8 h-9 text-xs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -388,13 +388,13 @@ export function HrReportsContent({
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface-container-highest/50 text-xs font-semibold uppercase text-on-surface-variant">
                     <tr>
-                      <th className="px-6 py-3">Título / Relatório</th>
-                      <th className="px-6 py-3">Data Ref.</th>
-                      <th className="px-6 py-3">Autor</th>
-                      <th className="px-6 py-3">Setor / Unidade</th>
-                      <th className="px-6 py-3">Status</th>
-                      <th className="px-6 py-3">Carimbo de Envio</th>
-                      <th className="px-6 py-3 text-right">Ações</th>
+                      <th className="px-6 py-3.5">Título / Relatório</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">Data Ref.</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">Colaborador</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">Setor / Unidade</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap text-center">Status</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">Carimbo de Envio</th>
+                      <th className="px-6 py-3.5 text-right whitespace-nowrap">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-container">
@@ -420,7 +420,7 @@ export function HrReportsContent({
                           </td>
 
                           {/* Data de Referência */}
-                          <td className="px-6 py-4 text-on-surface-variant whitespace-nowrap text-xs font-medium">
+                          <td className="px-4 py-4 text-on-surface-variant whitespace-nowrap text-xs font-medium">
                             <div className="flex items-center gap-1.5">
                               <Calendar className="h-3.5 w-3.5 text-primary" />
                               <span>
@@ -432,8 +432,8 @@ export function HrReportsContent({
                             </div>
                           </td>
 
-                          {/* Autor */}
-                          <td className="px-6 py-4 whitespace-nowrap text-xs">
+                          {/* Colaborador */}
+                          <td className="px-4 py-4 whitespace-nowrap text-xs">
                             <div className="font-medium text-on-surface">
                               {report.user.name}
                             </div>
@@ -443,7 +443,7 @@ export function HrReportsContent({
                           </td>
 
                           {/* Setor e Unidade */}
-                          <td className="px-6 py-4 whitespace-nowrap text-xs text-on-surface-variant">
+                          <td className="px-4 py-4 whitespace-nowrap text-xs text-on-surface-variant">
                             <div className="font-medium text-on-surface">
                               {report.sector || 'Geral'}
                             </div>
@@ -453,7 +453,7 @@ export function HrReportsContent({
                           </td>
 
                           {/* Status */}
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
                             <span
                               className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                                 isSent
@@ -476,7 +476,7 @@ export function HrReportsContent({
                           </td>
 
                           {/* Carimbo de Envio */}
-                          <td className="px-6 py-4 whitespace-nowrap text-xs text-on-surface-variant">
+                          <td className="px-4 py-4 whitespace-nowrap text-xs text-on-surface-variant">
                             {report.sentAt ? (
                               <div className="font-medium text-emerald-700 dark:text-emerald-400">
                                 {new Date(report.sentAt).toLocaleString('pt-BR')}
