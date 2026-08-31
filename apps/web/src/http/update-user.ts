@@ -12,6 +12,7 @@ interface UpdateUserRequest {
     | 'COLLECTOR'
     | 'FISCAL'
     | 'INVENTORY'
+    | 'ANALYST'
   unitId?: string | null
 }
 

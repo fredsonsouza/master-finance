@@ -37,6 +37,7 @@ const roleNames: Record<string, string> = {
   COLLECTOR: 'Coletador',
   FISCAL: 'Fiscal',
   INVENTORY: 'Estoque',
+  ANALYST: 'Analista',
 }
 
 export function ProfileButton({ user }: ProfileButtonProps) {

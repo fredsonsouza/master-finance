@@ -81,6 +81,7 @@ export async function createUserAction(data: FormData) {
     | 'COLLECTOR'
     | 'FISCAL'
     | 'INVENTORY'
+    | 'ANALYST'
   const unitId = data.get('unitId') as string | null
 
   try {
@@ -184,6 +185,7 @@ export async function updateUserAction(id: string, data: FormData) {
     | 'COLLECTOR'
     | 'FISCAL'
     | 'INVENTORY'
+    | 'ANALYST'
   const unitId = data.get('unitId') as string | null
 
   try {

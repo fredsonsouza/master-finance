@@ -27,6 +27,10 @@ export default async function DashboardPage({ searchParams }: Props) {
     redirect('/transactions')
   }
 
+  if (user.role === 'ANALYST') {
+    redirect('/hr-reports')
+  }
+
   const resolvedParams = searchParams ? await searchParams : {}
   const activeUnitId = resolvedParams.unitId || null
 

@@ -56,7 +56,7 @@ export function SidebarNav({
   return (
     <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
       {/* Visão Geral */}
-      {userRole !== 'INVENTORY' && (
+      {userRole !== 'INVENTORY' && userRole !== 'ANALYST' && (
         <Link
           href="/"
           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${

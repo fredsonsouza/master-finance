@@ -171,6 +171,7 @@ export function SettingsContent({
     COLLECTOR: 'bg-emerald-500 text-white',
     FISCAL: 'bg-purple-500 text-white',
     INVENTORY: 'bg-slate-600 text-white',
+    ANALYST: 'bg-teal-600 text-white',
   }
 
   const roleNames: Record<string, string> = {
@@ -182,6 +183,7 @@ export function SettingsContent({
     COLLECTOR: 'Coletador',
     FISCAL: 'Fiscal',
     INVENTORY: 'Estoque',
+    ANALYST: 'Analista',
   }
 
   async function confirmDeleteUser() {

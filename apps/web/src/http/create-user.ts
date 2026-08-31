@@ -13,6 +13,7 @@ interface CreateUserRequest {
     | 'COLLECTOR'
     | 'FISCAL'
     | 'INVENTORY'
+    | 'ANALYST'
   unitId?: string | null
 }
 

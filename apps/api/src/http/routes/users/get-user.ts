@@ -36,6 +36,7 @@ export async function getUser(app: FastifyInstance) {
                   'COLLECTOR',
                   'FISCAL',
                   'INVENTORY',
+                  'ANALYST',
                 ]),
                 unitId: z.uuid().nullable(),
                 avatarUrl: z.url().nullable(),

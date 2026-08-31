@@ -108,4 +108,11 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
     can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
+
+  ANALYST(user, { can }) {
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+  },
 }

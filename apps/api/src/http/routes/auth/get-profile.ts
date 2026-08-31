@@ -32,6 +32,7 @@ export async function getProfile(app: FastifyInstance) {
                   'COLLECTOR',
                   'FISCAL',
                   'INVENTORY',
+                  'ANALYST',
                 ]),
                 unitId: z.string().uuid().nullable(),
                 unit: z
