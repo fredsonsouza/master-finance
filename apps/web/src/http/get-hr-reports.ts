@@ -19,10 +19,7 @@ export interface HrReport {
     id: string
     name: string
   } | null
-  sector: {
-    id: string
-    name: string
-  } | null
+  sector: string | null
 }
 
 export interface HrReportPagination {
@@ -42,7 +39,7 @@ export async function getHrReports(
   params?: {
     status?: 'DRAFT' | 'SENT'
     unitId?: string | null
-    sectorId?: string | null
+    sector?: string | null
     userId?: string | null
     startDate?: string | null
     endDate?: string | null
@@ -54,7 +51,7 @@ export async function getHrReports(
   const searchParams = new URLSearchParams()
   if (params?.status) searchParams.set('status', params.status)
   if (params?.unitId) searchParams.set('unitId', params.unitId)
-  if (params?.sectorId) searchParams.set('sectorId', params.sectorId)
+  if (params?.sector) searchParams.set('sector', params.sector)
   if (params?.userId) searchParams.set('userId', params.userId)
   if (params?.startDate) searchParams.set('startDate', params.startDate)
   if (params?.endDate) searchParams.set('endDate', params.endDate)

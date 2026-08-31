@@ -20,7 +20,7 @@ export async function getHrReports(app: FastifyInstance) {
           querystring: z.object({
             status: z.enum(['DRAFT', 'SENT']).optional(),
             unitId: z.string().uuid().optional(),
-            sectorId: z.string().uuid().optional(),
+            sector: z.string().optional(),
             userId: z.string().uuid().optional(),
             startDate: z.string().optional(),
             endDate: z.string().optional(),
@@ -52,12 +52,7 @@ export async function getHrReports(app: FastifyInstance) {
                       name: z.string(),
                     })
                     .nullable(),
-                  sector: z
-                    .object({
-                      id: z.string().uuid(),
-                      name: z.string(),
-                    })
-                    .nullable(),
+                  sector: z.string().nullable(),
                 })
               ),
               pagination: z.object({
@@ -91,7 +86,7 @@ export async function getHrReports(app: FastifyInstance) {
         const {
           status,
           unitId,
-          sectorId,
+          sector,
           userId: targetUserId,
           startDate,
           endDate,
@@ -117,8 +112,11 @@ export async function getHrReports(app: FastifyInstance) {
           where.unitId = unitId
         }
 
-        if (sectorId) {
-          where.sectorId = sectorId
+        if (sector && sector.trim().length > 0) {
+          where.sector = {
+            contains: sector.trim(),
+            mode: 'insensitive',
+          }
         }
 
         if (startDate || endDate) {
@@ -141,6 +139,12 @@ export async function getHrReports(app: FastifyInstance) {
             },
             {
               content: {
+                contains: search.trim(),
+                mode: 'insensitive',
+              },
+            },
+            {
+              sector: {
                 contains: search.trim(),
                 mode: 'insensitive',
               },
@@ -177,12 +181,6 @@ export async function getHrReports(app: FastifyInstance) {
                   name: true,
                 },
               },
-              sector: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
             },
             orderBy: [{ reportDate: 'desc' }, { createdAt: 'desc' }],
             skip,
@@ -214,12 +212,7 @@ export async function getHrReports(app: FastifyInstance) {
                   name: r.unit.name,
                 }
               : null,
-            sector: r.sector
-              ? {
-                  id: r.sector.id,
-                  name: r.sector.name,
-                }
-              : null,
+            sector: r.sector,
           })),
           pagination: {
             page,

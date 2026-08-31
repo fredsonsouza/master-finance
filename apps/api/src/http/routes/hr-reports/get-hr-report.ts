@@ -44,12 +44,7 @@ export async function getHrReport(app: FastifyInstance) {
                     name: z.string(),
                   })
                   .nullable(),
-                sector: z
-                  .object({
-                    id: z.string().uuid(),
-                    name: z.string(),
-                  })
-                  .nullable(),
+                sector: z.string().nullable(),
               }),
             }),
           },
@@ -79,12 +74,6 @@ export async function getHrReport(app: FastifyInstance) {
               },
             },
             unit: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            sector: {
               select: {
                 id: true,
                 name: true,
@@ -132,12 +121,7 @@ export async function getHrReport(app: FastifyInstance) {
                   name: report.unit.name,
                 }
               : null,
-            sector: report.sector
-              ? {
-                  id: report.sector.id,
-                  name: report.sector.name,
-                }
-              : null,
+            sector: report.sector,
           },
         })
       }

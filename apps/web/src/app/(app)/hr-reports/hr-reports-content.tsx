@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import type { HrReport, HrReportPagination } from '@/http/get-hr-reports'
-import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import {
   Building2,
@@ -42,7 +41,6 @@ interface HrReportsContentProps {
   initialReports: HrReport[]
   initialPagination: HrReportPagination
   units: Unit[]
-  sectors: Sector[]
   currentUser: {
     id: string
     name: string | null
@@ -55,7 +53,6 @@ export function HrReportsContent({
   initialReports,
   initialPagination,
   units,
-  sectors,
   currentUser,
 }: HrReportsContentProps) {
   const isManager =
@@ -66,7 +63,8 @@ export function HrReportsContent({
 
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'SENT'>('ALL')
   const [selectedUnitFilter, setSelectedUnitFilter] = useState('')
-  const [selectedSectorFilter, setSelectedSectorFilter] = useState('')
+  const [sectorFilter, setSectorFilter] = useState('')
+  const [activeSectorFilter, setActiveSectorFilter] = useState('')
   const [search, setSearch] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -82,7 +80,7 @@ export function HrReportsContent({
     page: number,
     status = statusFilter,
     unitId = selectedUnitFilter,
-    sectorId = selectedSectorFilter,
+    sector = activeSectorFilter,
     searchTerm = activeSearch
   ) {
     setIsLoading(true)
@@ -91,7 +89,7 @@ export function HrReportsContent({
       perPage: pagination.perPage || 20,
       status: status === 'ALL' ? undefined : status,
       unitId: unitId || undefined,
-      sectorId: sectorId || undefined,
+      sector: sector || undefined,
       search: searchTerm || undefined,
     })
 
@@ -106,29 +104,27 @@ export function HrReportsContent({
 
   function handleStatusChange(newStatus: 'ALL' | 'DRAFT' | 'SENT') {
     setStatusFilter(newStatus)
-    loadReports(1, newStatus, selectedUnitFilter, selectedSectorFilter, activeSearch)
+    loadReports(1, newStatus, selectedUnitFilter, activeSectorFilter, activeSearch)
   }
 
   function handleUnitChange(newUnitId: string) {
     setSelectedUnitFilter(newUnitId)
-    loadReports(1, statusFilter, newUnitId, selectedSectorFilter, activeSearch)
-  }
-
-  function handleSectorChange(newSectorId: string) {
-    setSelectedSectorFilter(newSectorId)
-    loadReports(1, statusFilter, selectedUnitFilter, newSectorId, activeSearch)
+    loadReports(1, statusFilter, newUnitId, activeSectorFilter, activeSearch)
   }
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setActiveSearch(search)
-    loadReports(1, statusFilter, selectedUnitFilter, selectedSectorFilter, search)
+    setActiveSectorFilter(sectorFilter)
+    loadReports(1, statusFilter, selectedUnitFilter, sectorFilter, search)
   }
 
-  function handleClearSearch() {
+  function handleClearFilters() {
     setSearch('')
     setActiveSearch('')
-    loadReports(1, statusFilter, selectedUnitFilter, selectedSectorFilter, '')
+    setSectorFilter('')
+    setActiveSectorFilter('')
+    loadReports(1, statusFilter, selectedUnitFilter, '', '')
   }
 
   async function confirmDelete() {
@@ -286,20 +282,31 @@ export function HrReportsContent({
             <div className="relative flex-1">
               <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
               <Input
-                placeholder="Buscar por título, conteúdo ou autor..."
+                placeholder="Buscar por título, conteúdo, setor ou autor..."
                 className="bg-surface pl-8 h-9 text-xs"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              {search && (
+              {(search || sectorFilter) && (
                 <button
                   type="button"
-                  onClick={handleClearSearch}
+                  onClick={handleClearFilters}
                   className="absolute right-2.5 top-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
+            </div>
+
+            {/* Setor Filtro Texto */}
+            <div className="relative w-full md:w-44 shrink-0">
+              <Layers className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+              <Input
+                placeholder="Filtrar por setor..."
+                className="bg-surface pl-8 h-9 text-xs"
+                value={sectorFilter}
+                onChange={(e) => setSectorFilter(e.target.value)}
+              />
             </div>
 
             {/* Unidade (apenas para Admin/Manager ou quem tem filiais) */}
@@ -320,23 +327,6 @@ export function HrReportsContent({
                 </select>
               </div>
             )}
-
-            {/* Setor */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Layers className="h-4 w-4 text-primary hidden sm:block" />
-              <select
-                value={selectedSectorFilter}
-                onChange={(e) => handleSectorChange(e.target.value)}
-                className="h-9 rounded-md border border-outline bg-surface text-on-surface px-2.5 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer w-full md:w-40"
-              >
-                <option value="">Todos os Setores</option>
-                {sectors.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <Button
               type="submit"
@@ -442,7 +432,9 @@ export function HrReportsContent({
 
                           {/* Setor e Unidade */}
                           <td className="px-6 py-4 whitespace-nowrap text-xs text-on-surface-variant">
-                            <div>{report.sector?.name || 'Geral'}</div>
+                            <div className="font-medium text-on-surface">
+                              {report.sector || 'Geral'}
+                            </div>
                             <div className="text-[11px] text-primary">
                               {report.unit?.name || 'Todas as Unidades'}
                             </div>
@@ -574,7 +566,6 @@ export function HrReportsContent({
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         units={units}
-        sectors={sectors}
         defaultUnitId={currentUser.unitId}
         onSaved={() => loadReports(1)}
       />
@@ -586,7 +577,6 @@ export function HrReportsContent({
           open={!!editingReport}
           onOpenChange={(open) => !open && setEditingReport(null)}
           units={units}
-          sectors={sectors}
           defaultUnitId={currentUser.unitId}
           onSaved={() => {
             setEditingReport(null)

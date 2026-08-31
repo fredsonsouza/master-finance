@@ -67,7 +67,7 @@ describe('HR Work Reports Unit Tests', () => {
     await app.register(deleteHrReport)
   })
 
-  test('should allow EMPLOYEE to create a draft report', async () => {
+  test('should allow EMPLOYEE to create a draft report with free text sector', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
@@ -84,7 +84,7 @@ describe('HR Work Reports Unit Tests', () => {
       sentAt: null,
       userId: '123e4567-e89b-12d3-a456-426614174000',
       unitId: '223e4567-e89b-12d3-a456-426614174001',
-      sectorId: null,
+      sector: 'Recepção e Triagem',
       createdAt: date,
       updatedAt: date,
     } as any)
@@ -97,11 +97,13 @@ describe('HR Work Reports Unit Tests', () => {
         content: 'Atendimentos normais no dia de hoje.',
         reportDate: '2026-08-29T00:00:00.000Z',
         status: 'DRAFT',
+        sector: 'Recepção e Triagem',
       },
     })
 
     expect(response.statusCode).toBe(201)
     expect(response.json().report.status).toBe('DRAFT')
+    expect(response.json().report.sector).toBe('Recepção e Triagem')
     expect(response.json().report.sentAt).toBeNull()
   })
 
@@ -130,7 +132,7 @@ describe('HR Work Reports Unit Tests', () => {
           role: 'EMPLOYEE',
         },
         unit: null,
-        sector: null,
+        sector: 'Recepção',
       },
     ] as any)
 
@@ -185,6 +187,7 @@ describe('HR Work Reports Unit Tests', () => {
       status: 'DRAFT',
       sentAt: null,
       userId: '123e4567-e89b-12d3-a456-426614174000',
+      sector: 'Recepção',
     } as any)
 
     const sentDate = new Date()
@@ -197,7 +200,7 @@ describe('HR Work Reports Unit Tests', () => {
       sentAt: sentDate,
       userId: '123e4567-e89b-12d3-a456-426614174000',
       unitId: null,
-      sectorId: null,
+      sector: 'Recepção Principal',
       createdAt: new Date('2026-08-29'),
       updatedAt: sentDate,
     } as any)
@@ -209,11 +212,13 @@ describe('HR Work Reports Unit Tests', () => {
         title: 'Relatório Final',
         content: 'Conteúdo finalizado e enviado',
         status: 'SENT',
+        sector: 'Recepção Principal',
       },
     })
 
     expect(response.statusCode).toBe(200)
     expect(response.json().report.status).toBe('SENT')
+    expect(response.json().report.sector).toBe('Recepção Principal')
     expect(response.json().report.sentAt).not.toBeNull()
   })
 
@@ -231,6 +236,7 @@ describe('HR Work Reports Unit Tests', () => {
       status: 'SENT',
       sentAt: new Date('2026-08-29T10:00:00Z'),
       userId: '123e4567-e89b-12d3-a456-426614174000',
+      sector: 'Laboratório',
     } as any)
 
     const response = await app.inject({

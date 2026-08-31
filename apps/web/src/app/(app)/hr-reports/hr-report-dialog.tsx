@@ -11,7 +11,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { HrReport } from '@/http/get-hr-reports'
-import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import {
   Building2,
@@ -29,7 +28,6 @@ import { saveHrReportAction } from './actions'
 interface HrReportDialogProps {
   report?: HrReport | null
   units: Unit[]
-  sectors: Sector[]
   defaultUnitId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -39,7 +37,6 @@ interface HrReportDialogProps {
 export function HrReportDialog({
   report,
   units,
-  sectors,
   defaultUnitId,
   open,
   onOpenChange,
@@ -49,7 +46,7 @@ export function HrReportDialog({
   const [content, setContent] = useState('')
   const [reportDate, setReportDate] = useState('')
   const [selectedUnitId, setSelectedUnitId] = useState('')
-  const [selectedSectorId, setSelectedSectorId] = useState('')
+  const [sector, setSector] = useState('')
   const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [isSending, setIsSending] = useState(false)
 
@@ -65,13 +62,13 @@ export function HrReportDialog({
             : new Date().toISOString().split('T')[0]
         )
         setSelectedUnitId(report.unit?.id || defaultUnitId || '')
-        setSelectedSectorId(report.sector?.id || '')
+        setSector(report.sector || '')
       } else {
         setTitle('')
         setContent('')
         setReportDate(new Date().toISOString().split('T')[0])
         setSelectedUnitId(defaultUnitId || (units[0]?.id ?? ''))
-        setSelectedSectorId('')
+        setSector('')
       }
     }
   }, [open, report, defaultUnitId, units])
@@ -105,7 +102,7 @@ export function HrReportDialog({
       reportDate: new Date(reportDate).toISOString(),
       status,
       unitId: selectedUnitId || null,
-      sectorId: selectedSectorId || null,
+      sector: sector.trim() || null,
     })
 
     if (result.success && result.report) {
@@ -200,26 +197,19 @@ export function HrReportDialog({
               </select>
             </div>
 
-            {/* Setor */}
+            {/* Setor Livre */}
             <div className="space-y-1.5">
               <Label htmlFor="report-sector" className="flex items-center gap-1.5">
                 <Layers className="h-3.5 w-3.5 text-primary" />
                 Setor
               </Label>
-              <select
+              <Input
                 id="report-sector"
-                value={selectedSectorId}
-                onChange={(e) => setSelectedSectorId(e.target.value)}
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                placeholder="Ex: Recepção, Coleta..."
                 disabled={isSent || isSavingDraft || isSending}
-                className="h-9 w-full rounded-md border border-outline bg-surface text-on-surface px-3 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer disabled:opacity-60"
-              >
-                <option value="">Selecione o Setor</option>
-                {sectors.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
           </div>
 

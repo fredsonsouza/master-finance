@@ -29,7 +29,7 @@ export async function updateHrReport(app: FastifyInstance) {
             reportDate: z.coerce.date().optional(),
             status: z.enum(['DRAFT', 'SENT']).optional(),
             unitId: z.string().uuid().optional().nullable(),
-            sectorId: z.string().uuid().optional().nullable(),
+            sector: z.string().optional().nullable(),
           }),
           response: {
             200: z.object({
@@ -40,6 +40,9 @@ export async function updateHrReport(app: FastifyInstance) {
                 reportDate: z.date(),
                 status: z.enum(['DRAFT', 'SENT']),
                 sentAt: z.date().nullable(),
+                userId: z.string().uuid(),
+                unitId: z.string().uuid().nullable(),
+                sector: z.string().nullable(),
                 createdAt: z.date(),
                 updatedAt: z.date(),
               }),
@@ -95,7 +98,7 @@ export async function updateHrReport(app: FastifyInstance) {
           reportDate,
           status,
           unitId,
-          sectorId,
+          sector,
         } = request.body
 
         const isBecomingSent =
@@ -110,7 +113,7 @@ export async function updateHrReport(app: FastifyInstance) {
             status: status !== undefined ? status : undefined,
             sentAt: isBecomingSent ? new Date() : undefined,
             unitId: unitId !== undefined ? unitId : undefined,
-            sectorId: sectorId !== undefined ? sectorId : undefined,
+            sector: sector !== undefined ? (sector ? sector.trim() : null) : undefined,
           },
         })
 
@@ -130,6 +133,9 @@ export async function updateHrReport(app: FastifyInstance) {
             reportDate: updatedReport.reportDate,
             status: updatedReport.status,
             sentAt: updatedReport.sentAt,
+            userId: updatedReport.userId,
+            unitId: updatedReport.unitId,
+            sector: updatedReport.sector,
             createdAt: updatedReport.createdAt,
             updatedAt: updatedReport.updatedAt,
           },

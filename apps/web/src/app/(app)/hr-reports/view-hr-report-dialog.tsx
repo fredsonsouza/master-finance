@@ -125,7 +125,7 @@ export function ViewHrReportDialog({
           <div class="meta-item"><strong>Autor:</strong> ${report!.user.name} (@${report!.user.username})</div>
           <div class="meta-item"><strong>Data de Referência:</strong> ${reportDateStr}</div>
           <div class="meta-item"><strong>Unidade:</strong> ${report!.unit?.name || 'Não informada'}</div>
-          <div class="meta-item"><strong>Setor:</strong> ${report!.sector?.name || 'Não informado'}</div>
+          <div class="meta-item"><strong>Setor:</strong> ${report!.sector || 'Não informado'}</div>
           <div class="meta-item"><strong>Carimbo de Envio:</strong> ${sentAtStr}</div>
           <div class="meta-item"><strong>Criado em:</strong> ${new Date(report!.createdAt).toLocaleString('pt-BR')}</div>
         </div>
@@ -208,7 +208,7 @@ export function ViewHrReportDialog({
           <div className="flex items-center gap-2">
             <Layers className="h-4 w-4 text-primary shrink-0" />
             <span>
-              <strong>Setor:</strong> {report.sector?.name || 'Não informado'}
+              <strong>Setor:</strong> {report.sector || 'Não informado'}
             </span>
           </div>
           {report.sentAt && (

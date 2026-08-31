@@ -7,7 +7,7 @@ interface CreateHrReportRequest {
   reportDate: string
   status?: 'DRAFT' | 'SENT'
   unitId?: string | null
-  sectorId?: string | null
+  sector?: string | null
 }
 
 interface CreateHrReportResponse {

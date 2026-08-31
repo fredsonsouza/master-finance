@@ -10,7 +10,7 @@ import { revalidatePath } from 'next/cache'
 export async function fetchHrReportsAction(params?: {
   status?: 'DRAFT' | 'SENT'
   unitId?: string | null
-  sectorId?: string | null
+  sector?: string | null
   userId?: string | null
   startDate?: string | null
   endDate?: string | null
@@ -36,7 +36,7 @@ export async function saveHrReportAction(data: {
   reportDate: string
   status: 'DRAFT' | 'SENT'
   unitId?: string | null
-  sectorId?: string | null
+  sector?: string | null
 }) {
   const { token } = await auth()
   if (!token) return { success: false, report: null, message: 'Não autenticado' }
@@ -50,7 +50,7 @@ export async function saveHrReportAction(data: {
         reportDate: data.reportDate,
         status: data.status,
         unitId: data.unitId,
-        sectorId: data.sectorId,
+        sector: data.sector,
       })
       revalidatePath('/hr-reports')
       return { success: true, report: result.report, message: null }
@@ -62,7 +62,7 @@ export async function saveHrReportAction(data: {
         reportDate: data.reportDate,
         status: data.status,
         unitId: data.unitId,
-        sectorId: data.sectorId,
+        sector: data.sector,
       })
       revalidatePath('/hr-reports')
       return { success: true, report: result.report, message: null }
