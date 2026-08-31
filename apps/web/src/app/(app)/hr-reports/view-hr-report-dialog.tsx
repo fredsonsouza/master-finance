@@ -122,7 +122,7 @@ export function ViewHrReportDialog({
         </div>
 
         <div class="meta-grid">
-          <div class="meta-item"><strong>Colaborador:</strong> ${report.user.name} (@${report.user.username})</div>
+          <div class="meta-item"><strong>Colaborador:</strong> ${report.user.name}</div>
           <div class="meta-item"><strong>Data de Referência:</strong> ${reportDateStr}</div>
           <div class="meta-item"><strong>Unidade:</strong> ${report.unit?.name || 'Não informada'}</div>
           <div class="meta-item"><strong>Setor:</strong> ${report.sector || 'Não informado'}</div>

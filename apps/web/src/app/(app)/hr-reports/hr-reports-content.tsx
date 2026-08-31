@@ -437,9 +437,6 @@ export function HrReportsContent({
                             <div className="font-medium text-on-surface">
                               {report.user.name}
                             </div>
-                            <span className="text-[11px] text-on-surface-variant">
-                              @{report.user.username}
-                            </span>
                           </td>
 
                           {/* Setor e Unidade */}
