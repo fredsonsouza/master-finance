@@ -25,9 +25,10 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('manage', 'Metric')
     can('manage', 'CashClosure')
     can('manage', 'Collection')
+    can('manage', 'HrReport')
   },
 
-  FINANCIAL(_, { can }) {
+  FINANCIAL(user, { can }) {
     can('manage', 'Transaction')
     can('manage', 'Metric')
     can('manage', 'CashClosure')
@@ -36,6 +37,11 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('get', 'Unit')
     can('get', 'User')
     can('get', 'Category')
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   EMPLOYEE(user, { can }) {
@@ -43,6 +49,11 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('get', 'Item')
     can('get', 'Category')
     can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   SELLER(user, { can }) {
@@ -58,23 +69,43 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'OPEN' },
     })
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   COLLECTOR(user, { can }) {
     can('get', 'Collection', { unitId: { $eq: user.unitId } })
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   FISCAL(user, { can }) {
     can('manage', 'Collection')
     can('get', 'User', { unitId: { $eq: user.unitId } })
     can('get', 'Unit')
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
-  INVENTORY(_, { can }) {
+  INVENTORY(user, { can }) {
     can('manage', 'Transaction')
     can('manage', 'Item')
     can('manage', 'Unit')
     can('manage', 'Sector')
     can('manage', 'Category')
+
+    can('create', 'HrReport')
+    can('get', 'HrReport', { userId: { $eq: user.id } })
+    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 }

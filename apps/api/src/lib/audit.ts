@@ -19,6 +19,7 @@ export async function logAction({
     | 'CASH_CLOSURE'
     | 'COLLECTION'
     | 'AUTH'
+    | 'HR_REPORT'
   resourceId?: string
   details: string
   tx?: any

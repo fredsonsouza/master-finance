@@ -18,6 +18,7 @@ import { userSubject } from './subjects/user'
 import { cashClosureSubject } from './subjects/cash-closure'
 import { collectionSubject } from './subjects/collection'
 import { evaluationSubject } from './subjects/evaluation'
+import { hrReportSubject } from './subjects/hr-report'
 
 const appAbilitiesSchema = z.union([
   categorySubject,
@@ -30,6 +31,7 @@ const appAbilitiesSchema = z.union([
   cashClosureSubject,
   collectionSubject,
   evaluationSubject,
+  hrReportSubject,
 
   z.tuple([z.literal('manage'), z.literal('all')]),
 ])

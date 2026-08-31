@@ -71,6 +71,12 @@ import { getEvaluations } from './routes/evaluations/get-evaluations'
 import { getPublicSeller } from './routes/evaluations/get-public-seller'
 import { updateEvaluation } from './routes/evaluations/update-evaluation'
 
+import { createHrReport } from './routes/hr-reports/create-hr-report'
+import { deleteHrReport } from './routes/hr-reports/delete-hr-report'
+import { getHrReport } from './routes/hr-reports/get-hr-report'
+import { getHrReports } from './routes/hr-reports/get-hr-reports'
+import { updateHrReport } from './routes/hr-reports/update-hr-report'
+
 import { env } from '@saas/env'
 import { errorHandler } from './error-handle'
 
@@ -175,6 +181,12 @@ app.register(getPublicSeller)
 app.register(getEvaluations)
 app.register(deleteEvaluation)
 app.register(updateEvaluation)
+
+app.register(createHrReport)
+app.register(getHrReports)
+app.register(getHrReport)
+app.register(updateHrReport)
+app.register(deleteHrReport)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT, host: '0.0.0.0' }).then(() => {

@@ -43,6 +43,7 @@ model User {
   collectionsAsCreator   Collection[] @relation("CollectionCreator")
   auditLogs              AuditLog[]
   evaluations            Evaluation[]
+  hrReports              HrReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -59,6 +60,7 @@ model Unit {
   cashClosures CashClosure[]
   collections  Collection[]
   evaluations  Evaluation[]
+  hrReports    HrReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,6 +75,7 @@ model Sector {
   items        Item[]
   cashClosures CashClosure[]
   transactions Transaction[]
+  hrReports    HrReport[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -248,4 +251,35 @@ model Evaluation {
   @@index([sellerId, createdAt])
   @@index([unitId, createdAt])
   @@map("evaluations")
+}
+
+enum ReportStatus {
+  DRAFT
+  SENT
+}
+
+model HrReport {
+  id         String       @id @default(uuid())
+  title      String
+  content    String       @db.Text
+  reportDate DateTime     // Data referente ao relatório (ex: 29/08/2026)
+  status     ReportStatus @default(DRAFT)
+  sentAt     DateTime?    // Capturado automaticamente no momento do envio
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status, reportDate])
+  @@index([unitId, reportDate])
+  @@index([status, sentAt])
+  @@map("hr_reports")
 }
