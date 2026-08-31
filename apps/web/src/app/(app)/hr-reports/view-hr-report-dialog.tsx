@@ -33,14 +33,13 @@ export function ViewHrReportDialog({
   if (!report) return null
 
   function handlePrint() {
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer')
-    if (!printWindow) return
+    if (!report) return
 
-    const reportDateStr = new Date(report!.reportDate).toLocaleDateString('pt-BR', {
+    const reportDateStr = new Date(report.reportDate).toLocaleDateString('pt-BR', {
       timeZone: 'UTC',
     })
-    const sentAtStr = report!.sentAt
-      ? new Date(report!.sentAt).toLocaleString('pt-BR')
+    const sentAtStr = report.sentAt
+      ? new Date(report.sentAt).toLocaleString('pt-BR')
       : 'Não enviado (Rascunho)'
 
     const html = `
@@ -48,14 +47,15 @@ export function ViewHrReportDialog({
       <html lang="pt-BR">
       <head>
         <meta charset="utf-8">
-        <title>${report!.title} - Relatório de Setor</title>
+        <title>${report.title} - Relatório de Setor</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #1e293b;
             margin: 40px;
             line-height: 1.6;
+            background: #fff;
           }
           .header {
             border-bottom: 2px solid #0056b3;
@@ -113,36 +113,57 @@ export function ViewHrReportDialog({
       <body>
         <div class="header">
           <div>
-            <h1 class="title">${report!.title}</h1>
+            <h1 class="title">${report.title}</h1>
             <div style="font-size: 13px; color: #64748b;">Master Finance — Relatório Operacional de Setor / RH</div>
           </div>
           <div style="text-align: right; font-size: 12px; color: #0284c7; font-weight: 600;">
-            Status: ${report!.status === 'SENT' ? 'OFICIAL / ENVIADO' : 'RASCUNHO'}
+            Status: ${report.status === 'SENT' ? 'OFICIAL / ENVIADO' : 'RASCUNHO'}
           </div>
         </div>
 
         <div class="meta-grid">
-          <div class="meta-item"><strong>Colaborador:</strong> ${report!.user.name} (@${report!.user.username})</div>
+          <div class="meta-item"><strong>Colaborador:</strong> ${report.user.name} (@${report.user.username})</div>
           <div class="meta-item"><strong>Data de Referência:</strong> ${reportDateStr}</div>
-          <div class="meta-item"><strong>Unidade:</strong> ${report!.unit?.name || 'Não informada'}</div>
-          <div class="meta-item"><strong>Setor:</strong> ${report!.sector || 'Não informado'}</div>
+          <div class="meta-item"><strong>Unidade:</strong> ${report.unit?.name || 'Não informada'}</div>
+          <div class="meta-item"><strong>Setor:</strong> ${report.sector || 'Não informado'}</div>
           <div class="meta-item"><strong>Carimbo de Envio:</strong> ${sentAtStr}</div>
-          <div class="meta-item"><strong>Criado em:</strong> ${new Date(report!.createdAt).toLocaleString('pt-BR')}</div>
+          <div class="meta-item"><strong>Criado em:</strong> ${new Date(report.createdAt).toLocaleString('pt-BR')}</div>
         </div>
 
-        <div class="content-box">${report!.content}</div>
+        <div class="content-box">${report.content}</div>
 
         <div class="footer">
           Documento gerado eletronicamente pelo sistema Master Finance em ${new Date().toLocaleString('pt-BR')}.
         </div>
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
       </body>
       </html>
     `
-    printWindow.document.write(html)
-    printWindow.document.close()
+
+    // Use an invisible iframe for reliable printing without opening blank tabs or getting popup-blocked
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow?.document
+    if (doc) {
+      doc.open()
+      doc.write(html)
+      doc.close()
+      setTimeout(() => {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe)
+          }
+        }, 1500)
+      }, 300)
+    }
   }
 
   const isSent = report.status === 'SENT'
