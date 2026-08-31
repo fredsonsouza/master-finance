@@ -55,6 +55,11 @@ export async function getHrReports(app: FastifyInstance) {
                   sector: z.string().nullable(),
                 })
               ),
+              summary: z.object({
+                totalCount: z.number(),
+                sentCount: z.number(),
+                draftCount: z.number(),
+              }),
               pagination: z.object({
                 page: z.number(),
                 perPage: z.number(),
@@ -160,10 +165,19 @@ export async function getHrReports(app: FastifyInstance) {
           ]
         }
 
+        const baseWhereWithoutStatus = { ...where }
+        delete baseWhereWithoutStatus.status
+
         const skip = (page - 1) * perPage
 
-        const [totalCount, reports] = await Promise.all([
-          prisma.hrReport.count({ where }),
+        const [totalCount, sentCount, draftCount, reports] = await Promise.all([
+          prisma.hrReport.count({ where: baseWhereWithoutStatus }),
+          prisma.hrReport.count({
+            where: { ...baseWhereWithoutStatus, status: 'SENT' },
+          }),
+          prisma.hrReport.count({
+            where: { ...baseWhereWithoutStatus, status: 'DRAFT' },
+          }),
           prisma.hrReport.findMany({
             where,
             include: {
@@ -188,7 +202,12 @@ export async function getHrReports(app: FastifyInstance) {
           }),
         ])
 
-        const totalPages = Math.ceil(totalCount / perPage) || 1
+        const filteredCount = status
+          ? status === 'SENT'
+            ? sentCount
+            : draftCount
+          : totalCount
+        const totalPages = Math.ceil(filteredCount / perPage) || 1
 
         return reply.status(200).send({
           reports: reports.map((r) => ({
@@ -214,10 +233,15 @@ export async function getHrReports(app: FastifyInstance) {
               : null,
             sector: r.sector,
           })),
+          summary: {
+            totalCount,
+            sentCount,
+            draftCount,
+          },
           pagination: {
             page,
             perPage,
-            totalCount,
+            totalCount: filteredCount,
             totalPages,
           },
         })

@@ -1,5 +1,10 @@
 import { auth } from '@/auth/auth'
-import { getHrReports, type HrReport, type HrReportPagination } from '@/http/get-hr-reports'
+import {
+  getHrReports,
+  type HrReport,
+  type HrReportPagination,
+  type HrReportSummary,
+} from '@/http/get-hr-reports'
 import { getUnits, type Unit } from '@/http/get-units'
 import { HrReportsContent } from './hr-reports-content'
 
@@ -7,6 +12,11 @@ export default async function HrReportsPage() {
   const { token, user } = await auth()
 
   let reports: HrReport[] = []
+  let summary: HrReportSummary = {
+    totalCount: 0,
+    sentCount: 0,
+    draftCount: 0,
+  }
   let pagination: HrReportPagination = {
     page: 1,
     perPage: 20,
@@ -19,12 +29,18 @@ export default async function HrReportsPage() {
     const [reportsRes, unitsRes] = await Promise.all([
       getHrReports(token).catch(() => ({
         reports: [],
+        summary: { totalCount: 0, sentCount: 0, draftCount: 0 },
         pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
       })),
       getUnits(token).catch(() => ({ units: [] })),
     ])
 
     reports = reportsRes.reports
+    summary = reportsRes.summary || {
+      totalCount: reportsRes.pagination?.totalCount || 0,
+      sentCount: 0,
+      draftCount: 0,
+    }
     pagination = reportsRes.pagination
     units = unitsRes.units || []
 
@@ -46,6 +62,7 @@ export default async function HrReportsPage() {
   return (
     <HrReportsContent
       initialReports={reports}
+      initialSummary={summary}
       initialPagination={pagination}
       units={units}
       currentUser={{

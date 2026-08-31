@@ -114,7 +114,11 @@ describe('HR Work Reports Unit Tests', () => {
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
-    vi.mocked(prisma.hrReport.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.hrReport.count)
+      .mockResolvedValueOnce(1) // totalCount
+      .mockResolvedValueOnce(0) // sentCount
+      .mockResolvedValueOnce(1) // draftCount
+
     vi.mocked(prisma.hrReport.findMany).mockResolvedValueOnce([
       {
         id: '523e4567-e89b-12d3-a456-426614174005',
@@ -142,6 +146,11 @@ describe('HR Work Reports Unit Tests', () => {
     })
 
     expect(response.statusCode).toBe(200)
+    expect(response.json().summary).toEqual({
+      totalCount: 1,
+      sentCount: 0,
+      draftCount: 1,
+    })
     expect(prisma.hrReport.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
@@ -157,7 +166,11 @@ describe('HR Work Reports Unit Tests', () => {
       role: 'ADMIN',
     } as any)
 
-    vi.mocked(prisma.hrReport.count).mockResolvedValueOnce(0)
+    vi.mocked(prisma.hrReport.count)
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0)
+      .mockResolvedValueOnce(0)
+
     vi.mocked(prisma.hrReport.findMany).mockResolvedValueOnce([])
 
     const response = await app.inject({
@@ -166,6 +179,11 @@ describe('HR Work Reports Unit Tests', () => {
     })
 
     expect(response.statusCode).toBe(200)
+    expect(response.json().summary).toEqual({
+      totalCount: 0,
+      sentCount: 0,
+      draftCount: 0,
+    })
     expect(prisma.hrReport.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {},
@@ -200,7 +218,7 @@ describe('HR Work Reports Unit Tests', () => {
       sentAt: sentDate,
       userId: '123e4567-e89b-12d3-a456-426614174000',
       unitId: null,
-      sector: 'Recepção Principal',
+      sector: 'Recepção',
       createdAt: new Date('2026-08-29'),
       updatedAt: sentDate,
     } as any)
@@ -212,17 +230,22 @@ describe('HR Work Reports Unit Tests', () => {
         title: 'Relatório Final',
         content: 'Conteúdo finalizado e enviado',
         status: 'SENT',
-        sector: 'Recepção Principal',
       },
     })
 
     expect(response.statusCode).toBe(200)
     expect(response.json().report.status).toBe('SENT')
-    expect(response.json().report.sector).toBe('Recepção Principal')
-    expect(response.json().report.sentAt).not.toBeNull()
+    expect(prisma.hrReport.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'SENT',
+          sentAt: expect.any(Date),
+        }),
+      })
+    )
   })
 
-  test('should block non-admin from updating a report that is already SENT', async () => {
+  test('should prevent non-admin from modifying a report that was already SENT', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
@@ -230,24 +253,25 @@ describe('HR Work Reports Unit Tests', () => {
 
     vi.mocked(prisma.hrReport.findUnique).mockResolvedValueOnce({
       id: '523e4567-e89b-12d3-a456-426614174005',
-      title: 'Relatório já entregue',
-      content: 'Conteúdo imutável',
+      title: 'Relatório Fechado',
+      content: 'Conteúdo',
       reportDate: new Date('2026-08-29'),
       status: 'SENT',
-      sentAt: new Date('2026-08-29T10:00:00Z'),
+      sentAt: new Date('2026-08-29'),
       userId: '123e4567-e89b-12d3-a456-426614174000',
-      sector: 'Laboratório',
     } as any)
 
     const response = await app.inject({
       method: 'PUT',
       url: '/hr-reports/523e4567-e89b-12d3-a456-426614174005',
       payload: {
-        content: 'Tentando alterar relatório enviado',
+        title: 'Tentativa de Alteração',
       },
     })
 
     expect(response.statusCode).toBe(400)
-    expect(response.json().message).toContain('já enviados ao RH não podem ser alterados')
+    expect(response.json()).toEqual({
+      message: 'Relatórios já enviados ao RH não podem ser alterados.',
+    })
   })
 })

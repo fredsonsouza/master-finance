@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import type { HrReport, HrReportPagination } from '@/http/get-hr-reports'
+import type { HrReport, HrReportPagination, HrReportSummary } from '@/http/get-hr-reports'
 import type { Unit } from '@/http/get-units'
 import {
   Building2,
@@ -39,6 +39,7 @@ import { ViewHrReportDialog } from './view-hr-report-dialog'
 
 interface HrReportsContentProps {
   initialReports: HrReport[]
+  initialSummary: HrReportSummary
   initialPagination: HrReportPagination
   units: Unit[]
   currentUser: {
@@ -51,6 +52,7 @@ interface HrReportsContentProps {
 
 export function HrReportsContent({
   initialReports,
+  initialSummary,
   initialPagination,
   units,
   currentUser,
@@ -59,6 +61,7 @@ export function HrReportsContent({
     currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
 
   const [reports, setReports] = useState<HrReport[]>(initialReports)
+  const [summary, setSummary] = useState<HrReportSummary>(initialSummary)
   const [pagination, setPagination] = useState<HrReportPagination>(initialPagination)
 
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'SENT'>('ALL')
@@ -96,6 +99,9 @@ export function HrReportsContent({
     if (result.success && result.data) {
       setReports(result.data.reports)
       setPagination(result.data.pagination)
+      if (result.data.summary) {
+        setSummary(result.data.summary)
+      }
     } else {
       toast.error('Erro ao carregar relatórios.')
     }
@@ -180,7 +186,7 @@ export function HrReportsContent({
             <FileText className="h-5 w-5 text-primary" />
           </div>
           <div className="text-2xl font-bold text-on-surface mt-2">
-            {pagination.totalCount}
+            {summary.totalCount}
           </div>
         </div>
 
@@ -198,7 +204,10 @@ export function HrReportsContent({
             </span>
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </div>
-          <div className="text-sm text-on-surface-variant mt-2 font-medium">
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">
+            {summary.sentCount}
+          </div>
+          <div className="text-xs text-on-surface-variant mt-1 font-medium">
             Relatórios formalizados e registrados
           </div>
         </div>
@@ -217,7 +226,10 @@ export function HrReportsContent({
             </span>
             <Clock className="h-5 w-5 text-amber-600" />
           </div>
-          <div className="text-sm text-on-surface-variant mt-2 font-medium">
+          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-2">
+            {summary.draftCount}
+          </div>
+          <div className="text-xs text-on-surface-variant mt-1 font-medium">
             Relatórios em andamento (não entregues)
           </div>
         </div>

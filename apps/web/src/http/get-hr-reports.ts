@@ -22,6 +22,12 @@ export interface HrReport {
   sector: string | null
 }
 
+export interface HrReportSummary {
+  totalCount: number
+  sentCount: number
+  draftCount: number
+}
+
 export interface HrReportPagination {
   page: number
   perPage: number
@@ -31,6 +37,7 @@ export interface HrReportPagination {
 
 interface GetHrReportsResponse {
   reports: HrReport[]
+  summary: HrReportSummary
   pagination: HrReportPagination
 }
 
