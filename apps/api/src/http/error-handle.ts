@@ -47,7 +47,8 @@ export const errorHandler: FastifyErrorHandler = (error, request, reply) => {
     })
   }
 
-  // Safe server logging without leaking to response or writing to /tmp
+  // Explicit console error logging for server diagnostics in PM2 / docker
+  console.error('[API 500 Unhandled Error]:', error)
   request.log.error(error as any)
 
   return reply.status(500).send({ message: 'Internal server error' })
