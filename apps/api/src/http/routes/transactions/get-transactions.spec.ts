@@ -15,6 +15,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     transaction: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
   },
 }))
@@ -50,6 +51,7 @@ describe('Get Transactions Unit Test', () => {
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
+    vi.mocked(prisma.transaction.count).mockResolvedValueOnce(0)
     vi.mocked(prisma.transaction.findMany).mockResolvedValueOnce([])
 
     const response = await app.inject({
@@ -58,6 +60,12 @@ describe('Get Transactions Unit Test', () => {
     })
 
     expect(response.statusCode).toBe(200)
+    expect(response.json().pagination).toEqual({
+      page: 1,
+      perPage: 20,
+      totalCount: 0,
+      totalPages: 1,
+    })
     expect(prisma.transaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { unitId: '223e4567-e89b-12d3-a456-426614174001' },
@@ -65,23 +73,50 @@ describe('Get Transactions Unit Test', () => {
     )
   })
 
-  test('MANAGER can fetch transactions across units by month', async () => {
+  test('MANAGER can fetch transactions across units by month and search', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'MANAGER',
     } as any)
 
-    vi.mocked(prisma.transaction.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.transaction.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.transaction.findMany).mockResolvedValueOnce([
+      {
+        id: '123e4567-e89b-12d3-a456-426614174001',
+        type: 'ENTRY',
+        date: new Date('2026-05-10'),
+        value: 50,
+        quantity: 10,
+        month: '2026-05',
+        batchId: null,
+        item: {
+          id: '223e4567-e89b-12d3-a456-426614174002',
+          name: 'Luva Látex',
+          description: 'Caixa 100un',
+          sector: { name: 'Recepção' },
+        },
+        sector: { id: '323e4567-e89b-12d3-a456-426614174003', name: 'Recepção' },
+        unit: { name: 'Matriz' },
+      },
+    ] as any)
 
     const response = await app.inject({
       method: 'GET',
-      url: '/transactions?month=2026-05',
+      url: '/transactions?month=2026-05&page=1&perPage=10',
     })
 
     expect(response.statusCode).toBe(200)
+    expect(response.json().pagination).toEqual({
+      page: 1,
+      perPage: 10,
+      totalCount: 1,
+      totalPages: 1,
+    })
     expect(prisma.transaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ month: '2026-05' }),
+        take: 10,
+        skip: 0,
       })
     )
   })

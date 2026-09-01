@@ -198,3 +198,40 @@ export async function fetchAllItemsAction() {
     return { success: false, items: [], message: 'Erro ao buscar catálogo completo de itens.' }
   }
 }
+
+export async function fetchTransactionsAction(params: {
+  page?: number
+  perPage?: number
+  unitId?: string | null
+  type?: string | null
+  search?: string | null
+}) {
+  const { token } = await auth()
+  if (!token) {
+    return {
+      transactions: [],
+      pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+    }
+  }
+
+  try {
+    const { getTransactions } = await import('@/http/get-transactions')
+    const res = await getTransactions(token, params)
+    return {
+      transactions: res.transactions,
+      pagination: res.pagination || {
+        page: params.page || 1,
+        perPage: params.perPage || 20,
+        totalCount: res.transactions.length,
+        totalPages: 1,
+      },
+    }
+  } catch (error) {
+    console.error('Error fetching transactions:', error)
+    return {
+      transactions: [],
+      pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
+    }
+  }
+}
+

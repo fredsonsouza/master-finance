@@ -147,6 +147,8 @@ model Transaction {
   @@index([sectorId])
   @@index([userId])
   @@index([batchId])
+  @@index([date(sort: Desc)])
+  @@index([unitId, type, date(sort: Desc)])
   @@map("transactions")
 }
 
