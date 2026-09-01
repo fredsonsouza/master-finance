@@ -46,8 +46,8 @@ export async function Sidebar() {
     user.role === 'INVENTORY'
 
   return (
-    <aside className="w-64 border-r border-surface-container bg-surface flex flex-col">
-      <div className="p-6">
+    <aside className="h-full w-64 shrink-0 border-r border-surface-container bg-surface flex flex-col">
+      <div className="p-6 shrink-0">
         <h1 className="font-display text-2xl font-bold text-primary">
           Master Admin
         </h1>
@@ -65,7 +65,7 @@ export async function Sidebar() {
       />
 
       {/* Configurações e Logout no Rodapé */}
-      <div className="p-4 border-t border-surface-container space-y-1">
+      <div className="p-4 border-t border-surface-container space-y-1 shrink-0">
         {canViewSettings && (
           <Link
             href="/settings"
