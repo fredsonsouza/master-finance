@@ -215,17 +215,17 @@ export async function resetUserPasswordAction(
   customPassword?: string
 ) {
   const { token } = await auth()
-  if (!token) return { success: false, message: 'Não autenticado' }
+  if (!token) return { success: false, temporaryPassword: null, message: 'Não autenticado' }
 
   try {
-    await resetPassword(token, userId, {
+    const res = await resetPassword(token, userId, {
       password:
         customPassword && customPassword.trim().length > 0
           ? customPassword.trim()
           : undefined,
     })
     revalidatePath('/settings')
-    return { success: true, message: null }
+    return { success: true, temporaryPassword: res.temporaryPassword, message: null }
   } catch (err: unknown) {
     let msg = 'Erro ao redefinir senha do usuário.'
     if (err && typeof err === 'object' && 'response' in err) {
@@ -234,7 +234,7 @@ export async function resetUserPasswordAction(
         if (e?.message) msg = e.message
       } catch {}
     }
-    return { success: false, message: msg }
+    return { success: false, temporaryPassword: null, message: msg }
   }
 }
 

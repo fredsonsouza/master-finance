@@ -4,13 +4,21 @@ interface ResetPasswordRequest {
   password?: string
 }
 
+interface ResetPasswordResponse {
+  temporaryPassword: string
+}
+
 export async function resetPassword(
   token: string,
   userId: string,
   data?: ResetPasswordRequest
 ) {
-  await api.patch(`users/${userId}/reset-password`, {
-    headers: { Authorization: `Bearer ${token}` },
-    json: data || {},
-  })
+  const response = await api
+    .patch(`users/${userId}/reset-password`, {
+      headers: { Authorization: `Bearer ${token}` },
+      json: data || {},
+    })
+    .json<ResetPasswordResponse>()
+
+  return response
 }

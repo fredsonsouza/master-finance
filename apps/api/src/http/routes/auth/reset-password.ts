@@ -30,7 +30,9 @@ export async function resetPassword(app: FastifyInstance) {
             .nullable()
             .optional(),
           response: {
-            204: z.null(),
+            200: z.object({
+              temporaryPassword: z.string(),
+            }),
           },
         },
       },
@@ -62,8 +64,9 @@ export async function resetPassword(app: FastifyInstance) {
         }
 
         const customPassword = request.body?.password
-        // Gerar senha temporária segura quando não informada (evitando senha previsível '123')
-        const temporarySecret = customPassword || `Tmp#${randomBytes(6).toString('hex')}`
+        // Gerar senha temporária segura e legível quando não informada
+        const temporarySecret =
+          customPassword || `Master#${randomBytes(3).toString('hex').toUpperCase()}`
         const newPasswordHash = await hash(temporarySecret, 10)
 
         await prisma.user.update({
@@ -84,7 +87,7 @@ export async function resetPassword(app: FastifyInstance) {
             : `Resetou a senha do usuário: ${targetUser.name} (${targetUser.username}) com senha temporária segura`,
         })
 
-        return reply.status(204).send(null)
+        return reply.status(200).send({ temporaryPassword: temporarySecret })
       }
     )
 }

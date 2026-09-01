@@ -60,7 +60,7 @@ describe('Reset Password Unit Test', () => {
     await app.register(resetPassword)
   })
 
-  test('should allow ADMIN to reset an employee password to default (123)', async () => {
+  test('should allow ADMIN to reset an employee password to default generated temporary password', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'ADMIN',
@@ -79,7 +79,9 @@ describe('Reset Password Unit Test', () => {
       url: '/users/223e4567-e89b-12d3-a456-426614174001/reset-password',
     })
 
-    expect(response.statusCode).toBe(204)
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toHaveProperty('temporaryPassword')
+    expect(response.json().temporaryPassword).toMatch(/^Master#/)
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: '223e4567-e89b-12d3-a456-426614174001' },
       data: {
@@ -111,7 +113,8 @@ describe('Reset Password Unit Test', () => {
       },
     })
 
-    expect(response.statusCode).toBe(204)
+    expect(response.statusCode).toBe(200)
+    expect(response.json().temporaryPassword).toBe('newSecretPassword123')
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: '223e4567-e89b-12d3-a456-426614174001' },
       data: {
