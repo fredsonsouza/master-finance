@@ -30,12 +30,9 @@ export default async function EvaluationsPage() {
     getEvaluations(token, { page: 1, perPage: 10 }),
     isManagement
       ? Promise.all([
-          getUsers(token, null, null, null, 1, 200)
+          getUsers(token, null, 'SELLER', null, 1, 200)
             .then((res) => {
-              // Carrega todos os usuários que podem realizar atendimentos (SELLER, EMPLOYEE, MANAGER, ADMIN)
-              sellers = (res.users || []).filter((u) =>
-                ['SELLER', 'EMPLOYEE', 'MANAGER', 'ADMIN'].includes(u.role)
-              )
+              sellers = res.users || []
             })
             .catch(() => {}),
           getUnits(token)
