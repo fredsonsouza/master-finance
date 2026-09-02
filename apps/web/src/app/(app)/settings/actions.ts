@@ -14,7 +14,7 @@ import { updateCategory } from '@/http/update-category'
 import { updateSector } from '@/http/update-sector'
 import { updateUnit } from '@/http/update-unit'
 import { updateUser } from '@/http/update-user'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 
 export async function fetchUsersAction(params?: {
   unitId?: string | null
@@ -92,7 +92,11 @@ export async function createUserAction(data: FormData) {
       role,
       unitId: unitId || null,
     })
+    updateTag('users')
     revalidatePath('/settings')
+    revalidatePath('/evaluations')
+    revalidatePath('/cash-closures')
+    revalidatePath('/collections')
     return { success: true, message: null }
   } catch (err: unknown) {
     console.error('Exception in createUserAction:', err)
@@ -112,7 +116,12 @@ export async function deleteUnitAction(id: string) {
   const { token } = await auth()
   try {
     await deleteUnit(token, id)
+    updateTag('units')
     revalidatePath('/settings')
+    revalidatePath('/evaluations')
+    revalidatePath('/cash-closures')
+    revalidatePath('/collections')
+    revalidatePath('/transactions')
     return { success: true, message: null }
   } catch (err) {
     return { success: false, message: 'Erro ao excluir unidade.' }
@@ -124,7 +133,12 @@ export async function updateUnitAction(id: string, data: FormData) {
   const name = data.get('name') as string
   try {
     await updateUnit(token, id, { name })
+    updateTag('units')
     revalidatePath('/settings')
+    revalidatePath('/evaluations')
+    revalidatePath('/cash-closures')
+    revalidatePath('/collections')
+    revalidatePath('/transactions')
     return { success: true, message: null }
   } catch (err) {
     return { success: false, message: 'Erro ao atualizar unidade.' }
@@ -135,7 +149,9 @@ export async function deleteSectorAction(id: string) {
   const { token } = await auth()
   try {
     await deleteSector(token, id)
+    updateTag('sectors')
     revalidatePath('/settings')
+    revalidatePath('/transactions')
     return { success: true, message: null }
   } catch (err) {
     return { success: false, message: 'Erro ao excluir setor.' }
@@ -147,7 +163,9 @@ export async function updateSectorAction(id: string, data: FormData) {
   const name = data.get('name') as string
   try {
     await updateSector(token, id, { name })
+    updateTag('sectors')
     revalidatePath('/settings')
+    revalidatePath('/transactions')
     return { success: true, message: null }
   } catch (err) {
     return { success: false, message: 'Erro ao atualizar setor.' }
@@ -158,7 +176,11 @@ export async function deleteUserAction(id: string) {
   const { token } = await auth()
   try {
     await deleteUser(token, id)
+    updateTag('users')
     revalidatePath('/settings')
+    revalidatePath('/evaluations')
+    revalidatePath('/cash-closures')
+    revalidatePath('/collections')
     return { success: true, message: null }
   } catch (err: unknown) {
     let msg = 'Erro ao excluir usuário.'
@@ -196,7 +218,11 @@ export async function updateUserAction(id: string, data: FormData) {
       password:
         password && password.trim().length > 0 ? password.trim() : undefined,
     })
+    updateTag('users')
     revalidatePath('/settings')
+    revalidatePath('/evaluations')
+    revalidatePath('/cash-closures')
+    revalidatePath('/collections')
     return { success: true, message: null }
   } catch (err: unknown) {
     let msg = 'Erro ao atualizar usuário.'

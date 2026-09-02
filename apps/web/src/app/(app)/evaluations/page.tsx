@@ -7,6 +7,8 @@ import { redirect } from 'next/navigation'
 import { EvaluationsContent } from './evaluations-content'
 import { RegulationButton } from './regulation-button'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Meus Atendimentos - Master Admin',
   description: 'Acompanhe as avaliações de atendimento recebidas.',
@@ -28,14 +30,17 @@ export default async function EvaluationsPage() {
     getEvaluations(token, { page: 1, perPage: 10 }),
     isManagement
       ? Promise.all([
-          getUsers(token, null, 'SELLER')
+          getUsers(token, null, null, null, 1, 200)
             .then((res) => {
-              sellers = res.users
+              // Carrega todos os usuários que podem realizar atendimentos (SELLER, EMPLOYEE, MANAGER, ADMIN)
+              sellers = (res.users || []).filter((u) =>
+                ['SELLER', 'EMPLOYEE', 'MANAGER', 'ADMIN'].includes(u.role)
+              )
             })
             .catch(() => {}),
           getUnits(token)
             .then((res) => {
-              units = res.units
+              units = res.units || []
             })
             .catch(() => {}),
         ])

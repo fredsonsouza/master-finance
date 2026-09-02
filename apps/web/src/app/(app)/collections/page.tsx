@@ -37,7 +37,7 @@ export default async function CollectionsPage() {
 
       if (user.role !== 'COLLECTOR') {
         const collectorsUnitId = isGlobalUser ? null : activeUnitId
-        const usersRes = await getUsers(token, collectorsUnitId, 'COLLECTOR')
+        const usersRes = await getUsers(token, collectorsUnitId, 'COLLECTOR', null, 1, 200)
         collectors = usersRes.users
       }
 

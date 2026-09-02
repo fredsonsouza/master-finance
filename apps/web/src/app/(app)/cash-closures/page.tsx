@@ -11,6 +11,8 @@ import type { User } from '@/http/get-users'
 import { redirect } from 'next/navigation'
 import { CashClosuresContent } from './cash-closures-content'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CashClosuresPage() {
   const { user, token } = await auth()
 
@@ -38,7 +40,7 @@ export default async function CashClosuresPage() {
       const uRes = await getUnits(token)
       units = uRes.units
 
-      const usersRes = await getUsers(token, activeUnitId)
+      const usersRes = await getUsers(token, activeUnitId, null, null, 1, 200)
       users = usersRes.users
     }
   } catch (error) {
