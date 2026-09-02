@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { checkEvaluationAvailability } from '@/utils/evaluation-schedule'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -26,6 +27,15 @@ export async function createEvaluation(app: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      // Validação de horário de funcionamento no fuso de Roraima (GMT-4)
+      const availability = checkEvaluationAvailability()
+      if (!availability.isOpen) {
+        throw new BadRequestError(
+          availability.message ||
+            'O período de avaliações está encerrado no momento. As avaliações ocorrem de segunda a sexta das 06h às 18h20 e aos sábados das 06h às 12h20 (Horário de Roraima).'
+        )
+      }
+
       const { sellerId, clientName, rating, presetComment, observation } = request.body
 
       const seller = await prisma.user.findUnique({

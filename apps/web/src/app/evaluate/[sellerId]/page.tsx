@@ -1,7 +1,11 @@
 import { getPublicSeller } from '@/http/get-public-seller'
+import { checkEvaluationAvailability } from '@/utils/evaluation-schedule'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { EvaluateForm } from './evaluate-form'
+import { EvaluationClosedCard } from './evaluation-closed-card'
+
+export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ sellerId: string }>
@@ -23,9 +27,15 @@ export default async function PublicEvaluationPage({ params }: Props) {
     notFound()
   }
 
+  const availability = checkEvaluationAvailability()
+
   return (
     <main className="min-h-screen bg-surface-container-lowest flex flex-col items-center justify-center p-4">
-      <EvaluateForm seller={seller} />
+      {availability.isOpen ? (
+        <EvaluateForm seller={seller} />
+      ) : (
+        <EvaluationClosedCard seller={seller} availability={availability} />
+      )}
     </main>
   )
 }

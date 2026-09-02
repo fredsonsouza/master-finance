@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { checkEvaluationAvailability } from '@/utils/evaluation-schedule'
 import fastify from 'fastify'
 import {
   serializerCompiler,
@@ -17,6 +18,10 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
     },
   },
+}))
+
+vi.mock('@/utils/evaluation-schedule', () => ({
+  checkEvaluationAvailability: vi.fn(),
 }))
 
 describe('Create Evaluation Unit Test', () => {
@@ -38,7 +43,11 @@ describe('Create Evaluation Unit Test', () => {
     await app.register(createEvaluation)
   })
 
-  test('should allow public customer to submit evaluation with mandatory comment', async () => {
+  test('should allow public customer to submit evaluation during open hours (e.g. 10:00 AM weekday)', async () => {
+    vi.mocked(checkEvaluationAvailability).mockReturnValueOnce({
+      isOpen: true,
+    })
+
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Maria Recepção',
@@ -65,5 +74,27 @@ describe('Create Evaluation Unit Test', () => {
     expect(response.json()).toEqual({
       evaluationId: '323e4567-e89b-12d3-a456-426614174002',
     })
+  })
+
+  test('should reject evaluation submitted outside allowed schedule (e.g. 18:25 PM)', async () => {
+    vi.mocked(checkEvaluationAvailability).mockReturnValueOnce({
+      isOpen: false,
+      message: 'O período de avaliações de hoje encerrou às 18h20.',
+    })
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/evaluations/public',
+      payload: {
+        sellerId: '123e4567-e89b-12d3-a456-426614174000',
+        clientName: 'João da Silva',
+        rating: 'EXCELLENT',
+        observation: 'Tentativa fora do horário.',
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().message).toContain('18h20')
+    expect(prisma.evaluation.create).not.toHaveBeenCalled()
   })
 })
