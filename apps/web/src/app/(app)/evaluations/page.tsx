@@ -10,38 +10,34 @@ import { RegulationButton } from './regulation-button'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Meus Atendimentos - Master Admin',
+  title: 'Avaliações de Atendimento - Master Admin',
   description: 'Acompanhe as avaliações de atendimento recebidas.',
 }
 
 export default async function EvaluationsPage() {
   const { user, token } = await auth()
 
-  if (!['SELLER', 'ADMIN', 'MANAGER'].includes(user.role)) {
+  if (!['ADMIN', 'MANAGER'].includes(user.role)) {
     redirect('/')
   }
-
-  const isManagement = user.role === 'ADMIN' || user.role === 'MANAGER'
 
   let sellers: User[] = []
   let units: Unit[] = []
 
   const [{ evaluations, pagination, metrics, podium }] = await Promise.all([
     getEvaluations(token, { page: 1, perPage: 10 }),
-    isManagement
-      ? Promise.all([
-          getUsers(token, null, 'SELLER', null, 1, 200)
-            .then((res) => {
-              sellers = res.users || []
-            })
-            .catch(() => {}),
-          getUnits(token)
-            .then((res) => {
-              units = res.units || []
-            })
-            .catch(() => {}),
-        ])
-      : Promise.resolve([]),
+    Promise.all([
+      getUsers(token, null, 'SELLER', null, 1, 200)
+        .then((res) => {
+          sellers = res.users || []
+        })
+        .catch(() => {}),
+      getUnits(token)
+        .then((res) => {
+          units = res.units || []
+        })
+        .catch(() => {}),
+    ]),
   ])
 
   return (
@@ -49,12 +45,10 @@ export default async function EvaluationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-primary text-3xl font-bold">
-            {user.role === 'SELLER' ? 'Meus Atendimentos' : 'Avaliações de Atendimento'}
+            Avaliações de Atendimento
           </h1>
           <p className="text-on-surface-variant">
-            {user.role === 'SELLER'
-              ? 'Acompanhe sua satisfação de atendimento e compartilhe seu QR Code.'
-              : 'Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.'}
+            Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.
           </p>
         </div>
 

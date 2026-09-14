@@ -96,10 +96,7 @@ export async function getTransactions(app: FastifyInstance) {
 
         let { unitId, itemId, month, type, search, page, perPage } = request.query
 
-        if (
-          requestingUser.role === 'EMPLOYEE' ||
-          requestingUser.role === 'SELLER'
-        ) {
+        if (requestingUser.role === 'EMPLOYEE') {
           if (!requestingUser.unitId) {
             return reply.status(200).send({
               transactions: [],

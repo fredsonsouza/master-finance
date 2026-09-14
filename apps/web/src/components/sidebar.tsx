@@ -13,7 +13,6 @@ export async function Sidebar() {
     user.role === 'MANAGER' ||
     user.role === 'INVENTORY' ||
     user.role === 'EMPLOYEE' ||
-    user.role === 'SELLER' ||
     user.role === 'FINANCIAL'
 
   const canViewFinancial =
@@ -24,8 +23,7 @@ export async function Sidebar() {
 
   const canViewEvaluations =
     user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'SELLER'
+    user.role === 'MANAGER'
 
   const canViewCollections =
     user.role === 'ADMIN' ||

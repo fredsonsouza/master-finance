@@ -56,7 +56,9 @@ export function SidebarNav({
   return (
     <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
       {/* Visão Geral */}
-      {userRole !== 'INVENTORY' && userRole !== 'ANALYST' && (
+      {userRole !== 'INVENTORY' &&
+        userRole !== 'ANALYST' &&
+        userRole !== 'SELLER' && (
         <Link
           href="/"
           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
@@ -164,56 +166,58 @@ export function SidebarNav({
       )}
 
       {/* Menu Colapsável: RH */}
-      <div className="space-y-1">
-        <button
-          type="button"
-          onClick={() => setIsRhOpen((prev) => !prev)}
-          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-            isRhActive
-              ? 'text-primary bg-primary/5'
-              : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Users className="h-4 w-4 text-primary shrink-0" />
-            <span>RH</span>
-          </div>
-          <ChevronDown
-            className={`h-3.5 w-3.5 transition-transform duration-200 ${
-              isRhOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
+      {userRole !== 'SELLER' && (
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => setIsRhOpen((prev) => !prev)}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+              isRhActive
+                ? 'text-primary bg-primary/5'
+                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
             }`}
-          />
-        </button>
+          >
+            <div className="flex items-center gap-2.5">
+              <Users className="h-4 w-4 text-primary shrink-0" />
+              <span>RH</span>
+            </div>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                isRhOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
+              }`}
+            />
+          </button>
 
-        {isRhOpen && (
-          <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
-            {canViewEvaluations && (
+          {isRhOpen && (
+            <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
+              {canViewEvaluations && (
+                <Link
+                  href="/evaluations"
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    pathname.startsWith('/evaluations')
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  }`}
+                >
+                  <Star className="h-3.5 w-3.5 shrink-0" />
+                  <span>Meus Atendimentos</span>
+                </Link>
+              )}
               <Link
-                href="/evaluations"
+                href="/hr-reports"
                 className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  pathname.startsWith('/evaluations')
+                  pathname.startsWith('/hr-reports')
                     ? 'bg-primary/15 text-primary font-semibold'
                     : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
                 }`}
               >
-                <Star className="h-3.5 w-3.5 shrink-0" />
-                <span>Meus Atendimentos</span>
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span>Relatórios dos Setores</span>
               </Link>
-            )}
-            <Link
-              href="/hr-reports"
-              className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                pathname.startsWith('/hr-reports')
-                  ? 'bg-primary/15 text-primary font-semibold'
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5 shrink-0" />
-              <span>Relatórios dos Setores</span>
-            </Link>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Módulos Operacionais Adicionais */}
       {(canViewCollections || canViewReports || canViewLogs) && (

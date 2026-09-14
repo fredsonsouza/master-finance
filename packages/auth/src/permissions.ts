@@ -57,23 +57,12 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   SELLER(user, { can }) {
-    can('get', 'Sector')
-    can('get', 'Item')
-    can('get', 'Category')
-    can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
-    can('get', 'Evaluation', { sellerId: { $eq: user.id } })
-
     can('create', 'CashClosure')
     can('get', 'CashClosure', { unitId: { $eq: user.unitId } })
     can('update', 'CashClosure', ['cashDate', 'value', 'observation'], {
       userId: { $eq: user.id },
       status: { $eq: 'OPEN' },
     })
-
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   COLLECTOR(user, { can }) {

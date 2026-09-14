@@ -54,4 +54,40 @@ describe('Auth Permissions Test', () => {
     expect(ability.can('get', 'CashClosure')).toBe(false)
     expect(ability.can('get', 'Collection')).toBe(false)
   })
+
+  test('SELLER role permissions for CashClosure only', () => {
+    const sellerUser = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'SELLER' as const,
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    }
+
+    const ability = defineAbilityFor(sellerUser as any)
+
+    expect(ability.can('create', 'CashClosure')).toBe(true)
+    expect(
+      ability.can('get', {
+        __typename: 'CashClosure',
+        id: '1',
+        unitId: '223e4567-e89b-12d3-a456-426614174001',
+      } as any)
+    ).toBe(true)
+    expect(
+      ability.can('get', {
+        __typename: 'CashClosure',
+        id: '2',
+        unitId: 'other-unit-id',
+      } as any)
+    ).toBe(false)
+
+    // Forbidden actions
+    expect(ability.can('get', 'Item')).toBe(false)
+    expect(ability.can('get', 'Transaction')).toBe(false)
+    expect(ability.can('get', 'Evaluation')).toBe(false)
+    expect(ability.can('get', 'Category')).toBe(false)
+    expect(ability.can('get', 'Sector')).toBe(false)
+    expect(ability.can('create', 'HrReport')).toBe(false)
+    expect(ability.can('get', 'Collection')).toBe(false)
+    expect(ability.can('get', 'User')).toBe(false)
+  })
 })

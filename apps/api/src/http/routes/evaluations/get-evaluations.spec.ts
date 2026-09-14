@@ -46,10 +46,10 @@ describe('Get Evaluations Unit Test', () => {
     await app.register(getEvaluations)
   })
 
-  test('should allow SELLER to view their own evaluations', async () => {
+  test('should allow MANAGER/ADMIN to view evaluations', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'SELLER',
+      role: 'MANAGER',
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
@@ -102,5 +102,20 @@ describe('Get Evaluations Unit Test', () => {
       totalCount: 1,
       totalPages: 1,
     })
+  })
+
+  test('should block SELLER from viewing evaluations', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'SELLER',
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    } as any)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/evaluations',
+    })
+
+    expect(response.statusCode).toBe(401)
   })
 })
