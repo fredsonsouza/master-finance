@@ -21,6 +21,7 @@ import {
   Pencil,
   Plus,
   Printer,
+  RotateCcw,
   Trash2,
 } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -127,6 +128,20 @@ export function CashClosuresContent({
       toast.error(res.message)
     }
     setClosureToConfirm(null)
+  }
+
+  async function handleReopen(closureId: string) {
+    const res = await changeCashClosureStatus(closureId, 'OPEN')
+    if (res.success) {
+      toast.success('Caixa reaberto com sucesso!')
+      setClosures(
+        closures.map((c) =>
+          c.id === closureId ? { ...c, status: 'OPEN' } : c
+        )
+      )
+    } else {
+      toast.error(res.message)
+    }
   }
 
   const formatCurrency = (val: number) =>
@@ -311,6 +326,17 @@ export function CashClosuresContent({
                               className="text-success hover:text-success hover:bg-success/10 h-8 w-8 cursor-pointer"
                             >
                               <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {closure.status === 'CLOSED' && isFinancial && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Reabrir Caixa"
+                              onClick={() => handleReopen(closure.id)}
+                              className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 h-8 w-8 cursor-pointer"
+                            >
+                              <RotateCcw className="h-4 w-4" />
                             </Button>
                           )}
                           {canEdit && (
