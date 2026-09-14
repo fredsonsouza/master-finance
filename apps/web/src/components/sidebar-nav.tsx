@@ -166,7 +166,7 @@ export function SidebarNav({
       )}
 
       {/* Menu Colapsável: RH */}
-      {userRole !== 'SELLER' && (
+      {userRole !== 'SELLER' && userRole !== 'FINANCIAL' && (
         <div className="space-y-1">
           <button
             type="button"

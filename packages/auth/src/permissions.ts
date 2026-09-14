@@ -29,19 +29,11 @@ export const permissions: Record<Role, PermissionsByRole> = {
   },
 
   FINANCIAL(user, { can }) {
-    can('manage', 'Transaction')
-    can('manage', 'Metric')
     can('manage', 'CashClosure')
-    can('get', 'Item')
+    can('manage', 'Metric')
     can('get', 'Sector')
     can('get', 'Unit')
     can('get', 'User')
-    can('get', 'Category')
-
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
   },
 
   EMPLOYEE(user, { can }) {

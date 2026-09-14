@@ -6,10 +6,15 @@ import {
   type HrReportSummary,
 } from '@/http/get-hr-reports'
 import { getUnits, type Unit } from '@/http/get-units'
+import { redirect } from 'next/navigation'
 import { HrReportsContent } from './hr-reports-content'
 
 export default async function HrReportsPage() {
   const { token, user } = await auth()
+
+  if (user.role === 'SELLER' || user.role === 'FINANCIAL') {
+    redirect('/')
+  }
 
   let reports: HrReport[] = []
   let summary: HrReportSummary = {

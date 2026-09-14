@@ -7,11 +7,16 @@ import {
   type TransactionPagination,
 } from '@/http/get-transactions'
 import { getUnits, type Unit } from '@/http/get-units'
+import { redirect } from 'next/navigation'
 import { CreateTransactionDialog } from './create-transaction-dialog'
 import { TransactionsContent } from './transactions-content'
 
 export default async function TransactionsPage() {
-  const { token } = await auth()
+  const { user, token } = await auth()
+
+  if (!['ADMIN', 'MANAGER', 'INVENTORY', 'EMPLOYEE'].includes(user.role)) {
+    redirect('/')
+  }
 
   let transactions: Transaction[] = []
   let pagination: TransactionPagination = {

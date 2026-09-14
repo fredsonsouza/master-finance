@@ -2,6 +2,7 @@ import { auth } from '@/auth/auth'
 import { getCategories, type Category } from '@/http/get-categories'
 import { getItems, type Item } from '@/http/get-items'
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { CreateItemDialog } from './create-item-dialog'
 import { ItemsContent } from './items-content'
 
@@ -12,6 +13,10 @@ export const metadata: Metadata = {
 
 export default async function ItemsPage() {
   const { user, token } = await auth()
+
+  if (!['ADMIN', 'MANAGER', 'INVENTORY', 'EMPLOYEE'].includes(user.role)) {
+    redirect('/')
+  }
 
   const canManage = user.role === 'ADMIN' || user.role === 'INVENTORY'
 
