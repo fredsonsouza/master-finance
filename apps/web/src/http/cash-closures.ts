@@ -21,17 +21,58 @@ export interface CashClosure {
   }
 }
 
-interface GetCashClosuresResponse {
-  closures: CashClosure[]
+export interface CashClosurePagination {
+  page: number
+  perPage: number
+  totalCount: number
+  totalPages: number
 }
 
-export async function getCashClosures(token: string, unitId?: string | null) {
+export interface GetCashClosuresParams {
+  unitId?: string | null
+  status?: 'OPEN' | 'CLOSED' | string | null
+  sectorId?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  search?: string | null
+  page?: number
+  perPage?: number
+}
+
+export interface GetCashClosuresResponse {
+  closures: CashClosure[]
+  pagination: CashClosurePagination
+}
+
+export async function getCashClosures(
+  token: string,
+  params?: GetCashClosuresParams | string | null
+) {
+  const searchParams: Record<string, string> = {}
+
+  if (typeof params === 'string') {
+    if (params && params !== 'ALL') searchParams.unitId = params
+  } else if (params) {
+    if (params.unitId && params.unitId !== 'ALL')
+      searchParams.unitId = params.unitId
+    if (params.status && params.status !== 'ALL')
+      searchParams.status = params.status
+    if (params.sectorId && params.sectorId !== 'ALL')
+      searchParams.sectorId = params.sectorId
+    if (params.startDate) searchParams.startDate = params.startDate
+    if (params.endDate) searchParams.endDate = params.endDate
+    if (params.search?.trim()) searchParams.search = params.search.trim()
+    if (params.page) searchParams.page = String(params.page)
+    if (params.perPage) searchParams.perPage = String(params.perPage)
+  }
+
   const result = await api
     .get('cash-closures', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      searchParams: unitId ? { unitId } : undefined,
+      searchParams:
+        Object.keys(searchParams).length > 0 ? searchParams : undefined,
       next: {
         tags: ['cash-closures'],
       },

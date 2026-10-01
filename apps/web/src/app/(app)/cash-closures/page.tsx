@@ -1,7 +1,7 @@
 import { auth } from '@/auth/auth'
 import { getActiveUnit } from '@/components/unit-switcher-action'
 import { getCashClosures } from '@/http/cash-closures'
-import type { CashClosure } from '@/http/cash-closures'
+import type { CashClosure, CashClosurePagination } from '@/http/cash-closures'
 import { getSectors } from '@/http/get-sectors'
 import type { Sector } from '@/http/get-sectors'
 import { getUnits } from '@/http/get-units'
@@ -23,13 +23,24 @@ export default async function CashClosuresPage() {
   const activeUnitId = await getActiveUnit()
 
   let closures: CashClosure[] = []
+  let pagination: CashClosurePagination = {
+    page: 1,
+    perPage: 20,
+    totalCount: 0,
+    totalPages: 1,
+  }
   let sectors: Sector[] = []
   let units: Unit[] = []
   let users: User[] = []
 
   try {
-    const res = await getCashClosures(token, activeUnitId)
+    const res = await getCashClosures(token, {
+      unitId: activeUnitId,
+      page: 1,
+      perPage: 20,
+    })
     closures = res.closures
+    pagination = res.pagination
 
     if (activeUnitId) {
       const sRes = await getSectors(token)
@@ -50,6 +61,7 @@ export default async function CashClosuresPage() {
   return (
     <CashClosuresContent
       initialClosures={closures}
+      initialPagination={pagination}
       sectors={sectors}
       units={units}
       users={users}

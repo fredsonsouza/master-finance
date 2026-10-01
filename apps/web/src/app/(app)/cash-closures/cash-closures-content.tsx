@@ -11,28 +11,36 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import type { CashClosure } from '@/http/cash-closures'
+import type { CashClosure, CashClosurePagination } from '@/http/cash-closures'
 import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
   Pencil,
   Plus,
   Printer,
   RotateCcw,
   Trash2,
 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
-import { changeCashClosureStatus, deleteCashClosure } from './actions'
+import {
+  changeCashClosureStatus,
+  deleteCashClosure,
+  fetchCashClosuresAction,
+} from './actions'
 import { CreateCashClosureDialog } from './create-cash-closure-dialog'
 import { UpdateCashClosureDialog } from './update-cash-closure-dialog'
 
 interface Props {
   initialClosures: CashClosure[]
+  initialPagination: CashClosurePagination
   sectors: Sector[]
   units: Unit[]
   users: User[]
@@ -43,6 +51,7 @@ interface Props {
 
 export function CashClosuresContent({
   initialClosures,
+  initialPagination,
   sectors,
   units,
   users,
@@ -51,12 +60,16 @@ export function CashClosuresContent({
   activeUnitId,
 }: Props) {
   const [closures, setClosures] = useState(initialClosures)
+  const [pagination, setPagination] = useState(initialPagination)
+  const [isLoading, startTransition] = useTransition()
+
   const [prevInitialClosures, setPrevInitialClosures] =
     useState(initialClosures)
 
   if (initialClosures !== prevInitialClosures) {
     setPrevInitialClosures(initialClosures)
     setClosures(initialClosures)
+    setPagination(initialPagination)
   }
 
   const [search, setSearch] = useState('')
@@ -72,6 +85,11 @@ export function CashClosuresContent({
   const [closureToConfirm, setClosureToConfirm] = useState<string | null>(null)
   const [closureToDelete, setClosureToDelete] = useState<string | null>(null)
 
+  // Print dataset state
+  const [printClosures, setPrintClosures] =
+    useState<CashClosure[]>(initialClosures)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
+
   const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = useReactToPrint({
@@ -81,33 +99,125 @@ export function CashClosuresContent({
 
   const isFinancial = ['ADMIN', 'MANAGER', 'FINANCIAL'].includes(userRole)
 
-  const filtered = closures.filter((c) => {
-    const matchesSearch = c.user.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
+  const loadClosures = useCallback(
+    (
+      page = 1,
+      overrides?: {
+        search?: string
+        status?: string
+        unitId?: string
+        startDate?: string
+        endDate?: string
+      }
+    ) => {
+      const activeSearch =
+        overrides?.search !== undefined ? overrides.search : search
+      const activeStatus =
+        overrides?.status !== undefined ? overrides.status : statusFilter
+      const activeUnit =
+        overrides?.unitId !== undefined ? overrides.unitId : unitFilter
+      const activeStart =
+        overrides?.startDate !== undefined ? overrides.startDate : startDate
+      const activeEnd =
+        overrides?.endDate !== undefined ? overrides.endDate : endDate
 
-    const matchesStatus = statusFilter === 'ALL' || c.status === statusFilter
+      startTransition(async () => {
+        const res = await fetchCashClosuresAction({
+          page,
+          perPage: 20,
+          search: activeSearch || undefined,
+          status:
+            activeStatus !== 'ALL'
+              ? (activeStatus as 'OPEN' | 'CLOSED')
+              : undefined,
+          unitId: activeUnit !== 'ALL' ? activeUnit : undefined,
+          startDate: activeStart || undefined,
+          endDate: activeEnd || undefined,
+        })
 
-    const matchesUnit = unitFilter === 'ALL' || c.unit?.id === unitFilter
+        if (res.success) {
+          setClosures(res.closures)
+          setPagination(res.pagination)
+        } else {
+          toast.error('Erro ao carregar fechamentos.')
+        }
+      })
+    },
+    [search, statusFilter, unitFilter, startDate, endDate]
+  )
 
-    let matchesDate = true
-    if (startDate || endDate) {
-      const closureDateStr = new Date(c.cashDate).toISOString().split('T')[0]
-      if (startDate && closureDateStr < startDate) matchesDate = false
-      if (endDate && closureDateStr > endDate) matchesDate = false
+  // Debounced search
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
     }
+    const timer = setTimeout(() => {
+      loadClosures(1, { search })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [search, loadClosures])
 
-    return matchesSearch && matchesStatus && matchesUnit && matchesDate
-  })
+  function handleStatusChange(val: string) {
+    setStatusFilter(val)
+    loadClosures(1, { status: val })
+  }
 
-  const totalValue = filtered.reduce((acc, c) => acc + c.value, 0)
+  function handleUnitChange(val: string) {
+    setUnitFilter(val)
+    loadClosures(1, { unitId: val })
+  }
+
+  function handleStartDateChange(val: string) {
+    setStartDate(val)
+    loadClosures(1, { startDate: val })
+  }
+
+  function handleEndDateChange(val: string) {
+    setEndDate(val)
+    loadClosures(1, { endDate: val })
+  }
+
+  async function handlePrepareAndPrint() {
+    setIsExportingPdf(true)
+    try {
+      const res = await fetchCashClosuresAction({
+        page: 1,
+        perPage: 500,
+        search: search || undefined,
+        status:
+          statusFilter !== 'ALL'
+            ? (statusFilter as 'OPEN' | 'CLOSED')
+            : undefined,
+        unitId: unitFilter !== 'ALL' ? unitFilter : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      })
+
+      if (res.success) {
+        setPrintClosures(res.closures)
+        setTimeout(() => {
+          handlePrint()
+        }, 100)
+      } else {
+        toast.error('Erro ao preparar relatório para impressão.')
+      }
+    } catch {
+      toast.error('Erro ao gerar relatório.')
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
+  const printTotalValue = printClosures.reduce((acc, c) => acc + c.value, 0)
 
   async function handleDelete() {
     if (!closureToDelete) return
     const res = await deleteCashClosure(closureToDelete)
     if (res.success) {
       toast.success('Lançamento excluído.')
-      setClosures(closures.filter((c) => c.id !== closureToDelete))
+      loadClosures(pagination.page)
     } else {
       toast.error(res.message)
     }
@@ -119,11 +229,7 @@ export function CashClosuresContent({
     const res = await changeCashClosureStatus(closureToConfirm, 'CLOSED')
     if (res.success) {
       toast.success('Caixa fechado com sucesso!')
-      setClosures(
-        closures.map((c) =>
-          c.id === closureToConfirm ? { ...c, status: 'CLOSED' } : c
-        )
-      )
+      loadClosures(pagination.page)
     } else {
       toast.error(res.message)
     }
@@ -134,11 +240,7 @@ export function CashClosuresContent({
     const res = await changeCashClosureStatus(closureId, 'OPEN')
     if (res.success) {
       toast.success('Caixa reaberto com sucesso!')
-      setClosures(
-        closures.map((c) =>
-          c.id === closureId ? { ...c, status: 'OPEN' } : c
-        )
-      )
+      loadClosures(pagination.page)
     } else {
       toast.error(res.message)
     }
@@ -165,10 +267,15 @@ export function CashClosuresContent({
           {isFinancial && (
             <Button
               variant="outline"
-              onClick={() => handlePrint()}
+              disabled={isExportingPdf}
+              onClick={handlePrepareAndPrint}
               className="gap-2 cursor-pointer"
             >
-              <Printer className="h-4 w-4" />
+              {isExportingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
               Relatório (PDF)
             </Button>
           )}
@@ -201,7 +308,7 @@ export function CashClosuresContent({
           </label>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => handleStatusChange(e.target.value)}
             className="w-full border border-surface-container bg-surface rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
           >
             <option value="ALL">Todos</option>
@@ -217,7 +324,7 @@ export function CashClosuresContent({
             </label>
             <select
               value={unitFilter}
-              onChange={(e) => setUnitFilter(e.target.value)}
+              onChange={(e) => handleUnitChange(e.target.value)}
               className="w-full border border-surface-container bg-surface rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none"
             >
               <option value="ALL">Todas</option>
@@ -236,7 +343,7 @@ export function CashClosuresContent({
           </label>
           <DatePicker
             value={startDate}
-            onChange={setStartDate}
+            onChange={handleStartDateChange}
             outputFormat="YYYY-MM-DD"
             className="w-full bg-surface"
           />
@@ -248,7 +355,7 @@ export function CashClosuresContent({
           </label>
           <DatePicker
             value={endDate}
-            onChange={setEndDate}
+            onChange={handleEndDateChange}
             outputFormat="YYYY-MM-DD"
             className="w-full bg-surface"
           />
@@ -272,8 +379,10 @@ export function CashClosuresContent({
                   <th className="px-6 py-3 font-semibold text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-container">
-                {filtered.map((closure) => {
+              <tbody
+                className={`divide-y divide-surface-container ${isLoading ? 'opacity-60 transition-opacity' : ''}`}
+              >
+                {closures.map((closure) => {
                   const canEdit =
                     isFinancial ||
                     (closure.status === 'OPEN' && closure.user.id === userId)
@@ -366,19 +475,58 @@ export function CashClosuresContent({
                     </tr>
                   )
                 })}
-                {filtered.length === 0 && (
+                {closures.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={isFinancial ? 7 : 6}
                       className="px-6 py-8 text-center text-on-surface-variant"
                     >
-                      Nenhum fechamento encontrado.
+                      {isLoading
+                        ? 'Carregando fechamentos...'
+                        : 'Nenhum fechamento encontrado.'}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Paginação */}
+          {pagination.totalCount > 0 && (
+            <div className="flex items-center justify-between px-6 py-3 border-t border-surface-container bg-surface-container-lowest text-xs text-on-surface-variant">
+              <span>
+                Página <strong>{pagination.page}</strong> de{' '}
+                <strong>{pagination.totalPages}</strong> (
+                {pagination.totalCount}{' '}
+                {pagination.totalCount === 1 ? 'fechamento' : 'fechamentos'})
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.page <= 1 || isLoading}
+                  onClick={() => loadClosures(pagination.page - 1)}
+                  className="h-7 px-2 cursor-pointer"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    pagination.page >= pagination.totalPages || isLoading
+                  }
+                  onClick={() => loadClosures(pagination.page + 1)}
+                  className="h-7 px-2 cursor-pointer"
+                >
+                  Próxima
+                  <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -425,7 +573,7 @@ export function CashClosuresContent({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c) => (
+              {printClosures.map((c) => (
                 <tr key={c.id} className="border-b border-gray-100">
                   <td className="p-2">
                     {new Date(c.cashDate).toLocaleDateString('pt-BR', {
@@ -457,7 +605,7 @@ export function CashClosuresContent({
                   Valor Total no Período Selecionado:
                 </td>
                 <td className="p-4 text-right font-bold text-green-700 text-lg">
-                  {formatCurrency(totalValue)}
+                  {formatCurrency(printTotalValue)}
                 </td>
               </tr>
             </tfoot>

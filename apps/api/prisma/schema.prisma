@@ -177,6 +177,8 @@ model CashClosure {
   updatedAt DateTime @updatedAt
 
   @@index([unitId, status, cashDate])
+  @@index([cashDate(sort: Desc)])
+  @@index([unitId, cashDate(sort: Desc)])
   @@index([sectorId])
   @@index([userId])
   @@map("cash_closures")

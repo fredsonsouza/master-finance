@@ -16,11 +16,14 @@ export async function getCashClosures(app: FastifyInstance) {
           summary: 'Get all cash closures',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
-            unitId: z.uuid().optional(),
+            unitId: z.string().uuid().optional(),
             status: z.enum(['OPEN', 'CLOSED']).optional(),
-            sectorId: z.uuid().optional(),
+            sectorId: z.string().uuid().optional(),
             startDate: z.string().optional(),
             endDate: z.string().optional(),
+            search: z.string().optional(),
+            page: z.coerce.number().int().min(1).default(1),
+            perPage: z.coerce.number().int().min(1).max(200).default(20),
           }),
           response: {
             200: z.object({
@@ -48,12 +51,27 @@ export async function getCashClosures(app: FastifyInstance) {
                   }),
                 })
               ),
+              pagination: z.object({
+                page: z.number(),
+                perPage: z.number(),
+                totalCount: z.number(),
+                totalPages: z.number(),
+              }),
             }),
           },
         },
       },
       async (request, reply) => {
-        const { unitId, status, sectorId, startDate, endDate } = request.query
+        const {
+          unitId,
+          status,
+          sectorId,
+          startDate,
+          endDate,
+          search,
+          page,
+          perPage,
+        } = request.query
 
         const userId = await request.getCurrentUserId()
         const user = await prisma.user.findUnique({ where: { id: userId } })
@@ -67,30 +85,57 @@ export async function getCashClosures(app: FastifyInstance) {
 
         if (startDate || endDate) {
           where.cashDate = {}
-          if (startDate) where.cashDate.gte = new Date(startDate)
-          if (endDate) where.cashDate.lte = new Date(endDate)
+          if (startDate) {
+            where.cashDate.gte = new Date(startDate)
+          }
+          if (endDate) {
+            const end = new Date(endDate)
+            if (endDate.length === 10) {
+              end.setUTCHours(23, 59, 59, 999)
+            }
+            where.cashDate.lte = end
+          }
+        }
+
+        if (search && search.trim().length > 0) {
+          where.user = {
+            name: {
+              contains: search.trim(),
+              mode: 'insensitive',
+            },
+          }
         }
 
         // Se for SELLER e não tiver global access, restringe mais:
-        // Na real, a permissão diz que o SELLER vê todos do seu unitId.
-        // A regra de negócio que pediu era: vê todos da sua unidade ou todos os seus?
-        // Vamos deixar ele ver todos da sua unidade para transparência, como definido nas abilities.
         if (user?.role === 'SELLER' || user?.role === 'EMPLOYEE') {
           where.unitId = user.unitId // Força filtro na unidade do usuário
         }
 
-        const closures = await prisma.cashClosure.findMany({
-          where,
-          include: {
-            user: { select: { id: true, name: true } },
-            sector: { select: { id: true, name: true } },
-            unit: { select: { id: true, name: true } },
-          },
-          orderBy: { cashDate: 'desc' },
-        })
+        const [totalCount, closures] = await Promise.all([
+          prisma.cashClosure.count({ where }),
+          prisma.cashClosure.findMany({
+            where,
+            take: perPage,
+            skip: (page - 1) * perPage,
+            include: {
+              user: { select: { id: true, name: true } },
+              sector: { select: { id: true, name: true } },
+              unit: { select: { id: true, name: true } },
+            },
+            orderBy: { cashDate: 'desc' },
+          }),
+        ])
+
+        const totalPages = Math.ceil(totalCount / perPage) || 1
 
         return reply.status(200).send({
           closures,
+          pagination: {
+            page,
+            perPage,
+            totalCount,
+            totalPages,
+          },
         })
       }
     )

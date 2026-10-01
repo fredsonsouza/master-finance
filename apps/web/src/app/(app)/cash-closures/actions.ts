@@ -2,9 +2,11 @@
 
 import { getActiveUnit } from '@/components/unit-switcher-action'
 import {
+  type GetCashClosuresParams,
   changeCashClosureStatusAction,
   createCashClosureAction,
   deleteCashClosureAction,
+  getCashClosures,
   updateCashClosureAction,
 } from '@/http/cash-closures'
 import { revalidatePath } from 'next/cache'
@@ -96,5 +98,29 @@ export async function changeCashClosureStatus(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Erro inesperado.'
     return { success: false, message }
+  }
+}
+
+export async function fetchCashClosuresAction(params: GetCashClosuresParams) {
+  try {
+    const { token } = await auth()
+    const result = await getCashClosures(token, params)
+    return {
+      success: true,
+      closures: result.closures,
+      pagination: result.pagination,
+    }
+  } catch (error: unknown) {
+    console.error('Failed to fetch cash closures', error)
+    return {
+      success: false,
+      closures: [],
+      pagination: {
+        page: params.page || 1,
+        perPage: params.perPage || 20,
+        totalCount: 0,
+        totalPages: 1,
+      },
+    }
   }
 }
