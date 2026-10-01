@@ -67,6 +67,7 @@ export async function getEvaluations(
     endDate?: string | null
     page?: number
     perPage?: number
+    includePodium?: boolean
   }
 ) {
   const searchParams: Record<string, string> = {}
@@ -78,13 +79,17 @@ export async function getEvaluations(
   if (params?.endDate) searchParams.endDate = params.endDate
   if (params?.page) searchParams.page = String(params.page)
   if (params?.perPage) searchParams.perPage = String(params.perPage)
+  if (params?.includePodium !== undefined) {
+    searchParams.includePodium = String(params.includePodium)
+  }
 
   const result = await api
     .get('evaluations', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      searchParams: Object.keys(searchParams).length > 0 ? searchParams : undefined,
+      searchParams:
+        Object.keys(searchParams).length > 0 ? searchParams : undefined,
       next: {
         revalidate: 0,
       },

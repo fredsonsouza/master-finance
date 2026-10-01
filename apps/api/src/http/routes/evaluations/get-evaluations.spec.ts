@@ -118,4 +118,72 @@ describe('Get Evaluations Unit Test', () => {
 
     expect(response.statusCode).toBe(401)
   })
+
+  test('should skip podium calculation when includePodium is false', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'ADMIN',
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    } as any)
+
+    vi.mocked(prisma.evaluation.count).mockResolvedValueOnce(0)
+    vi.mocked(prisma.evaluation.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.evaluation.groupBy).mockResolvedValueOnce([])
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/evaluations?includePodium=false&podiumUnitId=223e4567-e89b-12d3-a456-426614174001',
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json().podium).toEqual([])
+    // prisma.evaluation.groupBy should only be called once (for metrics distribution), not twice (no podium)
+    expect(prisma.evaluation.groupBy).toHaveBeenCalledTimes(1)
+  })
+
+  test('should compute podium when includePodium is true and podiumUnitId is provided', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'ADMIN',
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    } as any)
+
+    vi.mocked(prisma.evaluation.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.evaluation.findMany).mockResolvedValueOnce([])
+    // First groupBy for metrics, second groupBy for podium
+    vi.mocked(prisma.evaluation.groupBy)
+      .mockResolvedValueOnce([
+        { rating: 'EXCELLENT', _count: { rating: 1 } },
+      ] as any)
+      .mockResolvedValueOnce([
+        {
+          sellerId: '123e4567-e89b-12d3-a456-426614174000',
+          rating: 'EXCELLENT',
+          _count: { rating: 1 },
+        },
+      ] as any)
+
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Maria Vendedora',
+        avatarUrl: null,
+        unit: {
+          id: '223e4567-e89b-12d3-a456-426614174001',
+          name: 'Unidade Centro',
+        },
+      },
+    ] as any)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/evaluations?includePodium=true&podiumUnitId=223e4567-e89b-12d3-a456-426614174001',
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json().podium).toHaveLength(1)
+    expect(response.json().podium[0].sellerName).toBe('Maria Vendedora')
+    expect(response.json().podium[0].satisfactionRate).toBe(100)
+    expect(prisma.evaluation.groupBy).toHaveBeenCalledTimes(2)
+  })
 })

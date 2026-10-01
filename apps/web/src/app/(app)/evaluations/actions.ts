@@ -15,6 +15,7 @@ export async function fetchEvaluationsAction(params?: {
   endDate?: string | null
   page?: number
   perPage?: number
+  includePodium?: boolean
 }) {
   const { token } = await auth()
   if (!token) return { success: false, data: null, message: 'Não autenticado' }
@@ -30,7 +31,10 @@ export async function fetchEvaluationsAction(params?: {
 export async function deleteEvaluationAction(id: string) {
   const { token, user } = await auth()
   if (!token || user.role !== 'ADMIN') {
-    return { success: false, message: 'Apenas Administradores podem excluir avaliações.' }
+    return {
+      success: false,
+      message: 'Apenas Administradores podem excluir avaliações.',
+    }
   }
 
   try {
@@ -52,7 +56,10 @@ export async function updateEvaluationAction(
 ) {
   const { token, user } = await auth()
   if (!token || user.role !== 'ADMIN') {
-    return { success: false, message: 'Apenas Administradores podem editar avaliações.' }
+    return {
+      success: false,
+      message: 'Apenas Administradores podem editar avaliações.',
+    }
   }
 
   try {

@@ -74,7 +74,8 @@ interface Props {
 const RATING_CONFIG = {
   EXCELLENT: {
     label: 'Ótimo',
-    badgeClass: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+    badgeClass:
+      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
     icon: Laugh,
   },
   GOOD: {
@@ -84,7 +85,8 @@ const RATING_CONFIG = {
   },
   REGULAR: {
     label: 'Regular',
-    badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
+    badgeClass:
+      'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
     icon: Meh,
   },
   BAD: {
@@ -104,24 +106,31 @@ export function EvaluationsContent({
   units = [],
 }: Props) {
   const isSeller = currentUser.role === 'SELLER'
-  const isManagement = currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+  const isManagement =
+    currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
   const isAdmin = currentUser.role === 'ADMIN'
 
   // Data states
-  const [evaluations, setEvaluations] = useState<EvaluationItem[]>(initialEvaluations)
+  const [evaluations, setEvaluations] =
+    useState<EvaluationItem[]>(initialEvaluations)
   const [metrics, setMetrics] = useState<EvaluationMetrics>(initialMetrics)
-  const [pagination, setPagination] = useState<EvaluationPagination>(initialPagination)
+  const [pagination, setPagination] =
+    useState<EvaluationPagination>(initialPagination)
   const [podium, setPodium] = useState<PodiumItem[]>(initialPodium)
 
   // Filters - History
-  const [selectedSellerId, setSelectedSellerId] = useState<string>(isSeller ? currentUser.id : '')
+  const [selectedSellerId, setSelectedSellerId] = useState<string>(
+    isSeller ? currentUser.id : ''
+  )
   const [selectedHistoryUnitId, setSelectedHistoryUnitId] = useState<string>('')
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
 
   // Filters - Podium (synchronized to current month by default)
   const [selectedPodiumUnitId, setSelectedPodiumUnitId] = useState<string>('')
-  const [selectedPodiumMonth, setSelectedPodiumMonth] = useState<string>(dayjs().format('YYYY-MM'))
+  const [selectedPodiumMonth, setSelectedPodiumMonth] = useState<string>(
+    dayjs().format('YYYY-MM')
+  )
 
   // Loading states
   const [isFetchingData, setIsFetchingData] = useState(false)
@@ -131,10 +140,14 @@ export function EvaluationsContent({
   const [isExportingPodiumPng, setIsExportingPodiumPng] = useState(false)
 
   // Edit / Delete modal states
-  const [editingEvaluation, setEditingEvaluation] = useState<EvaluationItem | null>(null)
-  const [deletingEvaluation, setDeletingEvaluation] = useState<EvaluationItem | null>(null)
+  const [editingEvaluation, setEditingEvaluation] =
+    useState<EvaluationItem | null>(null)
+  const [deletingEvaluation, setDeletingEvaluation] =
+    useState<EvaluationItem | null>(null)
 
-  const [editRating, setEditRating] = useState<'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'>('EXCELLENT')
+  const [editRating, setEditRating] = useState<
+    'EXCELLENT' | 'GOOD' | 'REGULAR' | 'BAD'
+  >('EXCELLENT')
   const [editPreset, setEditPreset] = useState('')
   const [editObservation, setEditObservation] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -145,7 +158,8 @@ export function EvaluationsContent({
     sellerId = selectedSellerId,
     unitId = selectedHistoryUnitId,
     start = startDate,
-    end = endDate
+    end = endDate,
+    includePodium = false
   ) {
     setIsFetchingData(true)
     const res = await fetchEvaluationsAction({
@@ -155,15 +169,16 @@ export function EvaluationsContent({
       unitId: unitId || undefined,
       startDate: start || undefined,
       endDate: end || undefined,
-      podiumUnitId: selectedPodiumUnitId || undefined,
-      podiumMonth: selectedPodiumMonth || undefined,
+      includePodium,
     })
 
     if (res.success && res.data) {
       setEvaluations(res.data.evaluations)
       setPagination(res.data.pagination)
       setMetrics(res.data.metrics)
-      if (res.data.podium) setPodium(res.data.podium)
+      if (includePodium && res.data.podium && res.data.podium.length > 0) {
+        setPodium(res.data.podium)
+      }
     } else {
       toast.error('Erro ao carregar histórico de avaliações.')
     }
@@ -171,7 +186,10 @@ export function EvaluationsContent({
   }
 
   // Handle unit change specifically for Podium
-  async function handlePodiumUnitChange(unitId: string, month = selectedPodiumMonth) {
+  async function handlePodiumUnitChange(
+    unitId: string,
+    month = selectedPodiumMonth
+  ) {
     setSelectedPodiumUnitId(unitId)
     if (!unitId) {
       setPodium([])
@@ -188,6 +206,7 @@ export function EvaluationsContent({
       endDate: endDate || undefined,
       podiumUnitId: unitId,
       podiumMonth: month || undefined,
+      includePodium: true,
     })
 
     if (res.success && res.data) {
@@ -215,18 +234,36 @@ export function EvaluationsContent({
   // Handle seller filter change for evaluations history
   async function handleSellerChange(sellerId: string) {
     setSelectedSellerId(sellerId)
-    await loadEvaluationsPage(1, sellerId, selectedHistoryUnitId, startDate, endDate)
+    await loadEvaluationsPage(
+      1,
+      sellerId,
+      selectedHistoryUnitId,
+      startDate,
+      endDate
+    )
   }
 
   // Handle date changes for history
   async function handleStartDateChange(date: string) {
     setStartDate(date)
-    await loadEvaluationsPage(1, selectedSellerId, selectedHistoryUnitId, date, endDate)
+    await loadEvaluationsPage(
+      1,
+      selectedSellerId,
+      selectedHistoryUnitId,
+      date,
+      endDate
+    )
   }
 
   async function handleEndDateChange(date: string) {
     setEndDate(date)
-    await loadEvaluationsPage(1, selectedSellerId, selectedHistoryUnitId, startDate, date)
+    await loadEvaluationsPage(
+      1,
+      selectedSellerId,
+      selectedHistoryUnitId,
+      startDate,
+      date
+    )
   }
 
   // Clear history filters
@@ -242,7 +279,7 @@ export function EvaluationsContent({
   async function handleExportPdf() {
     setIsExportingPdf(true)
     try {
-      // Fetch all items (up to 500) matching the current filter
+      // Fetch all items (up to 500) matching the current filter without podium recalculation
       const res = await fetchEvaluationsAction({
         page: 1,
         perPage: 500,
@@ -250,10 +287,13 @@ export function EvaluationsContent({
         unitId: selectedHistoryUnitId || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        includePodium: false,
       })
 
-      const dataToExport = res.success && res.data ? res.data.evaluations : evaluations
-      const metricsToExport = res.success && res.data ? res.data.metrics : metrics
+      const dataToExport =
+        res.success && res.data ? res.data.evaluations : evaluations
+      const metricsToExport =
+        res.success && res.data ? res.data.metrics : metrics
 
       const activeUnitObj = units.find((u) => u.id === selectedHistoryUnitId)
       const activeSellerObj = sellers.find((s) => s.id === selectedSellerId)
@@ -271,7 +311,11 @@ export function EvaluationsContent({
         evaluations: dataToExport,
         metrics: metricsToExport,
         unitName: activeUnitObj ? activeUnitObj.name : 'Todas as Unidades',
-        sellerName: isSeller ? currentUser.name : activeSellerObj ? activeSellerObj.name : 'Todos os Atendentes',
+        sellerName: isSeller
+          ? currentUser.name
+          : activeSellerObj
+            ? activeSellerObj.name
+            : 'Todos os Atendentes',
         period: periodDescription,
       })
     } catch (err) {
@@ -318,7 +362,9 @@ export function EvaluationsContent({
         unitName: activeUnit ? activeUnit.name : 'Unidade Selecionada',
         podiumMonth: selectedPodiumMonth,
       })
-      toast.success('Card do Pódio (PNG) gerado com sucesso para Stories e WhatsApp!')
+      toast.success(
+        'Card do Pódio (PNG) gerado com sucesso para Stories e WhatsApp!'
+      )
     } catch (err) {
       toast.error('Erro ao gerar card do pódio em PNG.')
     } finally {
@@ -395,7 +441,8 @@ export function EvaluationsContent({
                   Pódio dos Recepcionistas Mais Bem Avaliados
                 </CardTitle>
                 <p className="text-xs text-on-surface-variant">
-                  Classificação mensal por unidade baseada no nível de satisfação dos clientes e premiações.
+                  Classificação mensal por unidade baseada no nível de
+                  satisfação dos clientes e premiações.
                 </p>
               </div>
 
@@ -433,7 +480,11 @@ export function EvaluationsContent({
                 {/* Export Podium PNG (Stories / Status) Button */}
                 <Button
                   onClick={handleExportPodiumPng}
-                  disabled={isExportingPodiumPng || !selectedPodiumUnitId || podium.length === 0}
+                  disabled={
+                    isExportingPodiumPng ||
+                    !selectedPodiumUnitId ||
+                    podium.length === 0
+                  }
                   variant="default"
                   size="sm"
                   className="h-9 gap-1.5 text-xs cursor-pointer shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -450,7 +501,11 @@ export function EvaluationsContent({
                 {/* Export Podium PDF Button */}
                 <Button
                   onClick={handleExportPodiumPdf}
-                  disabled={isExportingPodiumPdf || !selectedPodiumUnitId || podium.length === 0}
+                  disabled={
+                    isExportingPodiumPdf ||
+                    !selectedPodiumUnitId ||
+                    podium.length === 0
+                  }
                   variant="outline"
                   size="sm"
                   className="h-9 gap-1.5 text-xs cursor-pointer"
@@ -479,7 +534,8 @@ export function EvaluationsContent({
                     Selecione uma unidade para visualizar o pódio do mês
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    Escolha uma unidade e o mês no filtro acima para ver os 3 melhores atendentes da recepção e seus respectivos prêmios.
+                    Escolha uma unidade e o mês no filtro acima para ver os 3
+                    melhores atendentes da recepção e seus respectivos prêmios.
                   </p>
                 </div>
               </div>
@@ -492,14 +548,19 @@ export function EvaluationsContent({
             ) : podium.length === 0 ? (
               /* Empty state for selected unit & month */
               <div className="text-center py-8 text-on-surface-variant text-sm bg-surface-container-lowest/30 rounded-xl">
-                Nenhum recepcionista com avaliações nesta unidade no mês selecionado ({dayjs(selectedPodiumMonth).format('MM/YYYY')}).
+                Nenhum recepcionista com avaliações nesta unidade no mês
+                selecionado ({dayjs(selectedPodiumMonth).format('MM/YYYY')}).
               </div>
             ) : (
               /* PODIUM LIST FORMAT */
               <div className="space-y-3">
                 <div className="text-xs font-semibold text-on-surface-variant mb-2 flex items-center justify-between">
                   <div>
-                    Top 3 Atendentes — <span className="text-primary font-bold">{selectedUnitObj?.name}</span> ({dayjs(selectedPodiumMonth).format('MMMM [de] YYYY')})
+                    Top 3 Atendentes —{' '}
+                    <span className="text-primary font-bold">
+                      {selectedUnitObj?.name}
+                    </span>{' '}
+                    ({dayjs(selectedPodiumMonth).format('MMMM [de] YYYY')})
                   </div>
                   <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
                     1º: R$ 400 | 2º: R$ 300 | 3º: R$ 200
@@ -510,7 +571,11 @@ export function EvaluationsContent({
                   const isGold = item.position === 1
                   const isSilver = item.position === 2
                   const isBronze = item.position === 3
-                  const bonusText = isGold ? 'R$ 400,00' : isSilver ? 'R$ 300,00' : 'R$ 200,00'
+                  const bonusText = isGold
+                    ? 'R$ 400,00'
+                    : isSilver
+                      ? 'R$ 300,00'
+                      : 'R$ 200,00'
 
                   return (
                     <div
@@ -574,7 +639,8 @@ export function EvaluationsContent({
                             {item.satisfactionRate}% de Satisfação
                           </div>
                           <div className="text-xs text-on-surface-variant font-normal">
-                            {item.totalEvaluations} avaliações ({item.excellentCount} ótimas, {item.goodCount} boas)
+                            {item.totalEvaluations} avaliações (
+                            {item.excellentCount} ótimas, {item.goodCount} boas)
                           </div>
                         </div>
                       </div>
@@ -598,7 +664,10 @@ export function EvaluationsContent({
               </span>
             </div>
 
-            {(selectedHistoryUnitId || selectedSellerId || startDate || endDate) && (
+            {(selectedHistoryUnitId ||
+              selectedSellerId ||
+              startDate ||
+              endDate) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -690,7 +759,13 @@ export function EvaluationsContent({
           </div>
         )}
 
-        <div className={isSeller || (isManagement && selectedSellerId) ? 'lg:col-span-2 space-y-6' : 'lg:col-span-3 space-y-6'}>
+        <div
+          className={
+            isSeller || (isManagement && selectedSellerId)
+              ? 'lg:col-span-2 space-y-6'
+              : 'lg:col-span-3 space-y-6'
+          }
+        >
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="bg-surface-container-lowest border-surface-container">
               <CardHeader className="pb-2">
@@ -781,8 +856,15 @@ export function EvaluationsContent({
             </CardTitle>
             {pagination.totalCount > 0 && (
               <p className="text-xs text-on-surface-variant font-medium">
-                Mostrando <span className="font-bold text-on-surface">{evaluations.length}</span> de{' '}
-                <span className="font-bold text-on-surface">{pagination.totalCount}</span> avaliações
+                Mostrando{' '}
+                <span className="font-bold text-on-surface">
+                  {evaluations.length}
+                </span>{' '}
+                de{' '}
+                <span className="font-bold text-on-surface">
+                  {pagination.totalCount}
+                </span>{' '}
+                avaliações
               </p>
             )}
           </div>
@@ -810,7 +892,8 @@ export function EvaluationsContent({
             </div>
           ) : evaluations.length === 0 ? (
             <div className="text-on-surface-variant py-10 text-center text-sm">
-              Nenhuma avaliação registrada até o momento com os filtros selecionados.
+              Nenhuma avaliação registrada até o momento com os filtros
+              selecionados.
             </div>
           ) : (
             <div className="space-y-4">
@@ -822,9 +905,13 @@ export function EvaluationsContent({
                       <th className="px-6 py-3 font-semibold">Cliente</th>
                       <th className="px-6 py-3 font-semibold">Atendente</th>
                       <th className="px-6 py-3 font-semibold">Comentário</th>
-                      <th className="px-6 py-3 text-right font-semibold">Data</th>
+                      <th className="px-6 py-3 text-right font-semibold">
+                        Data
+                      </th>
                       {isAdmin && (
-                        <th className="px-6 py-3 text-right font-semibold">Ações</th>
+                        <th className="px-6 py-3 text-right font-semibold">
+                          Ações
+                        </th>
                       )}
                     </tr>
                   </thead>
@@ -912,8 +999,14 @@ export function EvaluationsContent({
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
                   <div className="text-on-surface-variant font-medium">
-                    Página <span className="font-bold text-on-surface">{pagination.page}</span> de{' '}
-                    <span className="font-bold text-on-surface">{pagination.totalPages}</span>
+                    Página{' '}
+                    <span className="font-bold text-on-surface">
+                      {pagination.page}
+                    </span>{' '}
+                    de{' '}
+                    <span className="font-bold text-on-surface">
+                      {pagination.totalPages}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -930,7 +1023,10 @@ export function EvaluationsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={pagination.page >= pagination.totalPages || isFetchingData}
+                      disabled={
+                        pagination.page >= pagination.totalPages ||
+                        isFetchingData
+                      }
                       onClick={() => loadEvaluationsPage(pagination.page + 1)}
                       className="h-8 gap-1 text-xs cursor-pointer"
                     >
@@ -946,7 +1042,10 @@ export function EvaluationsContent({
       </Card>
 
       {/* Edit Evaluation Dialog */}
-      <Dialog open={!!editingEvaluation} onOpenChange={(val) => !val && setEditingEvaluation(null)}>
+      <Dialog
+        open={!!editingEvaluation}
+        onOpenChange={(val) => !val && setEditingEvaluation(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Avaliação</DialogTitle>
@@ -957,7 +1056,9 @@ export function EvaluationsContent({
 
           <form onSubmit={handleConfirmEdit} className="space-y-4 py-2">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-on-surface">Nota do Atendimento</label>
+              <label className="text-xs font-semibold text-on-surface">
+                Nota do Atendimento
+              </label>
               <select
                 value={editRating}
                 onChange={(e) => setEditRating(e.target.value as any)}
@@ -971,7 +1072,9 @@ export function EvaluationsContent({
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-on-surface">Comentário do Atendimento</label>
+              <label className="text-xs font-semibold text-on-surface">
+                Comentário do Atendimento
+              </label>
               <Textarea
                 value={editObservation}
                 onChange={(e) => setEditObservation(e.target.value)}
@@ -982,7 +1085,11 @@ export function EvaluationsContent({
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-outline/30">
-              <Button type="button" variant="outline" onClick={() => setEditingEvaluation(null)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingEvaluation(null)}
+              >
                 Cancelar
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -994,20 +1101,34 @@ export function EvaluationsContent({
       </Dialog>
 
       {/* Delete Evaluation Confirmation Dialog */}
-      <Dialog open={!!deletingEvaluation} onOpenChange={(val) => !val && setDeletingEvaluation(null)}>
+      <Dialog
+        open={!!deletingEvaluation}
+        onOpenChange={(val) => !val && setDeletingEvaluation(null)}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-error">Excluir Avaliação</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir esta avaliação de {deletingEvaluation?.seller.name}? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir esta avaliação de{' '}
+              {deletingEvaluation?.seller.name}? Esta ação não pode ser
+              desfeita.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-outline/30">
-            <Button type="button" variant="outline" onClick={() => setDeletingEvaluation(null)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeletingEvaluation(null)}
+            >
               Cancelar
             </Button>
-            <Button variant="default" className="bg-error text-white hover:bg-error/90 cursor-pointer" onClick={handleConfirmDelete} disabled={isSubmitting}>
+            <Button
+              variant="default"
+              className="bg-error text-white hover:bg-error/90 cursor-pointer"
+              onClick={handleConfirmDelete}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Excluindo...' : 'Confirmar Exclusão'}
             </Button>
           </div>
