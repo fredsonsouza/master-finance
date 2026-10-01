@@ -53,11 +53,70 @@ export async function downloadPodiumPng({
     c.closePath()
   }
 
+  function getVisibleBounds(img: HTMLImageElement) {
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = img.naturalWidth || img.width
+    tempCanvas.height = img.naturalHeight || img.height
+    const tCtx = tempCanvas.getContext('2d', { willReadFrequently: true })
+    if (!tCtx) {
+      return {
+        sx: 0,
+        sy: 0,
+        sw: tempCanvas.width,
+        sh: tempCanvas.height,
+      }
+    }
+    tCtx.drawImage(img, 0, 0)
+    try {
+      const {
+        data,
+        width: w,
+        height: h,
+      } = tCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height)
+      let minX = w
+      let minY = h
+      let maxX = 0
+      let maxY = 0
+      let hasPixels = false
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const alpha = data[(y * w + x) * 4 + 3]
+          if (alpha > 15) {
+            hasPixels = true
+            if (x < minX) minX = x
+            if (x > maxX) maxX = x
+            if (y < minY) minY = y
+            if (y > maxY) maxY = y
+          }
+        }
+      }
+
+      if (hasPixels && maxX >= minX && maxY >= minY) {
+        return {
+          sx: minX,
+          sy: minY,
+          sw: maxX - minX + 1,
+          sh: maxY - minY + 1,
+        }
+      }
+    } catch {
+      // Fallback in case getImageData fails
+    }
+
+    return {
+      sx: 0,
+      sy: 0,
+      sw: tempCanvas.width,
+      sh: tempCanvas.height,
+    }
+  }
+
   const drawAndExport = () => {
     const width = 1080
     const cardHeight = 440
     const cardGap = 32
-    const headerHeight = 330
+    const headerHeight = 340
     const bottomPadding = 60
     const count = Math.max(1, podium.length)
     const height =
@@ -74,30 +133,27 @@ export async function downloadPodiumPng({
     ctx.fillStyle = '#f0f4f8'
     ctx.fillRect(0, 0, width, height)
 
-    // 2. Logo Centralizada no Topo (Tamanho Ampliado)
+    // 2. Logo Centralizada no Topo (Tamanho Ampliado e Proporcional)
     if (logo.complete && logo.naturalHeight > 0) {
-      const maxLogoH = 120
-      const maxLogoW = 440
-      let logoW = logo.width
-      let logoH = logo.height
+      const { sx, sy, sw, sh } = getVisibleBounds(logo)
+      const maxLogoW = 540
+      const maxLogoH = 140
+      let logoW = maxLogoW
+      let logoH = (sh / sw) * logoW
       if (logoH > maxLogoH) {
-        logoW = (maxLogoH / logoH) * logoW
         logoH = maxLogoH
-      }
-      if (logoW > maxLogoW) {
-        logoH = (maxLogoW / logoW) * logoH
-        logoW = maxLogoW
+        logoW = (sw / sh) * logoH
       }
       const logoX = (width - logoW) / 2
-      const logoY = 35
-      ctx.drawImage(logo, logoX, logoY, logoW, logoH)
+      const logoY = 32
+      ctx.drawImage(logo, sx, sy, sw, sh, logoX, logoY, logoW, logoH)
     }
 
     // 3. Título Principal
     ctx.textAlign = 'center'
     ctx.fillStyle = '#0056b3'
     ctx.font = '800 34px "Inter", system-ui, -apple-system, sans-serif'
-    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 195)
+    ctx.fillText('DESTAQUES DO ATENDIMENTO', width / 2, 208)
 
     // 4. Subtitle Badge (Pill)
     const subtitleText = `UNIDADE ${unitName.toUpperCase()} • ${capitalizedMonth.toUpperCase()}`
@@ -106,7 +162,7 @@ export async function downloadPodiumPng({
     const pillWidth = ctx.measureText(subtitleText).width + pillPaddingX * 2
     const pillHeight = 38
     const pillX = (width - pillWidth) / 2
-    const pillY = 220
+    const pillY = 236
 
     ctx.fillStyle = '#e6f0fa'
     roundRect(ctx, pillX, pillY, pillWidth, pillHeight, 19)
@@ -121,7 +177,7 @@ export async function downloadPodiumPng({
     // 5. Renderização dos Cards do Pódio
     const cardWidth = 960
     const cardX = (width - cardWidth) / 2
-    let currentY = 300
+    let currentY = headerHeight
 
     if (podium.length === 0) {
       // Estado Vazio
