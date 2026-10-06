@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   logo: {
-    width: 120,
-    height: 36,
+    width: 150,
+    height: 40,
     objectFit: 'contain',
   },
   headerTitles: {
@@ -285,9 +285,9 @@ export function CashClosuresPdfDocument({
   return (
     <Document
       title="Relatório de Fechamentos de Caixa"
-      author="Master Finance"
+      author="Master Admin"
       subject="Fechamentos de Caixa"
-      creator="Master Finance SaaS"
+      creator="Master Admin"
     >
       <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header (Fixo em todas as páginas) */}
@@ -307,7 +307,7 @@ export function CashClosuresPdfDocument({
             <Text style={styles.issuedDate}>
               Emissão: {issuedAt || new Date().toLocaleString('pt-BR')}
             </Text>
-            <Text style={styles.systemTag}>MASTER FINANCE SAAS</Text>
+            <Text style={styles.systemTag}>MASTER ADMIN</Text>
           </View>
         </View>
 
@@ -428,9 +428,7 @@ export function CashClosuresPdfDocument({
 
         {/* Footer com Numeração de Página Dinâmica */}
         <View style={styles.footer} fixed>
-          <Text>
-            Master Finance SaaS — Sistema de Gestão Financeira Clínico
-          </Text>
+          <Text>Master Admin — Sistema de Gestão Financeira Clínico</Text>
           <Text
             render={({ pageNumber, totalPages }) =>
               `Página ${pageNumber} de ${totalPages}`
