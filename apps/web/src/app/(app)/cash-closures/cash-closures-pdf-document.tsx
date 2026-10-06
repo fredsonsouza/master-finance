@@ -47,11 +47,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   logo: {
-    width: 150,
-    height: 40,
+    width: 220,
+    height: 54,
     objectFit: 'contain',
   },
   headerTitles: {
