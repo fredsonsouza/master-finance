@@ -307,7 +307,7 @@ export function EvaluationsContent({
         periodDescription = `Até ${dayjs(endDate).format('DD/MM/YYYY')}`
       }
 
-      downloadEvaluationsPdf({
+      await downloadEvaluationsPdf({
         evaluations: dataToExport,
         metrics: metricsToExport,
         unitName: activeUnitObj ? activeUnitObj.name : 'Todas as Unidades',
@@ -326,7 +326,7 @@ export function EvaluationsContent({
   }
 
   // Export Podium in PDF
-  function handleExportPodiumPdf() {
+  async function handleExportPodiumPdf() {
     if (!selectedPodiumUnitId || podium.length === 0) {
       toast.error('Selecione uma unidade com pódio gerado para exportar.')
       return
@@ -335,7 +335,7 @@ export function EvaluationsContent({
     setIsExportingPodiumPdf(true)
     try {
       const activeUnit = units.find((u) => u.id === selectedPodiumUnitId)
-      downloadPodiumPdf({
+      await downloadPodiumPdf({
         podium,
         unitName: activeUnit ? activeUnit.name : 'Unidade Selecionada',
         podiumMonth: selectedPodiumMonth,

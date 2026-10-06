@@ -1,7 +1,7 @@
 import { auth } from '@/auth/auth'
 import { getEvaluations } from '@/http/get-evaluations'
-import { getUnits, type Unit } from '@/http/get-units'
-import { getUsers, type User } from '@/http/get-users'
+import { type Unit, getUnits } from '@/http/get-units'
+import { type User, getUsers } from '@/http/get-users'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { EvaluationsContent } from './evaluations-content'
@@ -48,7 +48,8 @@ export default async function EvaluationsPage() {
             Avaliações de Atendimento
           </h1>
           <p className="text-on-surface-variant">
-            Gerencie a satisfação dos clientes e acompanhe o pódio de destaques da recepção por unidade.
+            Gerencie a satisfação dos clientes e acompanhe o pódio de destaques
+            da recepção por unidade.
           </p>
         </div>
 

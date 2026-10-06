@@ -15,8 +15,7 @@ interface Props {
 export function QrCodeCard({ sellerId, sellerName }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null)
 
-  const baseUrl =
-    typeof window !== 'undefined' ? window.location.origin : ''
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const evaluationUrl = sellerId ? `${baseUrl}/evaluate/${sellerId}` : ''
 
   function handleCopyLink() {
@@ -353,7 +352,11 @@ export function QrCodeCard({ sellerId, sellerName }: Props) {
             Imprimir Crachá
           </Button>
           <a href={evaluationUrl} target="_blank" rel="noreferrer">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-primary cursor-pointer">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-primary cursor-pointer"
+            >
               <ExternalLink className="h-3.5 w-3.5" />
               Testar
             </Button>
