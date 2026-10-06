@@ -23,7 +23,7 @@ export async function getCashClosures(app: FastifyInstance) {
             endDate: z.string().optional(),
             search: z.string().optional(),
             page: z.coerce.number().int().min(1).default(1),
-            perPage: z.coerce.number().int().min(1).max(200).default(20),
+            perPage: z.coerce.number().int().min(1).max(500).default(20),
           }),
           response: {
             200: z.object({

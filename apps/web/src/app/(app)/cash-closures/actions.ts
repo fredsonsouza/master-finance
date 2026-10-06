@@ -109,6 +109,7 @@ export async function fetchCashClosuresAction(params: GetCashClosuresParams) {
       success: true,
       closures: result.closures,
       pagination: result.pagination,
+      message: null,
     }
   } catch (error: unknown) {
     console.error('Failed to fetch cash closures', error)
@@ -121,6 +122,10 @@ export async function fetchCashClosuresAction(params: GetCashClosuresParams) {
         totalCount: 0,
         totalPages: 1,
       },
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Erro ao buscar fechamentos de caixa.',
     }
   }
 }

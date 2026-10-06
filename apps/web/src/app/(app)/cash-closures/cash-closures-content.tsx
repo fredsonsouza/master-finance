@@ -209,7 +209,7 @@ export function CashClosuresContent({
 
         toast.success('Relatório em PDF gerado e baixado com sucesso!')
       } else {
-        toast.error('Erro ao buscar dados para o relatório.')
+        toast.error(res.message || 'Erro ao buscar dados para o relatório.')
       }
     } catch {
       toast.error('Erro ao gerar relatório em PDF.')

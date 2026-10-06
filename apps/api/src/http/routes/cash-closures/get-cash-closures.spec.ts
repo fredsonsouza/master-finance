@@ -151,4 +151,27 @@ describe('Get Cash Closures Unit Test', () => {
       })
     )
   })
+
+  test('should accept perPage up to 500 for PDF export', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'ADMIN',
+    } as any)
+
+    vi.mocked(prisma.cashClosure.count).mockResolvedValueOnce(0)
+    vi.mocked(prisma.cashClosure.findMany).mockResolvedValueOnce([])
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/cash-closures?page=1&perPage=500',
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(prisma.cashClosure.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 500,
+        skip: 0,
+      })
+    )
+  })
 })
