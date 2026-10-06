@@ -20,15 +20,14 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  FileDown,
   Loader2,
   Pencil,
   Plus,
-  Printer,
   RotateCcw,
   Trash2,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { useReactToPrint } from 'react-to-print'
 import { toast } from 'sonner'
 import {
   changeCashClosureStatus,
@@ -36,6 +35,7 @@ import {
   fetchCashClosuresAction,
 } from './actions'
 import { CreateCashClosureDialog } from './create-cash-closure-dialog'
+import { downloadCashClosuresPdf } from './download-cash-closures-pdf'
 import { UpdateCashClosureDialog } from './update-cash-closure-dialog'
 
 interface Props {
@@ -85,17 +85,7 @@ export function CashClosuresContent({
   const [closureToConfirm, setClosureToConfirm] = useState<string | null>(null)
   const [closureToDelete, setClosureToDelete] = useState<string | null>(null)
 
-  // Print dataset state
-  const [printClosures, setPrintClosures] =
-    useState<CashClosure[]>(initialClosures)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
-
-  const printRef = useRef<HTMLDivElement>(null)
-
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: 'Relatorio_Fechamento_Caixas',
-  })
 
   const isFinancial = ['ADMIN', 'MANAGER', 'FINANCIAL'].includes(userRole)
 
@@ -179,7 +169,7 @@ export function CashClosuresContent({
     loadClosures(1, { endDate: val })
   }
 
-  async function handlePrepareAndPrint() {
+  async function handleExportPdf() {
     setIsExportingPdf(true)
     try {
       const res = await fetchCashClosuresAction({
@@ -195,22 +185,38 @@ export function CashClosuresContent({
         endDate: endDate || undefined,
       })
 
-      if (res.success) {
-        setPrintClosures(res.closures)
-        setTimeout(() => {
-          handlePrint()
-        }, 100)
+      if (res.success && res.closures) {
+        const totalValue = res.closures.reduce((acc, c) => acc + c.value, 0)
+        const activeUnitObj = units.find((u) => u.id === unitFilter)
+        const statusLabel =
+          statusFilter === 'CLOSED'
+            ? 'Fechado'
+            : statusFilter === 'OPEN'
+              ? 'Em Aberto'
+              : 'Todos os Status'
+
+        await downloadCashClosuresPdf({
+          closures: res.closures,
+          totalValue,
+          filters: {
+            unitName: activeUnitObj ? activeUnitObj.name : 'Todas as Unidades',
+            statusLabel,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+            search: search || undefined,
+          },
+        })
+
+        toast.success('Relatório em PDF gerado e baixado com sucesso!')
       } else {
-        toast.error('Erro ao preparar relatório para impressão.')
+        toast.error('Erro ao buscar dados para o relatório.')
       }
     } catch {
-      toast.error('Erro ao gerar relatório.')
+      toast.error('Erro ao gerar relatório em PDF.')
     } finally {
       setIsExportingPdf(false)
     }
   }
-
-  const printTotalValue = printClosures.reduce((acc, c) => acc + c.value, 0)
 
   async function handleDelete() {
     if (!closureToDelete) return
@@ -268,15 +274,15 @@ export function CashClosuresContent({
             <Button
               variant="outline"
               disabled={isExportingPdf}
-              onClick={handlePrepareAndPrint}
+              onClick={handleExportPdf}
               className="gap-2 cursor-pointer"
             >
               {isExportingPdf ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Printer className="h-4 w-4" />
+                <FileDown className="h-4 w-4" />
               )}
-              Relatório (PDF)
+              Exportar PDF
             </Button>
           )}
           <Button
@@ -529,89 +535,6 @@ export function CashClosuresContent({
           )}
         </div>
       </Card>
-
-      {/* Impressão Oculta */}
-      <div className="hidden">
-        <div ref={printRef} className="p-8 bg-white text-black print:block">
-          <div className="flex items-center justify-between border-b-2 border-gray-200 pb-6 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/logo.png"
-                  alt="Logo da Clínica"
-                  className="h-full w-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Relatório de Fechamentos de Caixa
-                </h2>
-                <p className="text-gray-500 text-sm">
-                  Gerado em {new Date().toLocaleDateString('pt-BR')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="p-2 border-b border-gray-300">Data do Caixa</th>
-                <th className="p-2 border-b border-gray-300">Colaborador</th>
-                {isFinancial && (
-                  <th className="p-2 border-b border-gray-300">Unidade</th>
-                )}
-                <th className="p-2 border-b border-gray-300">Status</th>
-                <th className="p-2 border-b border-gray-300">Observação</th>
-                <th className="p-2 border-b border-gray-300 text-right">
-                  Valor
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {printClosures.map((c) => (
-                <tr key={c.id} className="border-b border-gray-100">
-                  <td className="p-2">
-                    {new Date(c.cashDate).toLocaleDateString('pt-BR', {
-                      timeZone: 'UTC',
-                    })}
-                  </td>
-                  <td className="p-2">{c.user.name}</td>
-                  {isFinancial && (
-                    <td className="p-2">{c.unit?.name || '-'}</td>
-                  )}
-                  <td className="p-2">
-                    {c.status === 'OPEN' ? 'Em Aberto' : 'Fechado'}
-                  </td>
-                  <td className="p-2 text-xs text-gray-500">
-                    {c.observation || '-'}
-                  </td>
-                  <td className="p-2 text-right font-medium">
-                    {formatCurrency(c.value)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-50">
-                <td
-                  colSpan={isFinancial ? 5 : 4}
-                  className="p-4 text-right font-bold text-gray-700 text-lg uppercase"
-                >
-                  Valor Total no Período Selecionado:
-                </td>
-                <td className="p-4 text-right font-bold text-green-700 text-lg">
-                  {formatCurrency(printTotalValue)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
 
       <CreateCashClosureDialog
         open={isCreateOpen}
