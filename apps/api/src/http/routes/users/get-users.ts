@@ -55,7 +55,7 @@ export async function getUsers(app: FastifyInstance) {
                     'ANALYST',
                   ]),
                   unitId: z.uuid().nullable(),
-                  avatarUrl: z.url().nullable(),
+                  avatarUrl: z.string().nullable(),
                 })
               ),
               pagination: z.object({
@@ -90,30 +90,30 @@ export async function getUsers(app: FastifyInstance) {
 
         const { search, unitId, role, page, perPage } = request.query
 
-        let scopedUnitId = unitId || undefined
+        const scopedUnitId = unitId || undefined
+        let scopedRole = role || undefined
 
         if (requestingUser.role === 'FISCAL') {
-          if (!requestingUser.unitId) {
-            return reply.status(200).send({
-              users: [],
-              pagination: {
-                page,
-                perPage,
-                totalCount: 0,
-                totalPages: 1,
-              },
-            })
-          }
-          scopedUnitId = requestingUser.unitId
+          scopedRole = 'COLLECTOR'
         }
 
         const where = {
           unitId: scopedUnitId,
-          role: role || undefined,
+          role: scopedRole,
           OR: search?.trim()
             ? [
-                { name: { contains: search.trim(), mode: 'insensitive' as const } },
-                { username: { contains: search.trim(), mode: 'insensitive' as const } },
+                {
+                  name: {
+                    contains: search.trim(),
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  username: {
+                    contains: search.trim(),
+                    mode: 'insensitive' as const,
+                  },
+                },
               ]
             : undefined,
         }

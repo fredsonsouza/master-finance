@@ -16,7 +16,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import { Plus, X } from 'lucide-react'
-import { createCollection } from './actions'
+import { createCollection, fetchCollectorsAction } from './actions'
 
 interface Props {
   open: boolean
@@ -38,13 +38,23 @@ export function CreateCollectionDialog({
   const [requestDate, setRequestDate] = useState('')
   const [reason, setReason] = useState('')
 
+  const [collectorList, setCollectorList] = useState<User[]>(collectors)
   const [selectedCollectorId, setSelectedCollectorId] = useState('')
   const [selectedUnitId, setSelectedUnitId] = useState(activeUnitId || '')
+
+  useEffect(() => {
+    setCollectorList(collectors)
+  }, [collectors])
 
   useEffect(() => {
     if (open) {
       setSelectedCollectorId('')
       setSelectedUnitId(activeUnitId || '')
+      fetchCollectorsAction().then((res) => {
+        if (res.success && res.users.length > 0) {
+          setCollectorList(res.users)
+        }
+      })
     }
   }, [open, activeUnitId])
 
@@ -227,7 +237,9 @@ export function CreateCollectionDialog({
               onChange={(e) => {
                 const val = e.target.value
                 setSelectedCollectorId(val)
-                const selectedCollector = collectors.find((c) => c.id === val)
+                const selectedCollector = collectorList.find(
+                  (c) => c.id === val
+                )
                 if (selectedCollector?.unitId) {
                   setSelectedUnitId(selectedCollector.unitId)
                 }
@@ -235,7 +247,7 @@ export function CreateCollectionDialog({
               className="w-full border border-outline bg-surface rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
             >
               <option value="">Selecione um Coletador</option>
-              {collectors.map((c) => {
+              {collectorList.map((c) => {
                 const cUnit = units?.find((u) => u.id === c.unitId)
                 return (
                   <option key={c.id} value={c.id}>

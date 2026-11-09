@@ -120,4 +120,49 @@ describe('Get Users Unit Test', () => {
     })
     expect(prisma.user.findMany).not.toHaveBeenCalled()
   })
+
+  test('should allow FISCAL with global access (unitId null) to list COLLECTOR users', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'FISCAL',
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.user.count).mockResolvedValueOnce(1)
+    vi.mocked(prisma.user.findMany).mockResolvedValueOnce([
+      {
+        id: '523e4567-e89b-12d3-a456-426614174005',
+        name: 'Maria Coletadora',
+        username: 'maria.col',
+        role: 'COLLECTOR',
+        unitId: '423e4567-e89b-12d3-a456-426614174003',
+        avatarUrl: null,
+      },
+    ] as any)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/users?role=COLLECTOR&page=1&perPage=200',
+    })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({
+      users: [
+        {
+          id: '523e4567-e89b-12d3-a456-426614174005',
+          name: 'Maria Coletadora',
+          username: 'maria.col',
+          role: 'COLLECTOR',
+          unitId: '423e4567-e89b-12d3-a456-426614174003',
+          avatarUrl: null,
+        },
+      ],
+      pagination: {
+        page: 1,
+        perPage: 200,
+        totalCount: 1,
+        totalPages: 1,
+      },
+    })
+  })
 })

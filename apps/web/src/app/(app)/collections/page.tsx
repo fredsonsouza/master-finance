@@ -32,19 +32,21 @@ export default async function CollectionsPage() {
 
   try {
     if (activeUnitId || isGlobalUser) {
-      const collectionsRes = await getCollections(token, activeUnitId)
-      collections = collectionsRes.collections
+      const [collectionsRes, usersRes, unitsRes] = await Promise.all([
+        getCollections(token, activeUnitId).catch(() => ({ collections: [] })),
+        user.role !== 'COLLECTOR'
+          ? getUsers(token, null, 'COLLECTOR', null, 1, 200).catch(() => ({
+              users: [],
+            }))
+          : Promise.resolve({ users: [] }),
+        isGlobalUser
+          ? getUnits(token).catch(() => ({ units: [] }))
+          : Promise.resolve({ units: [] }),
+      ])
 
-      if (user.role !== 'COLLECTOR') {
-        const collectorsUnitId = isGlobalUser ? null : activeUnitId
-        const usersRes = await getUsers(token, collectorsUnitId, 'COLLECTOR', null, 1, 200)
-        collectors = usersRes.users
-      }
-
-      if (isGlobalUser) {
-        const unitsRes = await getUnits(token)
-        units = unitsRes.units
-      }
+      collections = collectionsRes.collections || []
+      collectors = usersRes.users || []
+      units = unitsRes.units || []
     }
   } catch (err) {
     console.error(err)

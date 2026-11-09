@@ -18,7 +18,7 @@ import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import dayjs from 'dayjs'
 import { Plus, X } from 'lucide-react'
-import { updateCollection } from './actions'
+import { fetchCollectorsAction, updateCollection } from './actions'
 
 interface Props {
   open: boolean
@@ -43,7 +43,12 @@ export function UpdateCollectionDialog({
   const [patientName, setPatientName] = useState('')
   const [pendingBy, setPendingBy] = useState('')
   const [notifiedBy, setNotifiedBy] = useState('')
+  const [collectorList, setCollectorList] = useState<User[]>(collectors)
   const [selectedCollectorId, setSelectedCollectorId] = useState('')
+
+  useEffect(() => {
+    setCollectorList(collectors)
+  }, [collectors])
 
   useEffect(() => {
     if (open && collection) {
@@ -56,6 +61,11 @@ export function UpdateCollectionDialog({
       setPendingBy(collection.pendingBy || '')
       setNotifiedBy(collection.notifiedBy || '')
       setSelectedCollectorId(collection.collector?.id || '')
+      fetchCollectorsAction().then((res) => {
+        if (res.success && res.users.length > 0) {
+          setCollectorList(res.users)
+        }
+      })
     }
   }, [open, collection])
 
@@ -247,7 +257,7 @@ export function UpdateCollectionDialog({
               className="w-full border border-outline bg-surface rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
             >
               <option value="">Selecione um Coletador</option>
-              {collectors.map((c) => {
+              {collectorList.map((c) => {
                 const cUnit = units?.find((u) => u.id === c.unitId)
                 return (
                   <option key={c.id} value={c.id}>

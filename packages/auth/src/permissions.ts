@@ -44,8 +44,14 @@ export const permissions: Record<Role, PermissionsByRole> = {
 
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('update', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
+    can('delete', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
   },
 
   SELLER(user, { can }) {
@@ -62,19 +68,31 @@ export const permissions: Record<Role, PermissionsByRole> = {
 
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('update', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
+    can('delete', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
   },
 
   FISCAL(user, { can }) {
     can('manage', 'Collection')
-    can('get', 'User', { unitId: { $eq: user.unitId } })
+    can('get', 'User')
     can('get', 'Unit')
 
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('update', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
+    can('delete', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
   },
 
   INVENTORY(user, { can }) {
@@ -86,14 +104,26 @@ export const permissions: Record<Role, PermissionsByRole> = {
 
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('update', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
+    can('delete', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
   },
 
   ANALYST(user, { can }) {
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
-    can('delete', 'HrReport', { userId: { $eq: user.id }, status: { $eq: 'DRAFT' } })
+    can('update', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
+    can('delete', 'HrReport', {
+      userId: { $eq: user.id },
+      status: { $eq: 'DRAFT' },
+    })
   },
 }

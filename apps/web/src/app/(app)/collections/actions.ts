@@ -7,7 +7,19 @@ import {
   deleteCollectionActionApi,
   updateCollectionActionApi,
 } from '@/http/collections'
+import { getUsers } from '@/http/get-users'
 import { revalidatePath } from 'next/cache'
+
+export async function fetchCollectorsAction() {
+  try {
+    const { token } = await auth()
+    if (!token) return { success: false, users: [] }
+    const res = await getUsers(token, null, 'COLLECTOR', null, 1, 200)
+    return { success: true, users: res.users || [] }
+  } catch {
+    return { success: false, users: [] }
+  }
+}
 
 export async function createCollection(data: {
   requestDate: string
