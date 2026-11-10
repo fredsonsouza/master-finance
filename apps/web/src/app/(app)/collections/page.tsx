@@ -31,9 +31,12 @@ export default async function CollectionsPage() {
     user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'FISCAL'
 
   try {
-    if (activeUnitId || isGlobalUser) {
+    if (activeUnitId || isGlobalUser || user.role === 'COLLECTOR') {
+      const collectionsUnitId = isGlobalUser ? null : activeUnitId
       const [collectionsRes, usersRes, unitsRes] = await Promise.all([
-        getCollections(token, activeUnitId).catch(() => ({ collections: [] })),
+        getCollections(token, collectionsUnitId).catch(() => ({
+          collections: [],
+        })),
         user.role !== 'COLLECTOR'
           ? getUsers(token, null, 'COLLECTOR', null, 1, 200).catch(() => ({
               users: [],
@@ -65,7 +68,7 @@ export default async function CollectionsPage() {
         </div>
       </div>
 
-      {!activeUnitId && !isGlobalUser ? (
+      {!activeUnitId && !isGlobalUser && user.role !== 'COLLECTOR' ? (
         <div className="text-center py-12 text-on-surface-variant">
           Selecione uma unidade no menu superior para visualizar as recoletas.
         </div>

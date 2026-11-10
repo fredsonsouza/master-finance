@@ -8,7 +8,7 @@ import {
   updateCollectionActionApi,
 } from '@/http/collections'
 import { getUsers } from '@/http/get-users'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, updateTag } from 'next/cache'
 
 export async function fetchCollectorsAction() {
   try {
@@ -51,7 +51,9 @@ export async function createCollection(data: {
       notifiedBy: data.notifiedBy,
       unitId,
     })
+    updateTag('collections')
     revalidatePath('/collections')
+    revalidatePath('/reports')
     return { success: true }
   } catch (error: unknown) {
     let message = 'Erro inesperado ao registrar a recoleta.'
@@ -69,7 +71,9 @@ export async function deleteCollection(id: string) {
   try {
     const { token } = await auth()
     await deleteCollectionActionApi(token, id)
+    updateTag('collections')
     revalidatePath('/collections')
+    revalidatePath('/reports')
     return { success: true }
   } catch (error: unknown) {
     return { success: false, message: 'Erro ao deletar recoleta.' }
@@ -92,7 +96,9 @@ export async function updateCollection(
   try {
     const { token } = await auth()
     await updateCollectionActionApi(token, id, data)
+    updateTag('collections')
     revalidatePath('/collections')
+    revalidatePath('/reports')
     return { success: true }
   } catch (error: unknown) {
     let message = 'Erro inesperado ao atualizar a recoleta.'

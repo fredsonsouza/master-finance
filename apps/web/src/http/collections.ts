@@ -24,6 +24,7 @@ export async function getCollections(token: string, unitId?: string | null) {
       searchParams: unitId ? { unitId } : undefined,
       next: {
         tags: ['collections'],
+        revalidate: 0,
       },
     })
     .json<{ collections: Collection[] }>()

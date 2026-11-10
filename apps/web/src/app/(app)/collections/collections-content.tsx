@@ -29,17 +29,20 @@ export function CollectionsContent({
   currentUserRole,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [unitFilter, setUnitFilter] = useState<string>('ALL')
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedCollection, setSelectedCollection] =
     useState<Collection | null>(null)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
-  const filtered = initialData.filter(
-    (item) =>
+  const filtered = initialData.filter((item) => {
+    const matchesSearch =
       item.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.patientCode.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    const matchesUnit = unitFilter === 'ALL' || item.unit?.id === unitFilter
+    return matchesSearch && matchesUnit
+  })
 
   const handleDelete = async (id: string) => {
     if (!confirm('Deseja realmente excluir este registro?')) return
@@ -50,8 +53,8 @@ export function CollectionsContent({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant" />
           <Input
             placeholder="Buscar por paciente ou código..."
@@ -60,6 +63,21 @@ export function CollectionsContent({
             className="pl-10"
           />
         </div>
+
+        {units.length > 0 && (
+          <select
+            value={unitFilter}
+            onChange={(e) => setUnitFilter(e.target.value)}
+            className="flex h-10 rounded-md border border-input bg-surface px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="ALL">Todas as unidades</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        )}
 
         {currentUserRole !== 'COLLECTOR' && (
           <Button
@@ -79,6 +97,7 @@ export function CollectionsContent({
               <th className="p-4 font-medium">Data Solicitada</th>
               <th className="p-4 font-medium">Cód. Atendimento</th>
               <th className="p-4 font-medium">Paciente</th>
+              <th className="p-4 font-medium">Unidade</th>
               <th className="p-4 font-medium">Exames</th>
               <th className="p-4 font-medium">Coletador</th>
               <th className="p-4 font-medium">Motivo</th>
@@ -92,7 +111,7 @@ export function CollectionsContent({
             {filtered.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center py-8 text-on-surface-variant border-b border-surface-container"
                 >
                   Nenhuma recoleta encontrada.
@@ -109,6 +128,9 @@ export function CollectionsContent({
                   </td>
                   <td className="p-4">{item.patientCode}</td>
                   <td className="p-4 whitespace-nowrap">{item.patientName}</td>
+                  <td className="p-4 whitespace-nowrap">
+                    {item.unit?.name || '-'}
+                  </td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1  min-width: 120px">
                       {item.exams.map((exam, i) => (

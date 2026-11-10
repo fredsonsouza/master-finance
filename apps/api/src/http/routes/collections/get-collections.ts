@@ -49,10 +49,18 @@ export async function getCollections(app: FastifyInstance) {
         }
 
         const where: any = {}
-        if (unitId) where.unitId = unitId
 
         if (currentUser.role === 'COLLECTOR') {
-          where.unitId = currentUser.unitId
+          if (currentUser.unitId) {
+            where.OR = [
+              { unitId: currentUser.unitId },
+              { collectorId: currentUser.id },
+            ]
+          } else {
+            where.collectorId = currentUser.id
+          }
+        } else if (unitId) {
+          where.unitId = unitId
         }
 
         const collections = await prisma.collection.findMany({
