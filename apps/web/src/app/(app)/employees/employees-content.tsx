@@ -1077,14 +1077,14 @@ export function EmployeesContent({
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-2 text-xl font-display">
+            <DialogTitle className="flex flex-wrap items-center justify-between gap-3 text-xl font-display">
               <span>
                 {editingEmployee
                   ? `Editar Ficha de Registro — ${editingEmployee.fullName}`
                   : 'Novo Registro de Empregado (Modelo Oficial RH)'}
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1 font-mono text-xs font-bold text-primary border border-primary/20">
-                <IdCard className="h-4 w-4" />
+              <span className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1 font-mono text-xs font-bold text-primary border border-primary/20">
+                <IdCard className="h-4 w-4 shrink-0" />
                 {registrationPreview}
               </span>
             </DialogTitle>

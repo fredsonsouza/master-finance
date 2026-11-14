@@ -75,20 +75,35 @@ export async function getProfile(app: FastifyInstance) {
                 name: true,
               },
             },
-            employee: {
-              select: {
-                id: true,
-                registrationNumber: true,
-                status: true,
-                roleTitle: true,
-              },
-            },
           },
           where: {
             id: sub,
           },
         })
         if (!user) throw new ResourceNotFoundError('User not found')
+
+        let employee: {
+          id: string
+          registrationNumber: string
+          status: 'ACTIVE' | 'INACTIVE'
+          roleTitle: string
+        } | null = null
+
+        if (prisma.employee?.findUnique) {
+          try {
+            employee = await prisma.employee.findUnique({
+              where: { userId: user.id },
+              select: {
+                id: true,
+                registrationNumber: true,
+                status: true,
+                roleTitle: true,
+              },
+            })
+          } catch {
+            employee = null
+          }
+        }
 
         return reply.send({
           user: {
@@ -100,7 +115,7 @@ export async function getProfile(app: FastifyInstance) {
             role: user.role,
             unitId: user.unitId,
             unit: user.unit,
-            employee: user.employee,
+            employee,
           },
         })
       }

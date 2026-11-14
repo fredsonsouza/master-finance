@@ -36,32 +36,48 @@ export async function authenticateWithPassword(app: FastifyInstance) {
         where: {
           username,
         },
-        include: {
-          employee: {
-            select: {
-              status: true,
-            },
-          },
-        },
       })
 
-      if (!userFromUsername && prisma.employee?.findUnique) {
-        const employeeRecord = await prisma.employee.findUnique({
-          where: {
-            registrationNumber: username.trim().toUpperCase(),
-          },
-          include: {
-            user: true,
-          },
-        })
+      let employeeStatus: 'ACTIVE' | 'INACTIVE' | null = null
 
-        if (employeeRecord?.user) {
-          userFromUsername = {
-            ...employeeRecord.user,
-            employee: {
-              status: employeeRecord.status,
-            },
+      if (userFromUsername) {
+        const inlineEmployee = (
+          userFromUsername as unknown as {
+            employee?: { status?: 'ACTIVE' | 'INACTIVE' } | null
           }
+        ).employee
+        if (inlineEmployee?.status) {
+          employeeStatus = inlineEmployee.status
+        } else if (prisma.employee?.findUnique) {
+          try {
+            const linkedEmployee = await prisma.employee.findUnique({
+              where: { userId: userFromUsername.id },
+              select: { status: true },
+            })
+            if (linkedEmployee) {
+              employeeStatus = linkedEmployee.status
+            }
+          } catch {
+            // Ignore if employees table/client is not migrated yet
+          }
+        }
+      } else if (prisma.employee?.findUnique) {
+        try {
+          const employeeRecord = await prisma.employee.findUnique({
+            where: {
+              registrationNumber: username.trim().toUpperCase(),
+            },
+            include: {
+              user: true,
+            },
+          })
+
+          if (employeeRecord?.user) {
+            userFromUsername = employeeRecord.user
+            employeeStatus = employeeRecord.status
+          }
+        } catch {
+          // Ignore if employees table/client is not migrated yet
         }
       }
 
@@ -69,7 +85,7 @@ export async function authenticateWithPassword(app: FastifyInstance) {
         throw new BadRequestError('Invalid credentials')
       }
 
-      if (userFromUsername.employee?.status === 'INACTIVE') {
+      if (employeeStatus === 'INACTIVE') {
         throw new BadRequestError(
           'Colaborador inativo. Entre em contato com o setor de RH.'
         )

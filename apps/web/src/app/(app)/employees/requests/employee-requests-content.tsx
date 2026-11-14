@@ -875,7 +875,7 @@ export function EmployeeRequestsContent({
 
       {/* Modal: Create Request (Collaborator) OR Direct Document Emission (HR) */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-display">
               {isHrManager
@@ -1077,7 +1077,7 @@ export function EmployeeRequestsContent({
         open={Boolean(managingRequest)}
         onOpenChange={(open) => !open && setManagingRequest(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-display">
               Elaboração & Assinatura Eletrônica de Documento
