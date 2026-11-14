@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
     },
+    employee: {
+      findUnique: vi.fn(),
+    },
   },
 }))
 
@@ -146,5 +149,57 @@ describe('Authenticate with Password Unit Test', () => {
 
     expect(response.statusCode).toBe(400)
     expect(response.json()).toEqual({ message: 'Invalid credentials' })
+  })
+
+  test('should authenticate using employee registrationNumber (MASTER-XXXX)', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.employee.findUnique).mockResolvedValue({
+      id: 'emp-1',
+      registrationNumber: 'MASTER-JSS0001',
+      status: 'ACTIVE',
+      user: {
+        id: 'user-1',
+        username: 'joao.silva',
+        password_hash: 'hashed_pass',
+      },
+    } as any)
+    vi.mocked(compare).mockImplementation(async () => true)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/sessions/password',
+      payload: {
+        username: 'master-jss0001',
+        password: 'password123',
+      },
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json()).toEqual({ token: 'mocked-jwt-token' })
+  })
+
+  test('should block login when linked employee is INACTIVE', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({
+      id: 'user-1',
+      username: 'joao.silva',
+      password_hash: 'hashed_pass',
+      employee: {
+        status: 'INACTIVE',
+      },
+    } as any)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/sessions/password',
+      payload: {
+        username: 'joao.silva',
+        password: 'password123',
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toEqual({
+      message: 'Colaborador inativo. Entre em contato com o setor de RH.',
+    })
   })
 })

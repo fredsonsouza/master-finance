@@ -33,12 +33,22 @@ export async function getProfile(app: FastifyInstance) {
                   'FISCAL',
                   'INVENTORY',
                   'ANALYST',
+                  'HR',
                 ]),
                 unitId: z.string().uuid().nullable(),
                 unit: z
                   .object({
                     id: z.string().uuid(),
                     name: z.string(),
+                  })
+                  .nullable()
+                  .optional(),
+                employee: z
+                  .object({
+                    id: z.string().uuid(),
+                    registrationNumber: z.string(),
+                    status: z.enum(['ACTIVE', 'INACTIVE']),
+                    roleTitle: z.string(),
                   })
                   .nullable()
                   .optional(),
@@ -65,6 +75,14 @@ export async function getProfile(app: FastifyInstance) {
                 name: true,
               },
             },
+            employee: {
+              select: {
+                id: true,
+                registrationNumber: true,
+                status: true,
+                roleTitle: true,
+              },
+            },
           },
           where: {
             id: sub,
@@ -82,6 +100,7 @@ export async function getProfile(app: FastifyInstance) {
             role: user.role,
             unitId: user.unitId,
             unit: user.unit,
+            employee: user.employee,
           },
         })
       }

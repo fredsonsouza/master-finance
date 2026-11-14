@@ -94,7 +94,8 @@ export async function getTransactions(app: FastifyInstance) {
           )
         }
 
-        let { unitId, itemId, month, type, search, page, perPage } = request.query
+        let { unitId, itemId, month, type, search, page, perPage } =
+          request.query
 
         if (requestingUser.role === 'EMPLOYEE') {
           if (!requestingUser.unitId) {
@@ -122,7 +123,11 @@ export async function getTransactions(app: FastifyInstance) {
           const searchTerm = search.trim()
           where.OR = [
             { item: { name: { contains: searchTerm, mode: 'insensitive' } } },
-            { item: { description: { contains: searchTerm, mode: 'insensitive' } } },
+            {
+              item: {
+                description: { contains: searchTerm, mode: 'insensitive' },
+              },
+            },
             { sector: { name: { contains: searchTerm, mode: 'insensitive' } } },
             { unit: { name: { contains: searchTerm, mode: 'insensitive' } } },
           ]

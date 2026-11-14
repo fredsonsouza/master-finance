@@ -33,7 +33,8 @@ export function ItemsContent({
   canManage,
 }: Props) {
   const [items, setItems] = useState<Item[]>(initialItems)
-  const [pagination, setPagination] = useState<ItemPagination>(initialPagination)
+  const [pagination, setPagination] =
+    useState<ItemPagination>(initialPagination)
 
   const [searchInput, setSearchInput] = useState('')
   const [activeSearch, setActiveSearch] = useState('')
@@ -167,8 +168,13 @@ export function ItemsContent({
 
           {pagination.totalCount > 0 && (
             <div className="text-xs text-on-surface-variant font-medium">
-              Exibindo <span className="font-bold text-on-surface">{items.length}</span> de{' '}
-              <span className="font-bold text-on-surface">{pagination.totalCount}</span> itens
+              Exibindo{' '}
+              <span className="font-bold text-on-surface">{items.length}</span>{' '}
+              de{' '}
+              <span className="font-bold text-on-surface">
+                {pagination.totalCount}
+              </span>{' '}
+              itens
             </div>
           )}
         </CardHeader>
@@ -180,7 +186,9 @@ export function ItemsContent({
             </div>
           ) : items.length === 0 ? (
             <div className="text-on-surface-variant py-10 text-center text-sm space-y-2">
-              <p>Nenhum item encontrado no catálogo com os filtros aplicados.</p>
+              <p>
+                Nenhum item encontrado no catálogo com os filtros aplicados.
+              </p>
               {(activeSearch || selectedCategoryId) && (
                 <Button
                   variant="ghost"
@@ -253,7 +261,10 @@ export function ItemsContent({
                         </td>
                         {canManage && (
                           <td className="px-6 py-4 text-right">
-                            <UpdateItemDialog item={item} categories={categories} />
+                            <UpdateItemDialog
+                              item={item}
+                              categories={categories}
+                            />
                           </td>
                         )}
                       </tr>
@@ -266,8 +277,14 @@ export function ItemsContent({
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
                   <div className="text-on-surface-variant font-medium">
-                    Página <span className="font-bold text-on-surface">{pagination.page}</span> de{' '}
-                    <span className="font-bold text-on-surface">{pagination.totalPages}</span>
+                    Página{' '}
+                    <span className="font-bold text-on-surface">
+                      {pagination.page}
+                    </span>{' '}
+                    de{' '}
+                    <span className="font-bold text-on-surface">
+                      {pagination.totalPages}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -284,7 +301,9 @@ export function ItemsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={pagination.page >= pagination.totalPages || isLoading}
+                      disabled={
+                        pagination.page >= pagination.totalPages || isLoading
+                      }
                       onClick={() => loadPage(pagination.page + 1)}
                       className="h-8 gap-1 text-xs cursor-pointer"
                     >

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function EvaluationsPage() {
   const { user, token } = await auth()
 
-  if (!['ADMIN', 'MANAGER'].includes(user.role)) {
+  if (!['ADMIN', 'MANAGER', 'HR'].includes(user.role)) {
     redirect('/')
   }
 

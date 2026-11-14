@@ -107,8 +107,10 @@ export function EvaluationsContent({
 }: Props) {
   const isSeller = currentUser.role === 'SELLER'
   const isManagement =
-    currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
-  const isAdmin = currentUser.role === 'ADMIN'
+    currentUser.role === 'ADMIN' ||
+    currentUser.role === 'MANAGER' ||
+    currentUser.role === 'HR'
+  const isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'HR'
 
   // Data states
   const [evaluations, setEvaluations] =

@@ -1,6 +1,6 @@
 import { auth } from '@/auth/auth'
-import { getCategories, type Category } from '@/http/get-categories'
-import { getItems, type Item } from '@/http/get-items'
+import { type Category, getCategories } from '@/http/get-categories'
+import { type Item, getItems } from '@/http/get-items'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { CreateItemDialog } from './create-item-dialog'

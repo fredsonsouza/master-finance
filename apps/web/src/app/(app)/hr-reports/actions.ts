@@ -3,7 +3,7 @@
 import { auth } from '@/auth/auth'
 import { createHrReport } from '@/http/create-hr-report'
 import { deleteHrReport } from '@/http/delete-hr-report'
-import { getHrReports, type HrReport } from '@/http/get-hr-reports'
+import { type HrReport, getHrReports } from '@/http/get-hr-reports'
 import { updateHrReport } from '@/http/update-hr-report'
 import { revalidatePath } from 'next/cache'
 
@@ -39,7 +39,8 @@ export async function saveHrReportAction(data: {
   sector?: string | null
 }) {
   const { token } = await auth()
-  if (!token) return { success: false, report: null, message: 'Não autenticado' }
+  if (!token)
+    return { success: false, report: null, message: 'Não autenticado' }
 
   const formattedUnitId =
     data.unitId && data.unitId.trim() !== '' ? data.unitId.trim() : null

@@ -31,6 +31,7 @@ export async function getUsers(app: FastifyInstance) {
                 'FISCAL',
                 'INVENTORY',
                 'ANALYST',
+                'HR',
               ])
               .optional(),
             page: z.coerce.number().int().min(1).default(1),
@@ -53,6 +54,7 @@ export async function getUsers(app: FastifyInstance) {
                     'FISCAL',
                     'INVENTORY',
                     'ANALYST',
+                    'HR',
                   ]),
                   unitId: z.uuid().nullable(),
                   avatarUrl: z.string().nullable(),

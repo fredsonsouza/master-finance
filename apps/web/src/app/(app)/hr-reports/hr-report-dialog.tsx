@@ -167,7 +167,10 @@ export function HrReportDialog({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Data do Relatório */}
             <div className="space-y-1.5">
-              <Label htmlFor="report-date" className="flex items-center gap-1.5">
+              <Label
+                htmlFor="report-date"
+                className="flex items-center gap-1.5"
+              >
                 <Calendar className="h-3.5 w-3.5 text-primary" />
                 Data de Referência
               </Label>
@@ -182,7 +185,10 @@ export function HrReportDialog({
 
             {/* Unidade */}
             <div className="space-y-1.5">
-              <Label htmlFor="report-unit" className="flex items-center gap-1.5">
+              <Label
+                htmlFor="report-unit"
+                className="flex items-center gap-1.5"
+              >
                 <Building2 className="h-3.5 w-3.5 text-primary" />
                 Unidade
               </Label>
@@ -204,7 +210,10 @@ export function HrReportDialog({
 
             {/* Setor Livre */}
             <div className="space-y-1.5">
-              <Label htmlFor="report-sector" className="flex items-center gap-1.5">
+              <Label
+                htmlFor="report-sector"
+                className="flex items-center gap-1.5"
+              >
                 <Layers className="h-3.5 w-3.5 text-primary" />
                 Setor
               </Label>

@@ -17,6 +17,7 @@ enum Role {
   FISCAL
   INVENTORY
   ANALYST
+  HR
 }
 
 enum TransactionType {
@@ -46,6 +47,11 @@ model User {
   evaluations            Evaluation[]
   hrReports              HrReport[]
 
+  employee                Employee?         @relation("UserEmployeeProfile")
+  createdEmployees        Employee[]        @relation("EmployeeCreator")
+  requestedDocuments      EmployeeRequest[] @relation("DocumentRequester")
+  issuedEmployeeDocuments EmployeeRequest[] @relation("DocumentIssuer")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -56,12 +62,14 @@ model Unit {
   id   String @id @default(uuid())
   name String
 
-  users        User[]
-  transactions Transaction[]
-  cashClosures CashClosure[]
-  collections  Collection[]
-  evaluations  Evaluation[]
-  hrReports    HrReport[]
+  users            User[]
+  transactions     Transaction[]
+  cashClosures     CashClosure[]
+  collections      Collection[]
+  evaluations      Evaluation[]
+  hrReports        HrReport[]
+  employees        Employee[]
+  employeeRequests EmployeeRequest[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,6 +84,7 @@ model Sector {
   items        Item[]
   cashClosures CashClosure[]
   transactions Transaction[]
+  employees    Employee[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -289,4 +298,166 @@ model HrReport {
   @@index([unitId, reportDate])
   @@index([status, sentAt])
   @@map("hr_reports")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum EmployeeDocumentType {
+  DECLARATION
+  WARNING
+  RECEIPT
+}
+
+enum EmployeeRequestStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+model Employee {
+  id                 String         @id @default(uuid())
+  registrationNumber String         @unique // e.g., MASTER-JSS0001
+  esocialCode        String?
+  status             EmployeeStatus @default(ACTIVE)
+
+  // Dados do Empregador (padrão GERENCIACLIN LTDA)
+  employerName    String @default("GERENCIACLIN LTDA")
+  employerCnpj    String @default("59.162.564/0001-73")
+  employerAddress String @default("Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR")
+
+  // Identificação Pessoal e Residência
+  fullName      String
+  photoUrl      String?
+  birthDate     DateTime?
+  birthPlace    String?
+  nationality   String?   @default("Brasileira")
+  maritalStatus String?
+  raceColor     String?
+  fatherName    String?
+  motherName    String?
+  address       String?
+  zipCode       String?
+  landlinePhone String?
+  mobilePhone   String?
+  email         String?
+  beneficiaries Json? // Array de dependentes/beneficiários
+
+  // Documentação Legal
+  cpf                String    @unique
+  rgNumber           String?
+  rgIssueDate        DateTime?
+  rgIssuer           String?
+  ctpsNumber         String?
+  ctpsSeries         String?
+  ctpsIssueDate      DateTime?
+  ctpsState          String?   @default("RR")
+  voterRegistration  String?
+  voterZone          String?
+  voterSection       String?
+  cnhNumber          String?
+  cnhCategory        String?
+  militaryDoc        String?
+  militaryCategory   String?
+  classCouncilNumber String?
+
+  // Admissão, Contrato, FGTS e PIS
+  admissionDate         DateTime
+  roleTitle             String // Função
+  cboCode               String?
+  salary                Float    @default(0)
+  paymentType           String?  @default("Mensal")
+  workHoursSummary      String?
+  breakHoursSummary     String?
+  fgtsOptionDate        DateTime?
+  fgtsRectificationDate DateTime?
+  fgtsBankAccount       String?
+  pisRegistrationDate   DateTime?
+  pisNumber             String?
+  pisBankName           String?
+  pisBankNumber         String?
+  pisBankBranch         String?
+  pisBankAddress        String?
+
+  // Quadros Históricos (Página 1) e Horário Semanal (Página 2)
+  workSchedule              Json? // Grade de Dom a Sab (Tipo, Entrada, S. Intervalo, E. Intervalo, Saída)
+  salaryRoleHistory         Json? // Alterações de salário, cargo e/ou função
+  vacationsHistory          Json? // Férias: Período aquisitivo, gozo e abono
+  occupationalHealthHistory Json? // Acidentes de trabalho, doenças ou doenças profissionais
+  unionContributions        Json? // Contribuição sindical
+  generalObservations       String? @db.Text
+
+  // Rescisão / Desligamento
+  terminationDate  DateTime?
+  terminationType  String?
+  terminationNotes String? @db.Text
+
+  // Relacionamentos no Sistema
+  userId String? @unique
+  user   User?   @relation("UserEmployeeProfile", fields: [userId], references: [id], onDelete: SetNull)
+
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  sectorId String?
+  sector   Sector? @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User   @relation("EmployeeCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  requests EmployeeRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, fullName])
+  @@index([unitId, status])
+  @@index([sectorId])
+  @@index([registrationNumber])
+  @@index([cpf])
+  @@map("employees")
+}
+
+model EmployeeRequest {
+  id          String                @id @default(uuid())
+  type        EmployeeDocumentType
+  subtype     String // ex.: "DECLARACAO_VINCULO", "DECLARACAO_HORARIO", "ADVERTENCIA_ESCRITA", "SUSPENSAO", "RECIBO_VALE", "RECIBO_EPI"
+  title       String
+  description String                @db.Text
+  status      EmployeeRequestStatus @default(OPEN)
+
+  amount          Float? // Para recibos financeiros
+  referenceDate   DateTime  @default(now())
+  templateData    Json? // Dados extras do template (ex.: dias de suspensão, itens de EPI, finalidade)
+  rejectionReason String?   @db.Text
+
+  // Assinatura Eletrônica e Validação via QR Code
+  verificationCode String?   @unique // ex.: MC-DOC-2026-8F9A2C (gerado ao finalizar)
+  contentHash      String? // SHA-256 hash do documento assinado
+  signedAt         DateTime?
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  requestedById String
+  requestedBy   User   @relation("DocumentRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+
+  issuedById String?
+  issuedBy   User?   @relation("DocumentIssuer", fields: [issuedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId, status, createdAt(sort: Desc)])
+  @@index([requestedById, createdAt(sort: Desc)])
+  @@index([status, type, createdAt(sort: Desc)])
+  @@index([unitId, status])
+  @@index([verificationCode])
+  @@map("employee_requests")
 }

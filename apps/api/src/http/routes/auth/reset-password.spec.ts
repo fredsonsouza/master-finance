@@ -54,7 +54,9 @@ describe('Reset Password Unit Test', () => {
       ) {
         return reply.status(400).send({ message: error.message })
       }
-      return reply.status(500).send({ message: error.message, stack: error.stack })
+      return reply
+        .status(500)
+        .send({ message: error.message, stack: error.stack })
     })
 
     await app.register(resetPassword)

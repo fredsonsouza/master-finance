@@ -11,28 +11,31 @@ export async function Sidebar() {
   const canViewStock =
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
+    user.role === 'HR' ||
     user.role === 'INVENTORY' ||
     user.role === 'EMPLOYEE'
 
   const canViewFinancial =
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
+    user.role === 'HR' ||
     user.role === 'FINANCIAL' ||
     user.role === 'SELLER'
 
   const canViewEvaluations =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER'
+    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'HR'
 
   const canViewCollections =
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
+    user.role === 'HR' ||
     user.role === 'FISCAL' ||
     user.role === 'COLLECTOR'
 
   const canViewReports =
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
+    user.role === 'HR' ||
     user.role === 'FISCAL'
 
   const canViewLogs = user.role === 'ADMIN'
@@ -40,6 +43,7 @@ export async function Sidebar() {
   const canViewSettings =
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
+    user.role === 'HR' ||
     user.role === 'INVENTORY'
 
   return (

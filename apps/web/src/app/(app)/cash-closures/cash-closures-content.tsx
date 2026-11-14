@@ -87,7 +87,7 @@ export function CashClosuresContent({
 
   const [isExportingPdf, setIsExportingPdf] = useState(false)
 
-  const isFinancial = ['ADMIN', 'MANAGER', 'FINANCIAL'].includes(userRole)
+  const isFinancial = ['ADMIN', 'MANAGER', 'HR', 'FINANCIAL'].includes(userRole)
 
   const loadClosures = useCallback(
     (

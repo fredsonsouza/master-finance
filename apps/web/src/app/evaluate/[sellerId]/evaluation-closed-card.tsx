@@ -19,9 +19,7 @@ export function EvaluationClosedCard({ seller, availability }: Props) {
         <h2 className="text-xl font-bold tracking-tight font-display">
           Horário de Avaliações Encerrado
         </h2>
-        <p className="mt-1 text-xs text-slate-300">
-          Atendimento da Recepção
-        </p>
+        <p className="mt-1 text-xs text-slate-300">Atendimento da Recepção</p>
       </div>
 
       <CardContent className="p-6 space-y-6">
@@ -73,11 +71,15 @@ export function EvaluationClosedCard({ seller, availability }: Props) {
           </div>
           <div className="divide-y divide-surface-container">
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-on-surface-variant font-medium">Segunda a Sexta</span>
+              <span className="text-on-surface-variant font-medium">
+                Segunda a Sexta
+              </span>
               <span className="font-bold text-on-surface">06:00 às 18:20</span>
             </div>
             <div className="flex items-center justify-between py-1.5">
-              <span className="text-on-surface-variant font-medium">Sábado</span>
+              <span className="text-on-surface-variant font-medium">
+                Sábado
+              </span>
               <span className="font-bold text-on-surface">06:00 às 12:20</span>
             </div>
             <div className="flex items-center justify-between py-1.5 text-error">
@@ -89,7 +91,8 @@ export function EvaluationClosedCard({ seller, availability }: Props) {
 
         {/* Agradecimento */}
         <p className="text-center text-xs text-on-surface-variant leading-relaxed">
-          Agradecemos a sua preferência e aguardamos sua avaliação em nosso próximo horário de funcionamento!
+          Agradecemos a sua preferência e aguardamos sua avaliação em nosso
+          próximo horário de funcionamento!
         </p>
       </CardContent>
     </Card>

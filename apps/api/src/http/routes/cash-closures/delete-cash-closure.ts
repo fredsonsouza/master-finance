@@ -59,13 +59,10 @@ export async function deleteCashClosure(app: FastifyInstance) {
         } as any)
 
         if (
-          ability.cannot(
-            'delete',
-            {
-              __typename: 'CashClosure',
-              ...closure,
-            } as any
-          )
+          ability.cannot('delete', {
+            __typename: 'CashClosure',
+            ...closure,
+          } as any)
         ) {
           throw new UnauthorizedError(
             'You are not allowed to delete this cash closure.'

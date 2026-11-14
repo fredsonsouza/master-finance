@@ -14,7 +14,8 @@ export async function getLogs(app: FastifyInstance) {
       {
         schema: {
           tags: ['logs'],
-          summary: 'Get all audit logs with filters and pagination (ADMIN only)',
+          summary:
+            'Get all audit logs with filters and pagination (ADMIN only)',
           security: [{ bearerAuth: [] }],
           querystring: z.object({
             resource: z.string().optional(),
@@ -83,8 +84,14 @@ export async function getLogs(app: FastifyInstance) {
         if (search?.trim()) {
           whereClause.OR = [
             { details: { contains: search.trim(), mode: 'insensitive' } },
-            { user: { name: { contains: search.trim(), mode: 'insensitive' } } },
-            { user: { username: { contains: search.trim(), mode: 'insensitive' } } },
+            {
+              user: { name: { contains: search.trim(), mode: 'insensitive' } },
+            },
+            {
+              user: {
+                username: { contains: search.trim(), mode: 'insensitive' },
+              },
+            },
           ]
         }
 

@@ -105,9 +105,8 @@ export function UpdateUserDialog({
                 <option value="FISCAL">Fiscal (Gerencia Coletas)</option>
                 <option value="INVENTORY">Estoque</option>
                 <option value="ANALYST">Analista (Relatórios)</option>
-                {isAdmin && (
-                  <option value="ADMIN">Administrador</option>
-                )}
+                <option value="HR">RH (Recursos Humanos)</option>
+                {isAdmin && <option value="ADMIN">Administrador</option>}
               </select>
             </div>
             <div className="space-y-2">
@@ -132,7 +131,10 @@ export function UpdateUserDialog({
             <div className="space-y-2 border-t border-outline/20 pt-4">
               <div className="flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-primary" />
-                <Label htmlFor="update-user-password" className="font-semibold text-sm text-primary">
+                <Label
+                  htmlFor="update-user-password"
+                  className="font-semibold text-sm text-primary"
+                >
                   Alterar Senha do Usuário (Opcional)
                 </Label>
               </div>

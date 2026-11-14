@@ -37,6 +37,7 @@ export async function updateUser(app: FastifyInstance) {
                 'FISCAL',
                 'INVENTORY',
                 'ANALYST',
+                'HR',
               ])
               .optional(),
             unitId: z.string().uuid().nullable().optional(),

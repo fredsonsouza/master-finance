@@ -92,6 +92,7 @@ export function CreateUserDialog({
               <option value="FISCAL">Fiscal (Gerencia Coletas)</option>
               <option value="INVENTORY">Estoque</option>
               <option value="ANALYST">Analista (Relatórios)</option>
+              <option value="HR">RH (Recursos Humanos)</option>
               {currentUserRole === 'ADMIN' && (
                 <option value="ADMIN">Administrador</option>
               )}

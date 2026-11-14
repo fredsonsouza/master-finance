@@ -1,5 +1,9 @@
 import { auth } from '@/auth/auth'
-import { getLogs, type AuditLog, type AuditLogPagination } from '@/http/get-logs'
+import {
+  type AuditLog,
+  type AuditLogPagination,
+  getLogs,
+} from '@/http/get-logs'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LogsContent } from './logs-content'

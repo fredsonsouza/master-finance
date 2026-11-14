@@ -14,6 +14,7 @@ export interface User {
     | 'FISCAL'
     | 'INVENTORY'
     | 'ANALYST'
+    | 'HR'
   unitId: string | null
   avatarUrl: string | null
 }

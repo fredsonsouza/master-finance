@@ -49,7 +49,9 @@ export async function updateEvaluation(app: FastifyInstance) {
         } as any)
 
         if (ability.cannot('update', 'Evaluation')) {
-          throw new UnauthorizedError('Você não tem permissão para editar avaliações.')
+          throw new UnauthorizedError(
+            'Você não tem permissão para editar avaliações.'
+          )
         }
 
         const { id } = request.params
@@ -66,10 +68,15 @@ export async function updateEvaluation(app: FastifyInstance) {
         await prisma.evaluation.update({
           where: { id },
           data: {
-            clientName: clientName !== undefined ? clientName : evaluation.clientName,
+            clientName:
+              clientName !== undefined ? clientName : evaluation.clientName,
             rating: rating || evaluation.rating,
-            presetComment: presetComment !== undefined ? presetComment : evaluation.presetComment,
-            observation: observation !== undefined ? observation : evaluation.observation,
+            presetComment:
+              presetComment !== undefined
+                ? presetComment
+                : evaluation.presetComment,
+            observation:
+              observation !== undefined ? observation : evaluation.observation,
           },
         })
 

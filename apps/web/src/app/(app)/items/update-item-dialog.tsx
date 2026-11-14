@@ -23,10 +23,15 @@ interface Props {
   categories: Category[]
 }
 
-export function UpdateItemDialog({ item, categories: initialCategories }: Props) {
+export function UpdateItemDialog({
+  item,
+  categories: initialCategories,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>(initialCategories)
-  const [selectedCategoryId, setSelectedCategoryId] = useState(item.categoryId || '')
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    item.categoryId || ''
+  )
   const [newCategoryName, setNewCategoryName] = useState('')
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
 
@@ -254,7 +259,11 @@ export function UpdateItemDialog({ item, categories: initialCategories }: Props)
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isPending} className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="cursor-pointer"
+            >
               {isPending ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
           </div>

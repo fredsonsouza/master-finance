@@ -67,7 +67,8 @@ export async function updateItem(app: FastifyInstance) {
           )
         }
 
-        const { name, description, value, categoryId, sectorId, quantity } = request.body
+        const { name, description, value, categoryId, sectorId, quantity } =
+          request.body
 
         if (categoryId) {
           try {
@@ -100,10 +101,14 @@ export async function updateItem(app: FastifyInstance) {
             data: {
               name: name ?? targetItem.name,
               description:
-                description !== undefined ? description : targetItem.description,
+                description !== undefined
+                  ? description
+                  : targetItem.description,
               value: value !== undefined ? value : (targetItem as any).value,
               categoryId:
-                categoryId !== undefined ? categoryId : (targetItem as any).categoryId,
+                categoryId !== undefined
+                  ? categoryId
+                  : (targetItem as any).categoryId,
               sectorId: sectorId !== undefined ? sectorId : targetItem.sectorId,
               quantity: quantity !== undefined ? quantity : targetItem.quantity,
             },
@@ -115,7 +120,9 @@ export async function updateItem(app: FastifyInstance) {
             data: {
               name: name ?? targetItem.name,
               description:
-                description !== undefined ? description : targetItem.description,
+                description !== undefined
+                  ? description
+                  : targetItem.description,
               sectorId: sectorId !== undefined ? sectorId : targetItem.sectorId,
               quantity: quantity !== undefined ? quantity : targetItem.quantity,
             },

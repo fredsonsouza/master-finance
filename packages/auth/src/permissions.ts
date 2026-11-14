@@ -26,6 +26,24 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('manage', 'CashClosure')
     can('manage', 'Collection')
     can('manage', 'HrReport')
+    can('manage', 'Employee')
+    can('manage', 'EmployeeRequest')
+  },
+
+  HR(_, { can }) {
+    can('manage', 'Employee')
+    can('manage', 'EmployeeRequest')
+    can('manage', 'HrReport')
+    can('manage', 'Evaluation')
+    can('manage', 'User')
+    can('manage', 'Item')
+    can('manage', 'Transaction')
+    can('manage', 'Metric')
+    can('manage', 'CashClosure')
+    can('manage', 'Collection')
+    can('get', 'Unit')
+    can('get', 'Sector')
+    can('get', 'Category')
   },
 
   FINANCIAL(user, { can }) {
@@ -34,6 +52,8 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('get', 'Sector')
     can('get', 'Unit')
     can('get', 'User')
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   EMPLOYEE(user, { can }) {
@@ -52,6 +72,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'DRAFT' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   SELLER(user, { can }) {
@@ -61,6 +84,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'OPEN' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   COLLECTOR(user, { can }) {
@@ -76,6 +102,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'DRAFT' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   FISCAL(user, { can }) {
@@ -93,6 +122,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'DRAFT' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   INVENTORY(user, { can }) {
@@ -112,6 +144,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'DRAFT' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 
   ANALYST(user, { can }) {
@@ -125,5 +160,8 @@ export const permissions: Record<Role, PermissionsByRole> = {
       userId: { $eq: user.id },
       status: { $eq: 'DRAFT' },
     })
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
   },
 }

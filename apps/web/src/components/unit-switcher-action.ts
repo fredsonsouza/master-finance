@@ -8,7 +8,8 @@ export async function getActiveUnit() {
     user.role === 'ADMIN' ||
     user.role === 'MANAGER' ||
     user.role === 'FINANCIAL' ||
-    user.role === 'FISCAL'
+    user.role === 'FISCAL' ||
+    user.role === 'HR'
   ) {
     return null
   }

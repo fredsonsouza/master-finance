@@ -82,7 +82,9 @@ export async function updateTransaction(app: FastifyInstance) {
         }
 
         if (sectorId) {
-          const sector = await prisma.sector.findUnique({ where: { id: sectorId } })
+          const sector = await prisma.sector.findUnique({
+            where: { id: sectorId },
+          })
           if (!sector) {
             throw new BadRequestError('Sector not found.')
           }

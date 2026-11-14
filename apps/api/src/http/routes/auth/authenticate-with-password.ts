@@ -32,14 +32,47 @@ export async function authenticateWithPassword(app: FastifyInstance) {
     async (request, reply) => {
       const { username, password } = request.body
 
-      const userFromUsername = await prisma.user.findUnique({
+      let userFromUsername = await prisma.user.findUnique({
         where: {
           username,
         },
+        include: {
+          employee: {
+            select: {
+              status: true,
+            },
+          },
+        },
       })
+
+      if (!userFromUsername && prisma.employee?.findUnique) {
+        const employeeRecord = await prisma.employee.findUnique({
+          where: {
+            registrationNumber: username.trim().toUpperCase(),
+          },
+          include: {
+            user: true,
+          },
+        })
+
+        if (employeeRecord?.user) {
+          userFromUsername = {
+            ...employeeRecord.user,
+            employee: {
+              status: employeeRecord.status,
+            },
+          }
+        }
+      }
 
       if (!userFromUsername) {
         throw new BadRequestError('Invalid credentials')
+      }
+
+      if (userFromUsername.employee?.status === 'INACTIVE') {
+        throw new BadRequestError(
+          'Colaborador inativo. Entre em contato com o setor de RH.'
+        )
       }
 
       if (userFromUsername.username === null) {

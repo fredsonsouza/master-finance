@@ -6,13 +6,16 @@ import {
   Boxes,
   ChevronDown,
   CircleDollarSign,
+  FileCheck2,
   FileText,
   History,
+  IdCard,
   LayoutDashboard,
   Package,
   Settings,
   Star,
   Syringe,
+  UserCheck,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -46,12 +49,19 @@ export function SidebarNav({
   const isStockActive =
     pathname.startsWith('/transactions') || pathname.startsWith('/items')
   const isFinancialActive = pathname.startsWith('/cash-closures')
+  const isEmployeesActive = pathname.startsWith('/employees')
   const isRhActive =
-    pathname.startsWith('/evaluations') || pathname.startsWith('/hr-reports')
+    pathname.startsWith('/evaluations') ||
+    pathname.startsWith('/hr-reports') ||
+    isEmployeesActive
+
+  const canManageEmployees =
+    userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'HR'
 
   const [isStockOpen, setIsStockOpen] = useState(true)
   const [isFinancialOpen, setIsFinancialOpen] = useState(true)
   const [isRhOpen, setIsRhOpen] = useState(true)
+  const [isEmployeesOpen, setIsEmployeesOpen] = useState(true)
 
   return (
     <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
@@ -59,18 +69,18 @@ export function SidebarNav({
       {userRole !== 'INVENTORY' &&
         userRole !== 'ANALYST' &&
         userRole !== 'SELLER' && (
-        <Link
-          href="/"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-            pathname === '/'
-              ? 'bg-primary/10 text-primary font-semibold'
-              : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-          }`}
-        >
-          <LayoutDashboard className="h-4 w-4 shrink-0" />
-          <span>Visão Geral</span>
-        </Link>
-      )}
+          <Link
+            href="/"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              pathname === '/'
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+            }`}
+          >
+            <LayoutDashboard className="h-4 w-4 shrink-0" />
+            <span>Visão Geral</span>
+          </Link>
+        )}
 
       {/* Menu Colapsável: ESTOQUE */}
       {canViewStock && (
@@ -90,7 +100,9 @@ export function SidebarNav({
             </div>
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                isStockOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
+                isStockOpen
+                  ? 'rotate-0'
+                  : '-rotate-90 text-on-surface-variant/60'
               }`}
             />
           </button>
@@ -142,7 +154,9 @@ export function SidebarNav({
             </div>
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                isFinancialOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
+                isFinancialOpen
+                  ? 'rotate-0'
+                  : '-rotate-90 text-on-surface-variant/60'
               }`}
             />
           </button>
@@ -166,43 +180,44 @@ export function SidebarNav({
       )}
 
       {/* Menu Colapsável: RH */}
-      {userRole !== 'SELLER' && userRole !== 'FINANCIAL' && (
-        <div className="space-y-1">
-          <button
-            type="button"
-            onClick={() => setIsRhOpen((prev) => !prev)}
-            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-              isRhActive
-                ? 'text-primary bg-primary/5'
-                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+      <div className="space-y-1">
+        <button
+          type="button"
+          onClick={() => setIsRhOpen((prev) => !prev)}
+          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+            isRhActive
+              ? 'text-primary bg-primary/5'
+              : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="h-4 w-4 text-primary shrink-0" />
+            <span>RH</span>
+          </div>
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${
+              isRhOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
             }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Users className="h-4 w-4 text-primary shrink-0" />
-              <span>RH</span>
-            </div>
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                isRhOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
-              }`}
-            />
-          </button>
+          />
+        </button>
 
-          {isRhOpen && (
-            <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
-              {canViewEvaluations && (
-                <Link
-                  href="/evaluations"
-                  className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    pathname.startsWith('/evaluations')
-                      ? 'bg-primary/15 text-primary font-semibold'
-                      : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                  }`}
-                >
-                  <Star className="h-3.5 w-3.5 shrink-0" />
-                  <span>Meus Atendimentos</span>
-                </Link>
-              )}
+        {isRhOpen && (
+          <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
+            {canViewEvaluations && (
+              <Link
+                href="/evaluations"
+                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  pathname.startsWith('/evaluations')
+                    ? 'bg-primary/15 text-primary font-semibold'
+                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                }`}
+              >
+                <Star className="h-3.5 w-3.5 shrink-0" />
+                <span>Meus Atendimentos</span>
+              </Link>
+            )}
+
+            {userRole !== 'SELLER' && userRole !== 'FINANCIAL' && (
               <Link
                 href="/hr-reports"
                 className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -214,10 +229,69 @@ export function SidebarNav({
                 <FileText className="h-3.5 w-3.5 shrink-0" />
                 <span>Relatórios dos Setores</span>
               </Link>
+            )}
+
+            {/* Submenu aninhado: Colaboradores */}
+            <div className="space-y-1 pt-0.5">
+              <button
+                type="button"
+                onClick={() => setIsEmployeesOpen((prev) => !prev)}
+                className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  isEmployeesActive
+                    ? 'text-primary font-semibold bg-primary/10'
+                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <IdCard className="h-3.5 w-3.5 shrink-0" />
+                  <span>Colaboradores</span>
+                </div>
+                <ChevronDown
+                  className={`h-3 w-3 transition-transform duration-200 ${
+                    isEmployeesOpen
+                      ? 'rotate-0'
+                      : '-rotate-90 text-on-surface-variant/60'
+                  }`}
+                />
+              </button>
+
+              {isEmployeesOpen && (
+                <div className="pl-4 pr-1 space-y-1 border-l border-surface-container ml-3 animate-in fade-in-50 duration-150">
+                  {canManageEmployees && (
+                    <Link
+                      href="/employees"
+                      className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        pathname === '/employees'
+                          ? 'bg-primary/15 text-primary font-semibold'
+                          : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                      }`}
+                    >
+                      <UserCheck className="h-3.5 w-3.5 shrink-0" />
+                      <span>Quadro de Colaboradores</span>
+                    </Link>
+                  )}
+
+                  <Link
+                    href="/employees/requests"
+                    className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      pathname.startsWith('/employees/requests')
+                        ? 'bg-primary/15 text-primary font-semibold'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                    }`}
+                  >
+                    <FileCheck2 className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {canManageEmployees
+                        ? 'Solicitações e Documentos'
+                        : 'Minhas Solicitações'}
+                    </span>
+                  </Link>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Módulos Operacionais Adicionais */}
       {(canViewCollections || canViewReports || canViewLogs) && (
@@ -246,7 +320,9 @@ export function SidebarNav({
             >
               <BarChart3 className="h-4 w-4 shrink-0" />
               <span>
-                {userRole === 'FISCAL' ? 'Relatório Recoletas' : 'Relatórios Analíticos'}
+                {userRole === 'FISCAL'
+                  ? 'Relatório Recoletas'
+                  : 'Relatórios Analíticos'}
               </span>
             </Link>
           )}

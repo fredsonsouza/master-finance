@@ -27,7 +27,8 @@ export async function fetchItemsAction(params?: {
 
 export async function createCategoryAction(name: string) {
   const { token } = await auth()
-  if (!token) return { success: false, category: null, message: 'Não autenticado' }
+  if (!token)
+    return { success: false, category: null, message: 'Não autenticado' }
 
   try {
     const res = await createCategory(token, { name })
@@ -62,7 +63,8 @@ export async function createItemAction(data: FormData) {
   const name = data.get('name') as string
   const description = data.get('description') as string | undefined
   const rawCategoryId = data.get('categoryId') as string | undefined
-  const categoryId = rawCategoryId === '' || rawCategoryId === 'null' ? undefined : rawCategoryId
+  const categoryId =
+    rawCategoryId === '' || rawCategoryId === 'null' ? undefined : rawCategoryId
   const quantity = data.get('quantity') as string | undefined
   const rawValue = data.get('value') as string | undefined
   const value = rawValue ? Number(rawValue.replace(/\D/g, '')) / 100 : 0
@@ -126,7 +128,9 @@ export async function updateItemAction(data: FormData) {
       categoryId,
       value,
       quantity:
-        quantity !== undefined && quantity !== '' ? Number(quantity) : undefined,
+        quantity !== undefined && quantity !== ''
+          ? Number(quantity)
+          : undefined,
     })
 
     revalidatePath('/items')

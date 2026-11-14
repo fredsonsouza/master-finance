@@ -66,17 +66,21 @@ export function SettingsContent({
   activeUnitId,
   currentUserRole,
 }: SettingsContentProps) {
-  const isAdmin = !currentUserRole || currentUserRole.toUpperCase() === 'ADMIN'
+  const isAdmin =
+    !currentUserRole ||
+    currentUserRole.toUpperCase() === 'ADMIN' ||
+    currentUserRole.toUpperCase() === 'HR'
 
   const [usersState, setUsersState] = useState<User[]>(users)
-  const [userPaginationState, setUserPaginationState] = useState<UserPagination>(
-    userPagination || {
-      page: 1,
-      perPage: 20,
-      totalCount: users.length,
-      totalPages: Math.ceil(users.length / 20) || 1,
-    }
-  )
+  const [userPaginationState, setUserPaginationState] =
+    useState<UserPagination>(
+      userPagination || {
+        page: 1,
+        perPage: 20,
+        totalCount: users.length,
+        totalPages: Math.ceil(users.length / 20) || 1,
+      }
+    )
 
   const [searchUsers, setSearchUsers] = useState('')
   const [activeUserSearch, setActiveUserSearch] = useState('')
@@ -90,7 +94,8 @@ export function SettingsContent({
 
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
-  const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null)
+  const [resettingPasswordUser, setResettingPasswordUser] =
+    useState<User | null>(null)
 
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
   const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null)
@@ -133,7 +138,12 @@ export function SettingsContent({
   async function handleUserSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     setActiveUserSearch(searchUsers.trim())
-    await loadUsersPage(1, searchUsers.trim(), selectedRoleFilter, selectedUnitFilter)
+    await loadUsersPage(
+      1,
+      searchUsers.trim(),
+      selectedRoleFilter,
+      selectedUnitFilter
+    )
   }
 
   async function handleRoleFilterChange(role: string) {
@@ -172,6 +182,7 @@ export function SettingsContent({
     FISCAL: 'bg-purple-500 text-white',
     INVENTORY: 'bg-slate-600 text-white',
     ANALYST: 'bg-teal-600 text-white',
+    HR: 'bg-rose-600 text-white',
   }
 
   const roleNames: Record<string, string> = {
@@ -184,6 +195,7 @@ export function SettingsContent({
     FISCAL: 'Fiscal',
     INVENTORY: 'Estoque',
     ANALYST: 'Analista',
+    HR: 'RH (Recursos Humanos)',
   }
 
   async function confirmDeleteUser() {
@@ -227,14 +239,21 @@ export function SettingsContent({
   }
 
   return (
-    <Tabs defaultValue={currentUserRole === 'INVENTORY' ? 'units' : 'users'} className="w-full">
+    <Tabs
+      defaultValue={currentUserRole === 'INVENTORY' ? 'units' : 'users'}
+      className="w-full"
+    >
       <TabsList className="mb-4">
         {currentUserRole !== 'INVENTORY' && (
           <TabsTrigger value="users">Usuários</TabsTrigger>
         )}
-        <TabsTrigger value="units">Unidades</TabsTrigger>
-        <TabsTrigger value="sectors">Setores</TabsTrigger>
-        <TabsTrigger value="categories">Categorias</TabsTrigger>
+        {currentUserRole !== 'HR' && (
+          <>
+            <TabsTrigger value="units">Unidades</TabsTrigger>
+            <TabsTrigger value="sectors">Setores</TabsTrigger>
+            <TabsTrigger value="categories">Categorias</TabsTrigger>
+          </>
+        )}
       </TabsList>
 
       {currentUserRole !== 'INVENTORY' && (
@@ -248,13 +267,20 @@ export function SettingsContent({
                   </CardTitle>
                   {userPaginationState.totalCount > 0 && (
                     <p className="text-xs text-on-surface-variant font-medium mt-1">
-                      Exibindo <span className="font-bold text-on-surface">{usersState.length}</span> de{' '}
-                      <span className="font-bold text-on-surface">{userPaginationState.totalCount}</span> usuários
+                      Exibindo{' '}
+                      <span className="font-bold text-on-surface">
+                        {usersState.length}
+                      </span>{' '}
+                      de{' '}
+                      <span className="font-bold text-on-surface">
+                        {userPaginationState.totalCount}
+                      </span>{' '}
+                      usuários
                     </p>
                   )}
                 </div>
 
-                {currentUserRole === 'ADMIN' && (
+                {(currentUserRole === 'ADMIN' || currentUserRole === 'HR') && (
                   <CreateUserDialog
                     units={units}
                     activeUnitId={activeUnitId}
@@ -338,7 +364,10 @@ export function SettingsContent({
                     Buscar
                   </Button>
 
-                  {(activeUserSearch || selectedRoleFilter || selectedUnitFilter || searchUsers) && (
+                  {(activeUserSearch ||
+                    selectedRoleFilter ||
+                    selectedUnitFilter ||
+                    searchUsers) && (
                     <Button
                       type="button"
                       variant="outline"
@@ -362,7 +391,9 @@ export function SettingsContent({
               ) : usersState.length === 0 ? (
                 <div className="text-on-surface-variant py-10 text-center text-sm space-y-2">
                   <p>Nenhum usuário encontrado com os filtros selecionados.</p>
-                  {(activeUserSearch || selectedRoleFilter || selectedUnitFilter) && (
+                  {(activeUserSearch ||
+                    selectedRoleFilter ||
+                    selectedUnitFilter) && (
                     <Button
                       variant="ghost"
                       onClick={handleClearUserFilters}
@@ -391,7 +422,9 @@ export function SettingsContent({
                       </thead>
                       <tbody className="divide-surface-container divide-y">
                         {usersState.map((u) => {
-                          const uUnit = units.find((unit) => unit.id === u.unitId)
+                          const uUnit = units.find(
+                            (unit) => unit.id === u.unitId
+                          )
 
                           return (
                             <tr
@@ -422,7 +455,9 @@ export function SettingsContent({
                                       size="icon"
                                       title="Redefinir / Alterar Senha"
                                       className="text-on-surface hover:text-amber-500 hover:bg-amber-500/10 h-8 w-8 cursor-pointer"
-                                      onClick={() => setResettingPasswordUser(u)}
+                                      onClick={() =>
+                                        setResettingPasswordUser(u)
+                                      }
                                     >
                                       <KeyRound className="h-4 w-4 text-amber-500" />
                                     </Button>
@@ -458,16 +493,26 @@ export function SettingsContent({
                   {userPaginationState.totalPages > 1 && (
                     <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
                       <div className="text-on-surface-variant font-medium">
-                        Página <span className="font-bold text-on-surface">{userPaginationState.page}</span> de{' '}
-                        <span className="font-bold text-on-surface">{userPaginationState.totalPages}</span>
+                        Página{' '}
+                        <span className="font-bold text-on-surface">
+                          {userPaginationState.page}
+                        </span>{' '}
+                        de{' '}
+                        <span className="font-bold text-on-surface">
+                          {userPaginationState.totalPages}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={userPaginationState.page <= 1 || isLoadingUsers}
-                          onClick={() => loadUsersPage(userPaginationState.page - 1)}
+                          disabled={
+                            userPaginationState.page <= 1 || isLoadingUsers
+                          }
+                          onClick={() =>
+                            loadUsersPage(userPaginationState.page - 1)
+                          }
                           className="h-8 gap-1 text-xs cursor-pointer"
                         >
                           <ChevronLeft className="h-4 w-4" />
@@ -476,8 +521,13 @@ export function SettingsContent({
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={userPaginationState.page >= userPaginationState.totalPages || isLoadingUsers}
-                          onClick={() => loadUsersPage(userPaginationState.page + 1)}
+                          disabled={
+                            userPaginationState.page >=
+                              userPaginationState.totalPages || isLoadingUsers
+                          }
+                          onClick={() =>
+                            loadUsersPage(userPaginationState.page + 1)
+                          }
                           className="h-8 gap-1 text-xs cursor-pointer"
                         >
                           Próxima
@@ -520,8 +570,12 @@ export function SettingsContent({
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
                     <tr>
-                      <th className="px-6 py-3 font-semibold">Nome da Unidade</th>
-                      <th className="px-6 py-3 font-semibold">Data de Criação</th>
+                      <th className="px-6 py-3 font-semibold">
+                        Nome da Unidade
+                      </th>
+                      <th className="px-6 py-3 font-semibold">
+                        Data de Criação
+                      </th>
                       <th className="px-6 py-3 text-right font-semibold">
                         Ações
                       </th>
@@ -597,7 +651,9 @@ export function SettingsContent({
                   <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
                     <tr>
                       <th className="px-6 py-3 font-semibold">Nome do Setor</th>
-                      <th className="px-6 py-3 font-semibold">Data de Criação</th>
+                      <th className="px-6 py-3 font-semibold">
+                        Data de Criação
+                      </th>
                       <th className="px-6 py-3 text-right font-semibold">
                         Ações
                       </th>
@@ -613,7 +669,9 @@ export function SettingsContent({
                           {sector.name}
                         </td>
                         <td className="text-on-surface-variant px-6 py-4">
-                          {new Date(sector.createdAt).toLocaleDateString('pt-BR')}
+                          {new Date(sector.createdAt).toLocaleDateString(
+                            'pt-BR'
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
@@ -653,7 +711,8 @@ export function SettingsContent({
                 Categorias de Itens
               </CardTitle>
               <p className="text-xs text-on-surface-variant font-medium mt-1">
-                Classificações para organizar e filtrar o catálogo de produtos e insumos.
+                Classificações para organizar e filtrar o catálogo de produtos e
+                insumos.
               </p>
             </div>
             <CreateCategoryDialog />
@@ -705,7 +764,9 @@ export function SettingsContent({
                           </div>
                         </td>
                         <td className="px-6 py-4 text-on-surface-variant">
-                          {new Date(category.createdAt).toLocaleDateString('pt-BR')}
+                          {new Date(category.createdAt).toLocaleDateString(
+                            'pt-BR'
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">

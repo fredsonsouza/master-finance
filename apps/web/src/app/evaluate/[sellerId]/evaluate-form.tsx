@@ -5,14 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { PublicSeller } from '@/http/get-public-seller'
-import {
-  CheckCircle2,
-  Frown,
-  Laugh,
-  Meh,
-  Smile,
-  User,
-} from 'lucide-react'
+import { CheckCircle2, Frown, Laugh, Meh, Smile, User } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { createEvaluationAction } from './actions'
@@ -107,7 +100,9 @@ export function EvaluateForm({ seller }: Props) {
       if (response.success) {
         setSubmitted(true)
       } else {
-        toast.error(response.message || 'Erro ao enviar avaliação. Tente novamente.')
+        toast.error(
+          response.message || 'Erro ao enviar avaliação. Tente novamente.'
+        )
       }
     } catch (err: any) {
       toast.error('Erro ao enviar avaliação. Tente novamente.')
@@ -128,12 +123,14 @@ export function EvaluateForm({ seller }: Props) {
           </h2>
           <p className="text-on-surface-variant text-sm">
             Sua avaliação sobre o atendimento de{' '}
-            <strong className="text-on-surface">{seller.name}</strong> foi registrada com sucesso.
+            <strong className="text-on-surface">{seller.name}</strong> foi
+            registrada com sucesso.
           </p>
         </div>
 
         <p className="text-xs text-on-surface-variant italic">
-          Sua opinião é fundamental para mantermos a excelência do nosso atendimento.
+          Sua opinião é fundamental para mantermos a excelência do nosso
+          atendimento.
         </p>
       </Card>
     )
@@ -169,9 +166,14 @@ export function EvaluateForm({ seller }: Props) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Client Name Input (Mandatory) */}
           <div className="space-y-2">
-            <label htmlFor="clientName" className="text-xs font-semibold text-on-surface flex items-center justify-between">
+            <label
+              htmlFor="clientName"
+              className="text-xs font-semibold text-on-surface flex items-center justify-between"
+            >
               <span>Informe seu nome</span>
-              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
+              <span className="text-xs font-bold text-rose-500">
+                * Obrigatório
+              </span>
             </label>
             <Input
               id="clientName"
@@ -188,7 +190,9 @@ export function EvaluateForm({ seller }: Props) {
           <div className="space-y-2">
             <label className="text-xs font-semibold text-on-surface flex items-center justify-between">
               <span>Nota do Atendimento</span>
-              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
+              <span className="text-xs font-bold text-rose-500">
+                * Obrigatório
+              </span>
             </label>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -214,7 +218,9 @@ export function EvaluateForm({ seller }: Props) {
                     />
                     <span
                       className={`text-xs font-bold ${
-                        isSelected ? 'text-on-surface' : 'text-on-surface-variant'
+                        isSelected
+                          ? 'text-on-surface'
+                          : 'text-on-surface-variant'
                       }`}
                     >
                       {opt.label}
@@ -227,9 +233,14 @@ export function EvaluateForm({ seller }: Props) {
 
           {/* Mandatory Comment / Observação */}
           <div className="space-y-2">
-            <label htmlFor="observation" className="text-xs font-semibold text-on-surface flex items-center justify-between">
+            <label
+              htmlFor="observation"
+              className="text-xs font-semibold text-on-surface flex items-center justify-between"
+            >
               <span>Deixe seu comentário</span>
-              <span className="text-xs font-bold text-rose-500">* Obrigatório</span>
+              <span className="text-xs font-bold text-rose-500">
+                * Obrigatório
+              </span>
             </label>
             <Textarea
               id="observation"
@@ -245,7 +256,12 @@ export function EvaluateForm({ seller }: Props) {
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={isSubmitting || !selectedRating || !clientName.trim() || !observation.trim()}
+            disabled={
+              isSubmitting ||
+              !selectedRating ||
+              !clientName.trim() ||
+              !observation.trim()
+            }
             className="w-full h-12 text-sm font-bold shadow-md cursor-pointer"
           >
             {isSubmitting ? 'Registrando Avaliação...' : 'Enviar Avaliação'}

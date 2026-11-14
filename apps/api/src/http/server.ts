@@ -77,6 +77,17 @@ import { getHrReport } from './routes/hr-reports/get-hr-report'
 import { getHrReports } from './routes/hr-reports/get-hr-reports'
 import { updateHrReport } from './routes/hr-reports/update-hr-report'
 
+import { changeEmployeeStatus } from './routes/employees/change-employee-status'
+import { createEmployee } from './routes/employees/create-employee'
+import { createEmployeeRequest } from './routes/employees/create-employee-request'
+import { deleteEmployeeRequest } from './routes/employees/delete-employee-request'
+import { getEmployee } from './routes/employees/get-employee'
+import { getEmployeeRequests } from './routes/employees/get-employee-requests'
+import { getEmployees } from './routes/employees/get-employees'
+import { updateEmployee } from './routes/employees/update-employee'
+import { updateEmployeeRequestStatus } from './routes/employees/update-employee-request-status'
+import { verifyEmployeeDocument } from './routes/employees/verify-employee-document'
+
 import { env } from '@saas/env'
 import { errorHandler } from './error-handle'
 
@@ -86,7 +97,10 @@ app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 
 app.setErrorHandler(errorHandler)
-if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+if (
+  process.env.NODE_ENV !== 'production' ||
+  process.env.ENABLE_SWAGGER === 'true'
+) {
   app.register(fastifySwagger, {
     openapi: {
       info: {
@@ -187,6 +201,17 @@ app.register(getHrReports)
 app.register(getHrReport)
 app.register(updateHrReport)
 app.register(deleteHrReport)
+
+app.register(createEmployee)
+app.register(getEmployees)
+app.register(getEmployee)
+app.register(updateEmployee)
+app.register(changeEmployeeStatus)
+app.register(createEmployeeRequest)
+app.register(getEmployeeRequests)
+app.register(updateEmployeeRequestStatus)
+app.register(deleteEmployeeRequest)
+app.register(verifyEmployeeDocument)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT, host: '0.0.0.0' }).then(() => {

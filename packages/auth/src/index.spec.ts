@@ -122,4 +122,44 @@ describe('Auth Permissions Test', () => {
     expect(ability.can('delete', 'HrReport')).toBe(false)
     expect(ability.can('get', 'Evaluation')).toBe(false)
   })
+
+  test('HR role permissions: full access except managing Unit, Sector and Category', () => {
+    const hrUser = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'HR' as const,
+      unitId: null,
+    }
+
+    const ability = defineAbilityFor(hrUser as any)
+
+    expect(ability.can('manage', 'Employee')).toBe(true)
+    expect(ability.can('manage', 'EmployeeRequest')).toBe(true)
+    expect(ability.can('manage', 'HrReport')).toBe(true)
+    expect(ability.can('manage', 'Evaluation')).toBe(true)
+    expect(ability.can('manage', 'User')).toBe(true)
+    expect(ability.can('manage', 'Item')).toBe(true)
+    expect(ability.can('manage', 'Transaction')).toBe(true)
+    expect(ability.can('manage', 'CashClosure')).toBe(true)
+    expect(ability.can('manage', 'Collection')).toBe(true)
+
+    // Read-only for Unit, Sector, Category
+    expect(ability.can('get', 'Unit')).toBe(true)
+    expect(ability.can('get', 'Sector')).toBe(true)
+    expect(ability.can('get', 'Category')).toBe(true)
+
+    expect(ability.can('create', 'Unit')).toBe(false)
+    expect(ability.can('update', 'Unit')).toBe(false)
+    expect(ability.can('delete', 'Unit')).toBe(false)
+    expect(ability.can('manage', 'Unit')).toBe(false)
+
+    expect(ability.can('create', 'Sector')).toBe(false)
+    expect(ability.can('update', 'Sector')).toBe(false)
+    expect(ability.can('delete', 'Sector')).toBe(false)
+    expect(ability.can('manage', 'Sector')).toBe(false)
+
+    expect(ability.can('create', 'Category')).toBe(false)
+    expect(ability.can('update', 'Category')).toBe(false)
+    expect(ability.can('delete', 'Category')).toBe(false)
+    expect(ability.can('manage', 'Category')).toBe(false)
+  })
 })

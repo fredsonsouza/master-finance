@@ -66,7 +66,8 @@ export async function resetPassword(app: FastifyInstance) {
         const customPassword = request.body?.password
         // Gerar senha temporária segura e legível quando não informada
         const temporarySecret =
-          customPassword || `Master#${randomBytes(3).toString('hex').toUpperCase()}`
+          customPassword ||
+          `Master#${randomBytes(3).toString('hex').toUpperCase()}`
         const newPasswordHash = await hash(temporarySecret, 10)
 
         await prisma.user.update({

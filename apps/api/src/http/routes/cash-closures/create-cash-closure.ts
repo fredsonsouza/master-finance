@@ -60,13 +60,10 @@ export async function createCashClosure(app: FastifyInstance) {
         } as any)
 
         if (
-          ability.cannot(
-            'create',
-            {
-              __typename: 'CashClosure',
-              unitId,
-            } as any
-          )
+          ability.cannot('create', {
+            __typename: 'CashClosure',
+            unitId,
+          } as any)
         ) {
           throw new UnauthorizedError(
             'You are not allowed to create cash closures in this unit.'

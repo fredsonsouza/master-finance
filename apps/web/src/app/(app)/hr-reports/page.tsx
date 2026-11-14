@@ -1,11 +1,11 @@
 import { auth } from '@/auth/auth'
 import {
-  getHrReports,
   type HrReport,
   type HrReportPagination,
   type HrReportSummary,
+  getHrReports,
 } from '@/http/get-hr-reports'
-import { getUnits, type Unit } from '@/http/get-units'
+import { type Unit, getUnits } from '@/http/get-units'
 import { redirect } from 'next/navigation'
 import { HrReportsContent } from './hr-reports-content'
 

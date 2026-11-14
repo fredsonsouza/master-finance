@@ -14,7 +14,9 @@ export interface EvaluationAvailability {
  * - Sábado: 06:00 às 12:20 (Atendimento até 12:00 com 20min de tolerância)
  * - Domingo: Fechado o dia todo
  */
-export function checkEvaluationAvailability(date: Date = new Date()): EvaluationAvailability {
+export function checkEvaluationAvailability(
+  date: Date = new Date()
+): EvaluationAvailability {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Boa_Vista',
     weekday: 'short',
@@ -40,9 +42,9 @@ export function checkEvaluationAvailability(date: Date = new Date()): Evaluation
   }
 
   const dayOfWeek = weekdayMap[partMap.weekday] ?? 0
-  let hour = parseInt(partMap.hour || '0', 10)
+  let hour = Number.parseInt(partMap.hour || '0', 10)
   if (hour === 24) hour = 0
-  const minute = parseInt(partMap.minute || '0', 10)
+  const minute = Number.parseInt(partMap.minute || '0', 10)
   const totalMinutes = hour * 60 + minute
 
   const OPENING_MINUTES = 6 * 60 // 06:00 (360 min)
@@ -64,7 +66,10 @@ export function checkEvaluationAvailability(date: Date = new Date()): Evaluation
 
   // Segunda a Sexta (dias 1 a 5)
   if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-    if (totalMinutes >= OPENING_MINUTES && totalMinutes < WEEKDAY_CLOSING_MINUTES) {
+    if (
+      totalMinutes >= OPENING_MINUTES &&
+      totalMinutes < WEEKDAY_CLOSING_MINUTES
+    ) {
       return {
         isOpen: true,
         currentRoraimaTime: formattedCurrentTime,
@@ -92,7 +97,10 @@ export function checkEvaluationAvailability(date: Date = new Date()): Evaluation
 
   // Sábado (dia 6)
   if (dayOfWeek === 6) {
-    if (totalMinutes >= OPENING_MINUTES && totalMinutes < SATURDAY_CLOSING_MINUTES) {
+    if (
+      totalMinutes >= OPENING_MINUTES &&
+      totalMinutes < SATURDAY_CLOSING_MINUTES
+    ) {
       return {
         isOpen: true,
         currentRoraimaTime: formattedCurrentTime,
@@ -102,7 +110,8 @@ export function checkEvaluationAvailability(date: Date = new Date()): Evaluation
     if (totalMinutes < OPENING_MINUTES) {
       return {
         isOpen: false,
-        message: 'O período de avaliações inicia hoje (sábado) a partir das 06h00.',
+        message:
+          'O período de avaliações inicia hoje (sábado) a partir das 06h00.',
         nextOpening: 'Hoje às 06:00',
         currentRoraimaTime: formattedCurrentTime,
       }

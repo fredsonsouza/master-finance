@@ -43,7 +43,9 @@ export async function deleteEvaluation(app: FastifyInstance) {
         } as any)
 
         if (ability.cannot('delete', 'Evaluation')) {
-          throw new UnauthorizedError('Você não tem permissão para excluir avaliações.')
+          throw new UnauthorizedError(
+            'Você não tem permissão para excluir avaliações.'
+          )
         }
 
         const { id } = request.params

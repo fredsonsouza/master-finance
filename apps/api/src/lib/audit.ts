@@ -20,6 +20,8 @@ export async function logAction({
     | 'COLLECTION'
     | 'AUTH'
     | 'HR_REPORT'
+    | 'EMPLOYEE'
+    | 'EMPLOYEE_REQUEST'
   resourceId?: string
   details: string
   tx?: any

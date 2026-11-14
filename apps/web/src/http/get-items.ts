@@ -54,7 +54,8 @@ export async function getItems(
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      searchParams: Object.keys(searchParams).length > 0 ? searchParams : undefined,
+      searchParams:
+        Object.keys(searchParams).length > 0 ? searchParams : undefined,
       next: {
         tags: ['items'],
         revalidate: 0,

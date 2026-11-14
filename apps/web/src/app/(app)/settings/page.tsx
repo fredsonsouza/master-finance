@@ -1,8 +1,8 @@
 import { auth } from '@/auth/auth'
-import { getCategories, type Category } from '@/http/get-categories'
-import { getSectors, type Sector } from '@/http/get-sectors'
-import { getUnits, type Unit } from '@/http/get-units'
-import { getUsers, type User, type UserPagination } from '@/http/get-users'
+import { type Category, getCategories } from '@/http/get-categories'
+import { type Sector, getSectors } from '@/http/get-sectors'
+import { type Unit, getUnits } from '@/http/get-units'
+import { type User, type UserPagination, getUsers } from '@/http/get-users'
 import { redirect } from 'next/navigation'
 import { SettingsContent } from './settings-content'
 
@@ -14,7 +14,8 @@ export default async function SettingsPage() {
   if (
     user.role !== 'ADMIN' &&
     user.role !== 'MANAGER' &&
-    user.role !== 'INVENTORY'
+    user.role !== 'INVENTORY' &&
+    user.role !== 'HR'
   ) {
     redirect('/')
   }

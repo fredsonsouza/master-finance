@@ -25,7 +25,8 @@ export default function AppError({
         Erro ao carregar os dados
       </h2>
       <p className="mt-2 max-w-md text-sm text-on-surface-variant">
-        Não conseguimos carregar as informações desta seção. Verifique sua conexão ou tente recarregar os dados.
+        Não conseguimos carregar as informações desta seção. Verifique sua
+        conexão ou tente recarregar os dados.
       </p>
 
       {process.env.NODE_ENV !== 'production' && error.message && (

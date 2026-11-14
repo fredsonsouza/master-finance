@@ -81,7 +81,10 @@ export async function createTransaction(app: FastifyInstance) {
         const requestedQuantitiesByItem = new Map<string, number>()
         for (const itemReq of items) {
           const current = requestedQuantitiesByItem.get(itemReq.itemId) || 0
-          requestedQuantitiesByItem.set(itemReq.itemId, current + itemReq.quantity)
+          requestedQuantitiesByItem.set(
+            itemReq.itemId,
+            current + itemReq.quantity
+          )
         }
 
         await prisma.$transaction(async (tx) => {
@@ -111,10 +114,14 @@ export async function createTransaction(app: FastifyInstance) {
             sectorName = estoqueSector.name
           } else {
             if (!sectorId) {
-              throw new BadRequestError('O setor é obrigatório para transações de saída.')
+              throw new BadRequestError(
+                'O setor é obrigatório para transações de saída.'
+              )
             }
 
-            const sector = await tx.sector.findUnique({ where: { id: sectorId } })
+            const sector = await tx.sector.findUnique({
+              where: { id: sectorId },
+            })
             if (!sector) {
               throw new BadRequestError('Sector not found.')
             }
@@ -135,7 +142,10 @@ export async function createTransaction(app: FastifyInstance) {
 
           // Validate stock for EXIT transactions inside transaction lock
           if (type === 'EXIT') {
-            for (const [itemId, requestedQty] of requestedQuantitiesByItem.entries()) {
+            for (const [
+              itemId,
+              requestedQty,
+            ] of requestedQuantitiesByItem.entries()) {
               const pastTransactions = await tx.transaction.findMany({
                 where: { itemId, unitId },
                 select: { type: true, quantity: true },

@@ -35,9 +35,12 @@ export function ViewHrReportDialog({
   function handlePrint() {
     if (!report) return
 
-    const reportDateStr = new Date(report.reportDate).toLocaleDateString('pt-BR', {
-      timeZone: 'UTC',
-    })
+    const reportDateStr = new Date(report.reportDate).toLocaleDateString(
+      'pt-BR',
+      {
+        timeZone: 'UTC',
+      }
+    )
     const sentAtStr = report.sentAt
       ? new Date(report.sentAt).toLocaleString('pt-BR')
       : 'Não enviado (Rascunho)'

@@ -1,5 +1,6 @@
 'use client'
 
+import { signOutAction } from '@/app/auth/sign-out-action'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -15,7 +16,6 @@ import { LogOut } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
-import { signOutAction } from '@/app/auth/sign-out-action'
 import { updateProfileAction } from './profile-actions'
 
 interface ProfileButtonProps {

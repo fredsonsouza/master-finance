@@ -10,7 +10,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import type { HrReport, HrReportPagination, HrReportSummary } from '@/http/get-hr-reports'
+import type {
+  HrReport,
+  HrReportPagination,
+  HrReportSummary,
+} from '@/http/get-hr-reports'
 import type { Unit } from '@/http/get-units'
 import {
   Building2,
@@ -62,9 +66,12 @@ export function HrReportsContent({
 
   const [reports, setReports] = useState<HrReport[]>(initialReports)
   const [summary, setSummary] = useState<HrReportSummary>(initialSummary)
-  const [pagination, setPagination] = useState<HrReportPagination>(initialPagination)
+  const [pagination, setPagination] =
+    useState<HrReportPagination>(initialPagination)
 
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'SENT'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'SENT'>(
+    'ALL'
+  )
   const [selectedUnitFilter, setSelectedUnitFilter] = useState('')
   const [sectorFilter, setSectorFilter] = useState('')
   const [activeSectorFilter, setActiveSectorFilter] = useState('')
@@ -110,7 +117,13 @@ export function HrReportsContent({
 
   function handleStatusChange(newStatus: 'ALL' | 'DRAFT' | 'SENT') {
     setStatusFilter(newStatus)
-    loadReports(1, newStatus, selectedUnitFilter, activeSectorFilter, activeSearch)
+    loadReports(
+      1,
+      newStatus,
+      selectedUnitFilter,
+      activeSectorFilter,
+      activeSearch
+    )
   }
 
   function handleUnitChange(newUnitId: string) {
@@ -156,7 +169,8 @@ export function HrReportsContent({
             Relatórios de Setor & RH
           </h1>
           <p className="text-on-surface-variant text-sm mt-1">
-            Registro e envio de relatórios operacionais diários e mensais dos setores para o RH.
+            Registro e envio de relatórios operacionais diários e mensais dos
+            setores para o RH.
           </p>
         </div>
 
@@ -389,12 +403,24 @@ export function HrReportsContent({
                   <thead className="bg-surface-container-highest/50 text-xs font-semibold uppercase text-on-surface-variant">
                     <tr>
                       <th className="px-6 py-3.5">Título / Relatório</th>
-                      <th className="px-4 py-3.5 whitespace-nowrap">Data Ref.</th>
-                      <th className="px-4 py-3.5 whitespace-nowrap">Colaborador</th>
-                      <th className="px-4 py-3.5 whitespace-nowrap">Setor / Unidade</th>
-                      <th className="px-4 py-3.5 whitespace-nowrap text-center">Status</th>
-                      <th className="px-4 py-3.5 whitespace-nowrap">Carimbo de Envio</th>
-                      <th className="px-6 py-3.5 text-right whitespace-nowrap">Ações</th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">
+                        Data Ref.
+                      </th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">
+                        Colaborador
+                      </th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">
+                        Setor / Unidade
+                      </th>
+                      <th className="px-4 py-3.5 whitespace-nowrap text-center">
+                        Status
+                      </th>
+                      <th className="px-4 py-3.5 whitespace-nowrap">
+                        Carimbo de Envio
+                      </th>
+                      <th className="px-6 py-3.5 text-right whitespace-nowrap">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-container">
@@ -412,7 +438,9 @@ export function HrReportsContent({
                           <td className="px-6 py-4">
                             <div className="font-semibold text-on-surface flex items-center gap-2">
                               <FileText className="h-4 w-4 text-primary shrink-0" />
-                              <span className="line-clamp-1">{report.title}</span>
+                              <span className="line-clamp-1">
+                                {report.title}
+                              </span>
                             </div>
                             <p className="text-xs text-on-surface-variant line-clamp-1 mt-0.5 max-w-md">
                               {report.content}
@@ -476,7 +504,9 @@ export function HrReportsContent({
                           <td className="px-4 py-4 whitespace-nowrap text-xs text-on-surface-variant">
                             {report.sentAt ? (
                               <div className="font-medium text-emerald-700 dark:text-emerald-400">
-                                {new Date(report.sentAt).toLocaleString('pt-BR')}
+                                {new Date(report.sentAt).toLocaleString(
+                                  'pt-BR'
+                                )}
                               </div>
                             ) : (
                               <span className="text-on-surface-variant italic">
@@ -538,7 +568,8 @@ export function HrReportsContent({
                 <div className="flex items-center justify-between px-6 py-3 border-t border-surface-container bg-surface-container-lowest text-xs text-on-surface-variant">
                   <span>
                     Página <strong>{pagination.page}</strong> de{' '}
-                    <strong>{pagination.totalPages}</strong> ({pagination.totalCount} relatórios)
+                    <strong>{pagination.totalPages}</strong> (
+                    {pagination.totalCount} relatórios)
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -555,7 +586,9 @@ export function HrReportsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={pagination.page >= pagination.totalPages || isLoading}
+                      disabled={
+                        pagination.page >= pagination.totalPages || isLoading
+                      }
                       onClick={() => loadReports(pagination.page + 1)}
                       className="h-7 px-2 cursor-pointer"
                     >

@@ -24,7 +24,9 @@ export async function createHrReport(app: FastifyInstance) {
             content: z.string().min(1, 'Conteúdo do relatório é obrigatório.'),
             reportDate: z.coerce.date(),
             status: z.enum(['DRAFT', 'SENT']).default('DRAFT'),
-            unitId: z.union([z.string().uuid(), z.literal(''), z.null()]).optional(),
+            unitId: z
+              .union([z.string().uuid(), z.literal(''), z.null()])
+              .optional(),
             sector: z.string().optional().nullable(),
           }),
           response: {
@@ -69,14 +71,8 @@ export async function createHrReport(app: FastifyInstance) {
           )
         }
 
-        const {
-          title,
-          content,
-          reportDate,
-          status,
-          unitId,
-          sector,
-        } = request.body
+        const { title, content, reportDate, status, unitId, sector } =
+          request.body
 
         const targetUnitId =
           unitId && unitId !== '' ? unitId : (requestingUser.unitId ?? null)

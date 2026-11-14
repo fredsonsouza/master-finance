@@ -59,20 +59,22 @@ export async function updateCashClosure(app: FastifyInstance) {
         } as any)
 
         if (
-          ability.cannot(
-            'update',
-            {
-              __typename: 'CashClosure',
-              ...closure,
-            } as any
-          )
+          ability.cannot('update', {
+            __typename: 'CashClosure',
+            ...closure,
+          } as any)
         ) {
           throw new UnauthorizedError(
             'You are not allowed to update this cash closure.'
           )
         }
 
-        if (closure.status !== 'OPEN' && user.role !== 'ADMIN' && user.role !== 'MANAGER' && user.role !== 'FINANCIAL') {
+        if (
+          closure.status !== 'OPEN' &&
+          user.role !== 'ADMIN' &&
+          user.role !== 'MANAGER' &&
+          user.role !== 'FINANCIAL'
+        ) {
           throw new UnauthorizedError(
             'Não é possível editar lançamentos já fechados.'
           )

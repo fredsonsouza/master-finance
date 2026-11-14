@@ -14,6 +14,7 @@ export default async function CollectionsPage() {
   if (
     user.role !== 'ADMIN' &&
     user.role !== 'MANAGER' &&
+    user.role !== 'HR' &&
     user.role !== 'EMPLOYEE' &&
     user.role !== 'FISCAL' &&
     user.role !== 'COLLECTOR'
@@ -28,7 +29,10 @@ export default async function CollectionsPage() {
   let units: Unit[] = []
 
   const isGlobalUser =
-    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'FISCAL'
+    user.role === 'ADMIN' ||
+    user.role === 'MANAGER' ||
+    user.role === 'HR' ||
+    user.role === 'FISCAL'
 
   try {
     if (activeUnitId || isGlobalUser || user.role === 'COLLECTOR') {

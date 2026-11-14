@@ -34,8 +34,7 @@ export async function createTransactionAction(data: FormData) {
   if (!unitId) {
     return {
       success: false,
-      message:
-        'Selecione uma unidade para registrar transações.',
+      message: 'Selecione uma unidade para registrar transações.',
     }
   }
 
@@ -136,9 +135,7 @@ export async function updateTransactionAction(id: string, data: FormData) {
   const rawSectorId = data.get('sectorId') as string
   const dateStr = data.get('date') as string
 
-  const value = rawValue
-    ? Number(rawValue.replace(/\D/g, '')) / 100
-    : undefined
+  const value = rawValue ? Number(rawValue.replace(/\D/g, '')) / 100 : undefined
   const quantity = rawQuantity ? Number(rawQuantity) : undefined
   const sectorId = rawSectorId ? rawSectorId : undefined
 
@@ -195,7 +192,11 @@ export async function fetchAllItemsAction() {
     return { success: true, items, message: null }
   } catch (err) {
     console.error('[fetchAllItemsAction error]:', err)
-    return { success: false, items: [], message: 'Erro ao buscar catálogo completo de itens.' }
+    return {
+      success: false,
+      items: [],
+      message: 'Erro ao buscar catálogo completo de itens.',
+    }
   }
 }
 
@@ -234,4 +235,3 @@ export async function fetchTransactionsAction(params: {
     }
   }
 }
-

@@ -5,7 +5,13 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Input } from '@/components/ui/input'
 import type { AuditLog, AuditLogPagination } from '@/http/get-logs'
 import dayjs from 'dayjs'
-import { ChevronLeft, ChevronRight, Printer, RotateCcw, Search } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Printer,
+  RotateCcw,
+  Search,
+} from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { useReactToPrint } from 'react-to-print'
@@ -15,7 +21,10 @@ interface LogsContentProps {
   initialPagination: AuditLogPagination
 }
 
-export function LogsContent({ initialLogs, initialPagination }: LogsContentProps) {
+export function LogsContent({
+  initialLogs,
+  initialPagination,
+}: LogsContentProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -27,7 +36,8 @@ export function LogsContent({ initialLogs, initialPagination }: LogsContentProps
   const activeAction = searchParams.get('action') || ''
   const startDate = searchParams.get('startDate') || ''
   const endDate = searchParams.get('endDate') || ''
-  const currentPage = Number(searchParams.get('page')) || initialPagination.page || 1
+  const currentPage =
+    Number(searchParams.get('page')) || initialPagination.page || 1
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -170,8 +180,15 @@ export function LogsContent({ initialLogs, initialPagination }: LogsContentProps
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <p className="text-sm text-on-surface-variant font-medium">
-          Exibindo <span className="font-bold text-on-surface">{initialLogs.length}</span> de{' '}
-          <span className="font-bold text-on-surface">{initialPagination.totalCount}</span> logs de auditoria
+          Exibindo{' '}
+          <span className="font-bold text-on-surface">
+            {initialLogs.length}
+          </span>{' '}
+          de{' '}
+          <span className="font-bold text-on-surface">
+            {initialPagination.totalCount}
+          </span>{' '}
+          logs de auditoria
         </p>
         <Button
           onClick={() => handlePrint()}
@@ -286,7 +303,10 @@ export function LogsContent({ initialLogs, initialPagination }: LogsContentProps
             </div>
             <div className="text-right text-xs text-zinc-500 font-mono">
               <p>Gerado em: {dayjs().format('DD/MM/YYYY HH:mm')}</p>
-              <p>Registros: {initialLogs.length} de {initialPagination.totalCount}</p>
+              <p>
+                Registros: {initialLogs.length} de{' '}
+                {initialPagination.totalCount}
+              </p>
             </div>
           </div>
           <div className="mt-3 bg-zinc-50 p-2 rounded border border-zinc-200 text-2xs text-zinc-700">
@@ -369,8 +389,12 @@ export function LogsContent({ initialLogs, initialPagination }: LogsContentProps
           {initialPagination.totalPages > 1 && (
             <div className="flex items-center justify-between p-4 border-t border-surface-container bg-surface-container-lowest text-xs print:hidden">
               <div className="text-on-surface-variant font-medium">
-                Página <span className="font-bold text-on-surface">{currentPage}</span> de{' '}
-                <span className="font-bold text-on-surface">{initialPagination.totalPages}</span>
+                Página{' '}
+                <span className="font-bold text-on-surface">{currentPage}</span>{' '}
+                de{' '}
+                <span className="font-bold text-on-surface">
+                  {initialPagination.totalPages}
+                </span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -387,7 +411,9 @@ export function LogsContent({ initialLogs, initialPagination }: LogsContentProps
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={currentPage >= initialPagination.totalPages || isPending}
+                  disabled={
+                    currentPage >= initialPagination.totalPages || isPending
+                  }
                   onClick={() => applyFilters({ page: currentPage + 1 })}
                   className="h-8 gap-1 text-xs cursor-pointer"
                 >

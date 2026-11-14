@@ -83,8 +83,18 @@ export async function getItems(app: FastifyInstance) {
           sectorId: sectorId || undefined,
           OR: search?.trim()
             ? [
-                { name: { contains: search.trim(), mode: 'insensitive' as const } },
-                { description: { contains: search.trim(), mode: 'insensitive' as const } },
+                {
+                  name: {
+                    contains: search.trim(),
+                    mode: 'insensitive' as const,
+                  },
+                },
+                {
+                  description: {
+                    contains: search.trim(),
+                    mode: 'insensitive' as const,
+                  },
+                },
               ]
             : undefined,
         }
@@ -111,8 +121,18 @@ export async function getItems(app: FastifyInstance) {
             sectorId: sectorId || undefined,
             OR: search?.trim()
               ? [
-                  { name: { contains: search.trim(), mode: 'insensitive' as const } },
-                  { description: { contains: search.trim(), mode: 'insensitive' as const } },
+                  {
+                    name: {
+                      contains: search.trim(),
+                      mode: 'insensitive' as const,
+                    },
+                  },
+                  {
+                    description: {
+                      contains: search.trim(),
+                      mode: 'insensitive' as const,
+                    },
+                  },
                 ]
               : undefined,
           }

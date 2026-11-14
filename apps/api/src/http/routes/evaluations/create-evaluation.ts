@@ -11,13 +11,16 @@ export async function createEvaluation(app: FastifyInstance) {
     {
       schema: {
         tags: ['evaluations'],
-        summary: 'Submit customer evaluation for a seller/receptionist (Public)',
+        summary:
+          'Submit customer evaluation for a seller/receptionist (Public)',
         body: z.object({
           sellerId: z.string().uuid(),
           clientName: z.string().min(2, 'O nome do cliente é obrigatório.'),
           rating: z.enum(['EXCELLENT', 'GOOD', 'REGULAR', 'BAD']),
           presetComment: z.string().optional().nullable(),
-          observation: z.string().min(1, 'O comentário sobre o atendimento é obrigatório.'),
+          observation: z
+            .string()
+            .min(1, 'O comentário sobre o atendimento é obrigatório.'),
         }),
         response: {
           201: z.object({
@@ -36,7 +39,8 @@ export async function createEvaluation(app: FastifyInstance) {
         )
       }
 
-      const { sellerId, clientName, rating, presetComment, observation } = request.body
+      const { sellerId, clientName, rating, presetComment, observation } =
+        request.body
 
       const seller = await prisma.user.findUnique({
         where: { id: sellerId },

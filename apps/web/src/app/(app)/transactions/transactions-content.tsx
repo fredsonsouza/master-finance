@@ -12,7 +12,10 @@ import {
 import { Input } from '@/components/ui/input'
 import type { Item } from '@/http/get-items'
 import type { Sector } from '@/http/get-sectors'
-import type { Transaction, TransactionPagination } from '@/http/get-transactions'
+import type {
+  Transaction,
+  TransactionPagination,
+} from '@/http/get-transactions'
 import type { Unit } from '@/http/get-units'
 import {
   ArrowDownCircle,
@@ -44,8 +47,10 @@ export function TransactionsContent({
   sectors,
   units = [],
 }: Props) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
-  const [pagination, setPagination] = useState<TransactionPagination>(initialPagination)
+  const [transactions, setTransactions] =
+    useState<Transaction[]>(initialTransactions)
+  const [pagination, setPagination] =
+    useState<TransactionPagination>(initialPagination)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('ALL')
   const [unitFilter, setUnitFilter] = useState<string>('ALL')
@@ -59,12 +64,15 @@ export function TransactionsContent({
   const hasUnitData = transactions.some((tx) => tx.unit)
 
   function loadTransactions(
-    page: number = 1,
+    page = 1,
     overrides?: { unitId?: string; type?: string; search?: string }
   ) {
-    const activeUnitId = overrides?.unitId !== undefined ? overrides.unitId : unitFilter
-    const activeType = overrides?.type !== undefined ? overrides.type : typeFilter
-    const activeSearch = overrides?.search !== undefined ? overrides.search : search
+    const activeUnitId =
+      overrides?.unitId !== undefined ? overrides.unitId : unitFilter
+    const activeType =
+      overrides?.type !== undefined ? overrides.type : typeFilter
+    const activeSearch =
+      overrides?.search !== undefined ? overrides.search : search
 
     startTransition(async () => {
       const res = await fetchTransactionsAction({
@@ -169,9 +177,13 @@ export function TransactionsContent({
                   <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
                     <tr>
                       <th className="px-6 py-3 font-semibold">Tipo</th>
-                      <th className="px-6 py-3 font-semibold whitespace-nowrap">Data</th>
+                      <th className="px-6 py-3 font-semibold whitespace-nowrap">
+                        Data
+                      </th>
                       {hasUnitData && (
-                        <th className="px-6 py-3 font-semibold whitespace-nowrap">Unidade</th>
+                        <th className="px-6 py-3 font-semibold whitespace-nowrap">
+                          Unidade
+                        </th>
                       )}
                       <th className="px-6 py-3 font-semibold">Setor</th>
                       <th className="px-6 py-3 font-semibold">Item</th>
@@ -223,7 +235,9 @@ export function TransactionsContent({
                           <td className="px-6 py-4 font-medium">
                             {tx.item.name}
                           </td>
-                          <td className="px-6 py-4 font-medium">{tx.quantity}</td>
+                          <td className="px-6 py-4 font-medium">
+                            {tx.quantity}
+                          </td>
                           <td className="px-6 py-4 text-right font-medium tabular-nums whitespace-nowrap">
                             {new Intl.NumberFormat('pt-BR', {
                               style: 'currency',
@@ -270,7 +284,8 @@ export function TransactionsContent({
                 <div className="flex items-center justify-between px-6 py-3 border-t border-surface-container bg-surface-container-lowest text-xs text-on-surface-variant">
                   <span>
                     Página <strong>{pagination.page}</strong> de{' '}
-                    <strong>{pagination.totalPages}</strong> ({pagination.totalCount} transações)
+                    <strong>{pagination.totalPages}</strong> (
+                    {pagination.totalCount} transações)
                   </span>
 
                   <div className="flex items-center gap-2">
@@ -287,7 +302,9 @@ export function TransactionsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      disabled={pagination.page >= pagination.totalPages || isLoading}
+                      disabled={
+                        pagination.page >= pagination.totalPages || isLoading
+                      }
                       onClick={() => loadTransactions(pagination.page + 1)}
                       className="h-7 px-2 cursor-pointer"
                     >

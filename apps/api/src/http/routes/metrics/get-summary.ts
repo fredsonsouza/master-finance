@@ -83,7 +83,11 @@ export async function getSummary(app: FastifyInstance) {
         })
 
         const calculateTotals = (
-          transactions: { type: 'ENTRY' | 'EXIT'; value: number; quantity: number }[]
+          transactions: {
+            type: 'ENTRY' | 'EXIT'
+            value: number
+            quantity: number
+          }[]
         ) => {
           let entries = 0
           let exits = 0
@@ -95,7 +99,11 @@ export async function getSummary(app: FastifyInstance) {
           })
           entries = Number(entries.toFixed(2))
           exits = Number(exits.toFixed(2))
-          return { entries, exits, balance: Number((entries - exits).toFixed(2)) }
+          return {
+            entries,
+            exits,
+            balance: Number((entries - exits).toFixed(2)),
+          }
         }
 
         const current = calculateTotals(currentMonthTransactions as any)

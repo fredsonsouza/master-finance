@@ -37,6 +37,7 @@ export async function createUser(app: FastifyInstance) {
               'FISCAL',
               'INVENTORY',
               'ANALYST',
+              'HR',
             ]),
             unitId: z.string().uuid().nullable().optional(),
           }),

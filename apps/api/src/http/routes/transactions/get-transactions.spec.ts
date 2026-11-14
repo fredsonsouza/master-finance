@@ -95,7 +95,10 @@ describe('Get Transactions Unit Test', () => {
           description: 'Caixa 100un',
           sector: { name: 'Recepção' },
         },
-        sector: { id: '323e4567-e89b-12d3-a456-426614174003', name: 'Recepção' },
+        sector: {
+          id: '323e4567-e89b-12d3-a456-426614174003',
+          name: 'Recepção',
+        },
         unit: { name: 'Matriz' },
       },
     ] as any)

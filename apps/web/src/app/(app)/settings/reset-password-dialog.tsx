@@ -11,7 +11,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { User } from '@/http/get-users'
-import { Check, CheckCircle2, Copy, KeyRound, ShieldAlert, Sparkles } from 'lucide-react'
+import {
+  Check,
+  CheckCircle2,
+  Copy,
+  KeyRound,
+  ShieldAlert,
+  Sparkles,
+} from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { resetUserPasswordAction } from './actions'
@@ -21,12 +28,17 @@ interface ResetPasswordDialogProps {
   onClose: () => void
 }
 
-export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps) {
+export function ResetPasswordDialog({
+  user,
+  onClose,
+}: ResetPasswordDialogProps) {
   const open = user !== null
   const [isPending, startTransition] = useTransition()
   const [resetMode, setResetMode] = useState<'default' | 'custom'>('default')
   const [customPassword, setCustomPassword] = useState('')
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(
+    null
+  )
   const [copied, setCopied] = useState(false)
 
   if (!user) return null
@@ -84,7 +96,9 @@ export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps)
                 Senha Redefinida com Sucesso!
               </DialogTitle>
               <DialogDescription className="text-sm text-on-surface-variant">
-                A nova senha provisória de <strong className="text-on-surface">{user.name}</strong> foi gerada.
+                A nova senha provisória de{' '}
+                <strong className="text-on-surface">{user.name}</strong> foi
+                gerada.
               </DialogDescription>
             </div>
 
@@ -123,7 +137,9 @@ export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps)
             <div className="rounded-lg bg-surface-container p-3 border border-outline/20 flex items-start gap-2.5 text-xs text-on-surface-variant">
               <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <p>
-                Repasse esta senha ao colaborador. Ao realizar o primeiro login, o sistema exigirá obrigatoriamente a criação de uma nova senha pessoal.
+                Repasse esta senha ao colaborador. Ao realizar o primeiro login,
+                o sistema exigirá obrigatoriamente a criação de uma nova senha
+                pessoal.
               </p>
             </div>
 
@@ -173,7 +189,9 @@ export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps)
                       </span>
                     </div>
                     <p className="text-xs text-on-surface-variant">
-                      O sistema gera uma senha provisória segura que você poderá copiar. O colaborador será obrigado a alterá-la no primeiro acesso.
+                      O sistema gera uma senha provisória segura que você poderá
+                      copiar. O colaborador será obrigado a alterá-la no
+                      primeiro acesso.
                     </p>
                   </div>
                 </label>
@@ -192,7 +210,8 @@ export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps)
                       Definir Senha Manualmente
                     </p>
                     <p className="text-xs text-on-surface-variant">
-                      Você define uma senha específica agora e o colaborador poderá fazer login imediatamente.
+                      Você define uma senha específica agora e o colaborador
+                      poderá fazer login imediatamente.
                     </p>
                   </div>
                 </label>
@@ -200,7 +219,10 @@ export function ResetPasswordDialog({ user, onClose }: ResetPasswordDialogProps)
 
               {resetMode === 'custom' && (
                 <div className="space-y-2 rounded-lg bg-surface-container p-3 border border-outline/20">
-                  <Label htmlFor="custom-password" className="text-xs font-semibold text-on-surface">
+                  <Label
+                    htmlFor="custom-password"
+                    className="text-xs font-semibold text-on-surface"
+                  >
                     Nova Senha de Acesso *
                   </Label>
                   <Input

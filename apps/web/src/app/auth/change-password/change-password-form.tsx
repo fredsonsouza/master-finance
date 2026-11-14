@@ -20,7 +20,10 @@ interface ChangePasswordFormProps {
   username: string | null
 }
 
-export function ChangePasswordForm({ userName, username }: ChangePasswordFormProps) {
+export function ChangePasswordForm({
+  userName,
+  username,
+}: ChangePasswordFormProps) {
   const [state, formAction, isPending] = useActionState(
     async (
       prevState: { success: boolean; message: string | null },
@@ -54,7 +57,9 @@ export function ChangePasswordForm({ userName, username }: ChangePasswordFormPro
               <CardTitle>Crie sua Nova Senha</CardTitle>
             </div>
             <CardDescription>
-              Olá <strong>{userName || username}</strong>! Você está utilizando uma senha provisória definida pelo Administrador. Por segurança, crie sua nova senha pessoal para prosseguir.
+              Olá <strong>{userName || username}</strong>! Você está utilizando
+              uma senha provisória definida pelo Administrador. Por segurança,
+              crie sua nova senha pessoal para prosseguir.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -102,7 +107,8 @@ export function ChangePasswordForm({ userName, username }: ChangePasswordFormPro
           </CardContent>
           <CardFooter className="border-surface-container flex justify-center border-t pt-4">
             <p className="text-on-surface-variant text-xs text-center">
-              Após salvar sua nova senha, você terá acesso imediato às funcionalidades do sistema.
+              Após salvar sua nova senha, você terá acesso imediato às
+              funcionalidades do sistema.
             </p>
           </CardFooter>
         </Card>

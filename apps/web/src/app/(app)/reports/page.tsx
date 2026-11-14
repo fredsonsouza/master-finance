@@ -21,6 +21,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   if (
     user.role !== 'MANAGER' &&
     user.role !== 'ADMIN' &&
+    user.role !== 'HR' &&
     user.role !== 'FISCAL'
   ) {
     redirect('/')
@@ -57,7 +58,8 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   }
 
   // Se o usuário for ADMIN ou MANAGER, ele tem acesso ao relatório financeiro
-  const hasFinancialAccess = user.role === 'ADMIN' || user.role === 'MANAGER'
+  const hasFinancialAccess =
+    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'HR'
 
   try {
     if (hasFinancialAccess) {

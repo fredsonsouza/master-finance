@@ -56,13 +56,10 @@ export async function changeCashClosureStatus(app: FastifyInstance) {
         } as any)
 
         if (
-          ability.cannot(
-            'update',
-            {
-              __typename: 'CashClosure',
-              ...closure,
-            } as any
-          )
+          ability.cannot('update', {
+            __typename: 'CashClosure',
+            ...closure,
+          } as any)
         ) {
           throw new UnauthorizedError(
             'You are not allowed to update this cash closure.'

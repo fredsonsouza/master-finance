@@ -17,10 +17,17 @@ interface GetProfileResponse {
       | 'FISCAL'
       | 'INVENTORY'
       | 'ANALYST'
+      | 'HR'
     unitId: string | null
     unit?: {
       id: string
       name: string
+    } | null
+    employee?: {
+      id: string
+      registrationNumber: string
+      status: 'ACTIVE' | 'INACTIVE'
+      roleTitle: string
     } | null
   }
 }

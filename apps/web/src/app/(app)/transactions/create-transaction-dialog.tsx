@@ -358,7 +358,10 @@ export function CreateTransactionDialog({
             {/* Top configuration parameters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type" className="font-semibold text-xs text-on-surface">
+                <Label
+                  htmlFor="type"
+                  className="font-semibold text-xs text-on-surface"
+                >
                   Tipo de Movimentação *
                 </Label>
                 <select
@@ -378,7 +381,10 @@ export function CreateTransactionDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="unitId" className="font-semibold text-xs text-on-surface">
+                <Label
+                  htmlFor="unitId"
+                  className="font-semibold text-xs text-on-surface"
+                >
                   Unidade *
                 </Label>
                 <select
@@ -401,8 +407,13 @@ export function CreateTransactionDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="sectorId" className="font-semibold text-xs text-on-surface">
-                  {type === 'ENTRY' ? 'Setor Destino' : 'Setor Solicitante (Saída) *'}
+                <Label
+                  htmlFor="sectorId"
+                  className="font-semibold text-xs text-on-surface"
+                >
+                  {type === 'ENTRY'
+                    ? 'Setor Destino'
+                    : 'Setor Solicitante (Saída) *'}
                 </Label>
                 {type === 'ENTRY' ? (
                   <Input
@@ -435,7 +446,10 @@ export function CreateTransactionDialog({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date" className="font-semibold text-xs text-on-surface">
+                <Label
+                  htmlFor="date"
+                  className="font-semibold text-xs text-on-surface"
+                >
                   Data da Movimentação (Opcional)
                 </Label>
                 <DatePicker
@@ -555,7 +569,8 @@ export function CreateTransactionDialog({
 
               {addedItems.length === 0 ? (
                 <div className="border-2 border-dashed border-outline/50 rounded-lg p-6 text-center text-sm text-on-surface-variant bg-surface-container-lowest">
-                  Nenhum item adicionado ao lote ainda. Busque e clique em um item acima para adicioná-lo.
+                  Nenhum item adicionado ao lote ainda. Busque e clique em um
+                  item acima para adicioná-lo.
                 </div>
               ) : (
                 <div className="border border-outline rounded-lg overflow-hidden divide-y divide-outline/30">
@@ -571,7 +586,9 @@ export function CreateTransactionDialog({
 
                   <div className="max-h-52 overflow-y-auto divide-y divide-outline/20">
                     {addedItems.map((item) => {
-                      const catalogItem = catalogItems.find((i) => i.id === item.itemId)
+                      const catalogItem = catalogItems.find(
+                        (i) => i.id === item.itemId
+                      )
                       return (
                         <div
                           key={item.itemId}
@@ -647,7 +664,8 @@ export function CreateTransactionDialog({
                     Valor Total da Movimentação:
                   </span>
                   <span className="text-xs text-on-surface-variant">
-                    {addedItems.length} {addedItems.length === 1 ? 'item' : 'itens'} no lote
+                    {addedItems.length}{' '}
+                    {addedItems.length === 1 ? 'item' : 'itens'} no lote
                   </span>
                 </div>
                 <span className="text-xl font-bold text-primary">
@@ -704,7 +722,8 @@ export function CreateTransactionDialog({
               <div className="p-3 bg-surface-container rounded-md text-xs space-y-1">
                 {checkingStock ? (
                   <div className="flex items-center gap-2 text-on-surface-variant">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verificando estoque disponível...
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Verificando
+                    estoque disponível...
                   </div>
                 ) : (
                   <p className="font-semibold text-on-surface">
@@ -739,7 +758,10 @@ export function CreateTransactionDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sub-value" className="font-semibold text-xs flex items-center justify-between">
+              <Label
+                htmlFor="sub-value"
+                className="font-semibold text-xs flex items-center justify-between"
+              >
                 <span className="flex items-center gap-1">
                   <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                   Valor Unitário (R$) *
@@ -767,7 +789,9 @@ export function CreateTransactionDialog({
               <div className="flex items-start gap-1.5 p-2 rounded bg-surface-container text-xs text-on-surface-variant">
                 <Info className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
                 <span>
-                  O valor já vem preenchido com o preço cadastrado. Ao editar esse valor, o novo preço substituirá o valor base do item no catálogo para as próximas movimentações.
+                  O valor já vem preenchido com o preço cadastrado. Ao editar
+                  esse valor, o novo preço substituirá o valor base do item no
+                  catálogo para as próximas movimentações.
                 </span>
               </div>
             </div>

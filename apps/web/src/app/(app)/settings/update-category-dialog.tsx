@@ -65,7 +65,8 @@ export function UpdateCategoryDialog({
             <DialogTitle>Editar Categoria</DialogTitle>
           </div>
           <DialogDescription>
-            Altere o nome da categoria para corrigir a grafia ou atualizar a classificação.
+            Altere o nome da categoria para corrigir a grafia ou atualizar a
+            classificação.
           </DialogDescription>
         </DialogHeader>
 
