@@ -23,6 +23,14 @@ import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
 import {
+  composeFullAddress,
+  formatCepInput,
+  formatCpfInput,
+  formatLandlinePhoneInput,
+  formatMobilePhoneInput,
+  lookupAddressByCep,
+} from '@/utils/cep-lookup'
+import {
   Briefcase,
   Building2,
   CheckCircle2,
@@ -32,6 +40,7 @@ import {
   Filter,
   IdCard,
   Loader2,
+  MapPin,
   Pencil,
   Plus,
   Power,
@@ -161,15 +170,6 @@ function previewInitialsFromName(name: string): string {
     : (tokens[0]?.slice(0, 3) || 'EMP').padEnd(2, 'X')
 }
 
-function formatCpfInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 11)
-  if (digits.length <= 3) return digits
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`
-  if (digits.length <= 9)
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
-}
-
 function formatCurrencyBrl(value?: number | null): string {
   if (value === undefined || value === null) return 'R$ 0,00'
   return new Intl.NumberFormat('pt-BR', {
@@ -241,11 +241,11 @@ export function EmployeesContent({
   const [esocialCode, setEsocialCode] = useState('')
   const [cpf, setCpf] = useState('')
   const [rgNumber, setRgNumber] = useState('')
-  const [rgIssuer, setRgIssuer] = useState('')
+  const [rgIssuer, setRgIssuer] = useState('SSP/RR')
   const [rgIssueDate, setRgIssueDate] = useState('')
   const [ctpsNumber, setCtpsNumber] = useState('')
   const [ctpsSeries, setCtpsSeries] = useState('')
-  const [ctpsState, setCtpsState] = useState('SC')
+  const [ctpsState, setCtpsState] = useState('RR')
   const [ctpsIssueDate, setCtpsIssueDate] = useState('')
   const [pisNumber, setPisNumber] = useState('')
   const [pisRegistrationDate, setPisRegistrationDate] = useState('')
@@ -269,15 +269,21 @@ export function EmployeesContent({
   const [motherName, setMotherName] = useState('')
 
   const [zipCode, setZipCode] = useState('')
+  const [isLookingUpCep, setIsLookingUpCep] = useState(false)
+  const [addressStreet, setAddressStreet] = useState('')
+  const [addressNumber, setAddressNumber] = useState('')
+  const [addressNeighborhood, setAddressNeighborhood] = useState('')
+  const [addressCity, setAddressCity] = useState('Boa Vista')
+  const [addressState, setAddressState] = useState('RR')
   const [address, setAddress] = useState('')
   const [landlinePhone, setLandlinePhone] = useState('')
   const [mobilePhone, setMobilePhone] = useState('')
   const [email, setEmail] = useState('')
 
   const [employerName, setEmployerName] = useState('GERENCIACLIN LTDA')
-  const [employerCnpj, setEmployerCnpj] = useState('35.676.026/0001-23')
+  const [employerCnpj, setEmployerCnpj] = useState('59.162.564/0001-73')
   const [employerAddress, setEmployerAddress] = useState(
-    'R GETULIO VARGAS, 2117, CENTRO - SÃO FRANCISCO DO SUL/SC'
+    'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR'
   )
   const [roleTitle, setRoleTitle] = useState('')
   const [cboCode, setCboCode] = useState('')
@@ -362,6 +368,87 @@ export function EmployeesContent({
     })
   }
 
+  async function handleLookupCep(rawCep: string) {
+    const clean = rawCep.replace(/\D/g, '')
+    if (clean.length !== 8) {
+      toast.error('Informe um CEP válido com 8 dígitos (ex: 69300-000).')
+      return
+    }
+
+    setIsLookingUpCep(true)
+    try {
+      const result = await lookupAddressByCep(clean)
+      if (!result) {
+        toast.warning(
+          'CEP não encontrado na base dos Correios. Preencha o endereço manualmente.'
+        )
+        return
+      }
+
+      setZipCode(result.zipCode)
+      setAddressStreet(result.street)
+      setAddressNeighborhood(result.neighborhood)
+      setAddressCity(result.city || 'Boa Vista')
+      setAddressState(result.state || 'RR')
+
+      const composed = composeFullAddress({
+        street: result.street,
+        number: addressNumber,
+        complement: result.complement,
+        neighborhood: result.neighborhood,
+        city: result.city || 'Boa Vista',
+        state: result.state || 'RR',
+      })
+      if (composed) {
+        setAddress(composed)
+      }
+      toast.success('Endereço preenchido automaticamente via CEP!')
+    } finally {
+      setIsLookingUpCep(false)
+    }
+  }
+
+  function handleZipCodeChange(value: string) {
+    const masked = formatCepInput(value)
+    setZipCode(masked)
+    const digits = masked.replace(/\D/g, '')
+    if (digits.length === 8) {
+      handleLookupCep(digits)
+    }
+  }
+
+  function updateStructuredAddress(next: {
+    street?: string
+    number?: string
+    neighborhood?: string
+    city?: string
+    state?: string
+  }) {
+    const s = next.street !== undefined ? next.street : addressStreet
+    const n = next.number !== undefined ? next.number : addressNumber
+    const b =
+      next.neighborhood !== undefined ? next.neighborhood : addressNeighborhood
+    const c = next.city !== undefined ? next.city : addressCity
+    const uf = next.state !== undefined ? next.state : addressState
+
+    if (next.street !== undefined) setAddressStreet(s)
+    if (next.number !== undefined) setAddressNumber(n)
+    if (next.neighborhood !== undefined) setAddressNeighborhood(b)
+    if (next.city !== undefined) setAddressCity(c)
+    if (next.state !== undefined) setAddressState(uf)
+
+    const composed = composeFullAddress({
+      street: s,
+      number: n,
+      neighborhood: b,
+      city: c,
+      state: uf,
+    })
+    if (composed) {
+      setAddress(composed)
+    }
+  }
+
   function openCreateDialog() {
     setEditingEmployee(null)
     setActiveTab('PERSONAL')
@@ -369,11 +456,11 @@ export function EmployeesContent({
     setEsocialCode('')
     setCpf('')
     setRgNumber('')
-    setRgIssuer('SSP/SC')
+    setRgIssuer('SSP/RR')
     setRgIssueDate('')
     setCtpsNumber('')
     setCtpsSeries('')
-    setCtpsState('SC')
+    setCtpsState('RR')
     setCtpsIssueDate('')
     setPisNumber('')
     setPisRegistrationDate('')
@@ -391,18 +478,23 @@ export function EmployeesContent({
     setMaritalStatus('Solteiro(a)')
     setRaceColor('')
     setNationality('Brasileira')
-    setBirthPlace('')
+    setBirthPlace('Boa Vista/RR')
     setFatherName('')
     setMotherName('')
     setZipCode('')
+    setAddressStreet('')
+    setAddressNumber('')
+    setAddressNeighborhood('')
+    setAddressCity('Boa Vista')
+    setAddressState('RR')
     setAddress('')
     setLandlinePhone('')
     setMobilePhone('')
     setEmail('')
     setEmployerName('GERENCIACLIN LTDA')
-    setEmployerCnpj('35.676.026/0001-23')
+    setEmployerCnpj('59.162.564/0001-73')
     setEmployerAddress(
-      'R GETULIO VARGAS, 2117, CENTRO - SÃO FRANCISCO DO SUL/SC'
+      'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR'
     )
     setRoleTitle('')
     setCboCode('')
@@ -430,13 +522,13 @@ export function EmployeesContent({
     setActiveTab('PERSONAL')
     setFullName(emp.fullName)
     setEsocialCode(emp.esocialCode || '')
-    setCpf(emp.cpf)
+    setCpf(formatCpfInput(emp.cpf))
     setRgNumber(emp.rgNumber || '')
-    setRgIssuer(emp.rgIssuer || '')
+    setRgIssuer(emp.rgIssuer || 'SSP/RR')
     setRgIssueDate(toInputDate(emp.rgIssueDate))
     setCtpsNumber(emp.ctpsNumber || '')
     setCtpsSeries(emp.ctpsSeries || '')
-    setCtpsState(emp.ctpsState || 'SC')
+    setCtpsState(emp.ctpsState || 'RR')
     setCtpsIssueDate(toInputDate(emp.ctpsIssueDate))
     setPisNumber(emp.pisNumber || '')
     setPisRegistrationDate(toInputDate(emp.pisRegistrationDate))
@@ -454,17 +546,25 @@ export function EmployeesContent({
     setMaritalStatus(emp.maritalStatus || '')
     setRaceColor(emp.raceColor || '')
     setNationality(emp.nationality || 'Brasileira')
-    setBirthPlace(emp.birthPlace || '')
+    setBirthPlace(emp.birthPlace || 'Boa Vista/RR')
     setFatherName(emp.fatherName || '')
     setMotherName(emp.motherName || '')
-    setZipCode(emp.zipCode || '')
+    setZipCode(formatCepInput(emp.zipCode || ''))
+    setAddressStreet('')
+    setAddressNumber('')
+    setAddressNeighborhood('')
+    setAddressCity('Boa Vista')
+    setAddressState('RR')
     setAddress(emp.address || '')
-    setLandlinePhone(emp.landlinePhone || '')
-    setMobilePhone(emp.mobilePhone || '')
+    setLandlinePhone(formatLandlinePhoneInput(emp.landlinePhone || ''))
+    setMobilePhone(formatMobilePhoneInput(emp.mobilePhone || ''))
     setEmail(emp.email || '')
     setEmployerName(emp.employerName || 'GERENCIACLIN LTDA')
-    setEmployerCnpj(emp.employerCnpj || '35.676.026/0001-23')
-    setEmployerAddress(emp.employerAddress || '')
+    setEmployerCnpj(emp.employerCnpj || '59.162.564/0001-73')
+    setEmployerAddress(
+      emp.employerAddress ||
+        'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR'
+    )
     setRoleTitle(emp.roleTitle || '')
     setCboCode(emp.cboCode || '')
     setAdmissionDate(toInputDate(emp.admissionDate))
@@ -548,15 +648,16 @@ export function EmployeesContent({
         birthPlace: birthPlace.trim() || null,
         fatherName: fatherName.trim() || null,
         motherName: motherName.trim() || null,
-        zipCode: zipCode.trim() || null,
+        zipCode: formatCepInput(zipCode) || null,
         address: address.trim() || null,
-        landlinePhone: landlinePhone.trim() || null,
-        mobilePhone: mobilePhone.trim() || null,
+        landlinePhone: formatLandlinePhoneInput(landlinePhone) || null,
+        mobilePhone: formatMobilePhoneInput(mobilePhone) || null,
         email: email.trim() || null,
         employerName: employerName.trim() || 'GERENCIACLIN LTDA',
-        employerCnpj: employerCnpj.trim() || '35.676.026/0001-23',
+        employerCnpj: employerCnpj.trim() || '59.162.564/0001-73',
         employerAddress:
-          employerAddress.trim() || 'R GETULIO VARGAS, 2117, CENTRO',
+          employerAddress.trim() ||
+          'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR',
         roleTitle: roleTitle.trim(),
         cboCode: cboCode.trim() || null,
         admissionDate,
@@ -1171,7 +1272,7 @@ export function EmployeesContent({
                   <Input
                     value={birthPlace}
                     onChange={(e) => setBirthPlace(e.target.value)}
-                    placeholder="Ex: Joinville/SC"
+                    placeholder="Ex: Boa Vista/RR"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1204,26 +1305,118 @@ export function EmployeesContent({
               </div>
 
               <div className="border-t border-outline-variant/20 pt-3">
-                <h4 className="text-xs font-bold uppercase text-on-surface-variant mb-2">
-                  Endereço Residencial & Contato
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="space-y-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold uppercase text-on-surface-variant flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                    Endereço Residencial & Contato (Busca Automática via CEP)
+                  </h4>
+                  {isLookingUpCep && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Consultando CEP nos Correios...
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <div className="sm:col-span-3 space-y-1">
                     <Label>CEP</Label>
+                    <div className="flex gap-1.5">
+                      <Input
+                        value={zipCode}
+                        onChange={(e) => handleZipCodeChange(e.target.value)}
+                        maxLength={9}
+                        placeholder="69300-000"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleLookupCep(zipCode)}
+                        disabled={
+                          isLookingUpCep ||
+                          zipCode.replace(/\D/g, '').length !== 8
+                        }
+                        title="Buscar endereço pelo CEP"
+                        className="h-10 px-2.5 shrink-0 cursor-pointer"
+                      >
+                        {isLookingUpCep ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Search className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-5 space-y-1">
+                    <Label>Logradouro / Rua</Label>
                     <Input
-                      value={zipCode}
-                      onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="89240-000"
+                      value={addressStreet}
+                      onChange={(e) =>
+                        updateStructuredAddress({ street: e.target.value })
+                      }
+                      placeholder="Ex: Rua Ivone Pinheiro"
                     />
                   </div>
+
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label>Número</Label>
+                    <Input
+                      value={addressNumber}
+                      onChange={(e) =>
+                        updateStructuredAddress({ number: e.target.value })
+                      }
+                      placeholder="Ex: 1590"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label>UF</Label>
+                    <Input
+                      value={addressState}
+                      onChange={(e) =>
+                        updateStructuredAddress({
+                          state: e.target.value.toUpperCase(),
+                        })
+                      }
+                      maxLength={2}
+                      placeholder="RR"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mt-3">
+                  <div className="sm:col-span-4 space-y-1">
+                    <Label>Bairro</Label>
+                    <Input
+                      value={addressNeighborhood}
+                      onChange={(e) =>
+                        updateStructuredAddress({
+                          neighborhood: e.target.value,
+                        })
+                      }
+                      placeholder="Ex: Tancredo Neves"
+                    />
+                  </div>
+
                   <div className="sm:col-span-3 space-y-1">
-                    <Label>
-                      Endereço Completo (Rua, Nº, Bairro, Cidade/UF)
-                    </Label>
+                    <Label>Cidade</Label>
+                    <Input
+                      value={addressCity}
+                      onChange={(e) =>
+                        updateStructuredAddress({ city: e.target.value })
+                      }
+                      placeholder="Boa Vista"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-5 space-y-1">
+                    <Label>Endereço Consolidado (Impresso na Ficha)</Label>
                     <Input
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Ex: Rua Getúlio Vargas, 100, Centro - São Francisco do Sul/SC"
+                      placeholder="Ex: Rua Ivone Pinheiro, 1590, Tancredo Neves - Boa Vista/RR"
                     />
                   </div>
                 </div>
@@ -1233,16 +1426,24 @@ export function EmployeesContent({
                     <Label>Celular / WhatsApp</Label>
                     <Input
                       value={mobilePhone}
-                      onChange={(e) => setMobilePhone(e.target.value)}
-                      placeholder="(47) 99999-9999"
+                      onChange={(e) =>
+                        setMobilePhone(formatMobilePhoneInput(e.target.value))
+                      }
+                      maxLength={15}
+                      placeholder="(95) 99999-9999"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label>Telefone Fixo</Label>
                     <Input
                       value={landlinePhone}
-                      onChange={(e) => setLandlinePhone(e.target.value)}
-                      placeholder="(47) 3444-0000"
+                      onChange={(e) =>
+                        setLandlinePhone(
+                          formatLandlinePhoneInput(e.target.value)
+                        )
+                      }
+                      maxLength={14}
+                      placeholder="(95) 3623-0000"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1268,6 +1469,7 @@ export function EmployeesContent({
                   <Input
                     value={cpf}
                     onChange={(e) => setCpf(formatCpfInput(e.target.value))}
+                    maxLength={14}
                     placeholder="000.000.000-00"
                   />
                 </div>
@@ -1284,7 +1486,7 @@ export function EmployeesContent({
                   <Input
                     value={rgIssuer}
                     onChange={(e) => setRgIssuer(e.target.value)}
-                    placeholder="SSP/SC"
+                    placeholder="SSP/RR"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1318,9 +1520,9 @@ export function EmployeesContent({
                   <Label>UF CTPS</Label>
                   <Input
                     value={ctpsState}
-                    onChange={(e) => setCtpsState(e.target.value)}
+                    onChange={(e) => setCtpsState(e.target.value.toUpperCase())}
                     maxLength={2}
-                    placeholder="SC"
+                    placeholder="RR"
                   />
                 </div>
                 <div className="space-y-1">

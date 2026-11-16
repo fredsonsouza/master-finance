@@ -354,8 +354,9 @@ export function EmployeeDocumentPdfDocument({
                   GERENCIACLIN LTDA — MASTERCLIN
                 </Text>
                 <Text style={styles.companyDetail}>
-                  CNPJ: 35.676.026/0001-23 • R. Getúlio Vargas, 2117, Centro —
-                  São Francisco do Sul/SC
+                  CNPJ: {request.employee.employerCnpj || '59.162.564/0001-73'}{' '}
+                  • Rua Ivone Pinheiro, 1590, Sala 08, Tancredo Neves — Boa
+                  Vista/RR
                 </Text>
                 <Text style={styles.companyDetail}>
                   Departamento de Recursos Humanos & Gestão de Pessoas
@@ -501,12 +502,12 @@ export function EmployeeDocumentPdfDocument({
                 registrado(a) sob a matrícula{' '}
                 {request.employee.registrationNumber}, exerce a função de{' '}
                 {request.employee.roleTitle} junto à empresa GERENCIACLIN LTDA
-                (CNPJ 35.676.026/0001-23).
+                (CNPJ {request.employee.employerCnpj || '59.162.564/0001-73'}).
               </Text>
             )}
 
             <Text style={styles.dateLocationText}>
-              São Francisco do Sul/SC,{' '}
+              Boa Vista/RR,{' '}
               {formatDatePtBr(request.signedAt || request.createdAt)}.
             </Text>
           </View>

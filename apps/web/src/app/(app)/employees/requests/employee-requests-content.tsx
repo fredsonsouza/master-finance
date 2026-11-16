@@ -136,7 +136,7 @@ const DOCUMENT_TEMPLATES: DocumentTemplatePreset[] = [
     type: 'DECLARATION',
     title: 'Declaração de Vínculo Empregatício',
     buildContent: (emp) =>
-      `Declaramos para os devidos fins que ${emp?.fullName || '[NOME DO COLABORADOR]'}, inscrito(a) no CPF sob o nº ${emp?.cpf || '[CPF]'} e portador(a) da matrícula institucional ${emp?.registrationNumber || '[MATRÍCULA]'}, é colaborador(a) integrante do quadro efetivo da empresa GERENCIACLIN LTDA (CNPJ 35.676.026/0001-23), exercendo regularmente o cargo de ${emp?.roleTitle || '[CARGO]'}.\n\nPor ser expressão da verdade, firmamos a presente declaração eletronicamente para que produza seus efeitos legais.`,
+      `Declaramos para os devidos fins que ${emp?.fullName || '[NOME DO COLABORADOR]'}, inscrito(a) no CPF sob o nº ${emp?.cpf || '[CPF]'} e portador(a) da matrícula institucional ${emp?.registrationNumber || '[MATRÍCULA]'}, é colaborador(a) integrante do quadro efetivo da empresa GERENCIACLIN LTDA (CNPJ 59.162.564/0001-73), exercendo regularmente o cargo de ${emp?.roleTitle || '[CARGO]'}.\n\nPor ser expressão da verdade, firmamos a presente declaração eletronicamente para que produza seus efeitos legais.`,
   },
   {
     key: 'DECLARATION_HORARIO',
@@ -164,7 +164,7 @@ const DOCUMENT_TEMPLATES: DocumentTemplatePreset[] = [
     type: 'RECEIPT',
     title: 'Recibo de Pagamento / Adiantamento',
     buildContent: (emp) =>
-      `Recebi da empresa GERENCIACLIN LTDA, inscrita no CNPJ sob o nº 35.676.026/0001-23, a importância discriminada neste comprovante, referente ao pagamento / adiantamento concedido a mim, ${emp?.fullName || '[NOME DO COLABORADOR]'}, CPF ${emp?.cpf || '[CPF]'}, matrícula ${emp?.registrationNumber || '[MATRÍCULA]'}.\n\nPelo presente recibo, dou plena, geral e irrevogável quitação do valor recebido para nada mais reclamar a esse título.`,
+      `Recebi da empresa GERENCIACLIN LTDA, inscrita no CNPJ sob o nº 59.162.564/0001-73, a importância discriminada neste comprovante, referente ao pagamento / adiantamento concedido a mim, ${emp?.fullName || '[NOME DO COLABORADOR]'}, CPF ${emp?.cpf || '[CPF]'}, matrícula ${emp?.registrationNumber || '[MATRÍCULA]'}.\n\nPelo presente recibo, dou plena, geral e irrevogável quitação do valor recebido para nada mais reclamar a esse título.`,
   },
   {
     key: 'RECEIPT_EPI',
