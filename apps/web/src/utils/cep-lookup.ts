@@ -43,6 +43,54 @@ export function formatCpfInput(value: string): string {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`
 }
 
+/**
+ * Máscara padrão brasileira para PIS / PASEP / NIT (11 dígitos: 000.00000.00-0)
+ */
+export function formatPisInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 8) return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  if (digits.length <= 10) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 8)}.${digits.slice(8)}`
+  }
+  return `${digits.slice(0, 3)}.${digits.slice(3, 8)}.${digits.slice(8, 10)}-${digits.slice(10, 11)}`
+}
+
+/**
+ * Máscara padrão brasileira para Número da CTPS:
+ * - Até 7 dígitos: 0000000 (padrão CTPS Física e 7 primeiros dígitos da CTPS Digital)
+ * - 8 dígitos (com dígito verificador): 0000000-0
+ */
+export function formatCtpsNumberInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 7) return digits
+  return `${digits.slice(0, 7)}-${digits.slice(7, 8)}`
+}
+
+/**
+ * Máscara padrão brasileira para Série da CTPS (até 4 dígitos numéricos: 0000)
+ */
+export function formatCtpsSeriesInput(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 4)
+}
+
+/**
+ * Máscara padrão brasileira para Título de Eleitor (12 dígitos: 0000 0000 0000)
+ */
+export function formatVoterRegistrationInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 12)
+  if (digits.length <= 4) return digits
+  if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`
+  return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`
+}
+
+/**
+ * Máscara numérica para CNH (até 11 dígitos: 00000000000)
+ */
+export function formatCnhInput(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 11)
+}
+
 export function composeFullAddress(parts: {
   street?: string
   number?: string

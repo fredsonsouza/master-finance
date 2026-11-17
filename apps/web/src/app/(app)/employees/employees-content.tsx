@@ -25,9 +25,14 @@ import type { User } from '@/http/get-users'
 import {
   composeFullAddress,
   formatCepInput,
+  formatCnhInput,
   formatCpfInput,
+  formatCtpsNumberInput,
+  formatCtpsSeriesInput,
   formatLandlinePhoneInput,
   formatMobilePhoneInput,
+  formatPisInput,
+  formatVoterRegistrationInput,
   lookupAddressByCep,
 } from '@/utils/cep-lookup'
 import {
@@ -40,7 +45,6 @@ import {
   Filter,
   IdCard,
   Loader2,
-  MapPin,
   Pencil,
   Plus,
   Power,
@@ -526,20 +530,22 @@ export function EmployeesContent({
     setRgNumber(emp.rgNumber || '')
     setRgIssuer(emp.rgIssuer || 'SSP/RR')
     setRgIssueDate(toInputDate(emp.rgIssueDate))
-    setCtpsNumber(emp.ctpsNumber || '')
-    setCtpsSeries(emp.ctpsSeries || '')
+    setCtpsNumber(formatCtpsNumberInput(emp.ctpsNumber || ''))
+    setCtpsSeries(formatCtpsSeriesInput(emp.ctpsSeries || ''))
     setCtpsState(emp.ctpsState || 'RR')
     setCtpsIssueDate(toInputDate(emp.ctpsIssueDate))
-    setPisNumber(emp.pisNumber || '')
+    setPisNumber(formatPisInput(emp.pisNumber || ''))
     setPisRegistrationDate(toInputDate(emp.pisRegistrationDate))
     setPisBankName(emp.pisBankName || 'Caixa Econômica Federal')
     setPisBankBranch(emp.pisBankBranch || '')
-    setVoterRegistration(emp.voterRegistration || '')
+    setVoterRegistration(
+      formatVoterRegistrationInput(emp.voterRegistration || '')
+    )
     setVoterZone(emp.voterZone || '')
     setVoterSection(emp.voterSection || '')
     setMilitaryDoc(emp.militaryDoc || '')
     setMilitaryCategory(emp.militaryCategory || '')
-    setCnhNumber(emp.cnhNumber || '')
+    setCnhNumber(formatCnhInput(emp.cnhNumber || ''))
     setCnhCategory(emp.cnhCategory || '')
     setClassCouncilNumber(emp.classCouncilNumber || '')
     setBirthDate(toInputDate(emp.birthDate))
@@ -1176,7 +1182,7 @@ export function EmployeesContent({
 
       {/* Create / Edit Employee Modal */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl xl:max-w-6xl w-[95vw] sm:p-7 max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center justify-between gap-3 text-xl font-display">
               <span>
@@ -1197,7 +1203,7 @@ export function EmployeesContent({
           </DialogHeader>
 
           {/* Navigation Tabs */}
-          <div className="flex flex-wrap gap-1.5 border-b border-outline-variant/25 pb-2 mt-2">
+          <div className="flex flex-wrap gap-2 border-b border-outline-variant/25 pb-3 mt-1">
             {(
               [
                 { id: 'PERSONAL', label: '1. Dados Pessoais & Endereço' },
@@ -1211,7 +1217,7 @@ export function EmployeesContent({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                   activeTab === tab.id
                     ? 'bg-primary text-on-primary shadow-sm'
                     : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
@@ -1224,9 +1230,9 @@ export function EmployeesContent({
 
           {/* TAB 1: DADOS PESSOAIS & ENDEREÇO */}
           {activeTab === 'PERSONAL' && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2 space-y-1">
+            <div className="space-y-5 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                <div className="sm:col-span-2 flex flex-col gap-2">
                   <Label>Nome Completo do Empregado *</Label>
                   <Input
                     value={fullName}
@@ -1234,7 +1240,7 @@ export function EmployeesContent({
                     placeholder="Ex: JOÃO SILVA SANTOS"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Data de Nascimento</Label>
                   <Input
                     type="date"
@@ -1244,13 +1250,13 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Estado Civil</Label>
                   <select
                     value={maritalStatus}
                     onChange={(e) => setMaritalStatus(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                    className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                   >
                     <option value="Solteiro(a)">Solteiro(a)</option>
                     <option value="Casado(a)">Casado(a)</option>
@@ -1259,7 +1265,7 @@ export function EmployeesContent({
                     <option value="Viúvo(a)">Viúvo(a)</option>
                   </select>
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Cor / Raça</Label>
                   <Input
                     value={raceColor}
@@ -1267,7 +1273,7 @@ export function EmployeesContent({
                     placeholder="Ex: Branca, Parda..."
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Naturalidade (Cidade/UF)</Label>
                   <Input
                     value={birthPlace}
@@ -1275,7 +1281,7 @@ export function EmployeesContent({
                     placeholder="Ex: Boa Vista/RR"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Nacionalidade</Label>
                   <Input
                     value={nationality}
@@ -1285,8 +1291,8 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Filiação — Nome do Pai</Label>
                   <Input
                     value={fatherName}
@@ -1294,7 +1300,7 @@ export function EmployeesContent({
                     placeholder="Nome completo do pai"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Filiação — Nome da Mãe</Label>
                   <Input
                     value={motherName}
@@ -1304,23 +1310,18 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="border-t border-outline-variant/20 pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-xs font-bold uppercase text-on-surface-variant flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-primary" />
-                    Endereço Residencial & Contato (Busca Automática via CEP)
-                  </h4>
-                  {isLookingUpCep && (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-primary">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Consultando CEP nos Correios...
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                  <div className="sm:col-span-3 space-y-1">
-                    <Label>CEP</Label>
+              <div className="border-t border-outline-variant/20 pt-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-x-4 gap-y-4">
+                  <div className="sm:col-span-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <Label>CEP</Label>
+                      {isLookingUpCep && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Buscando...
+                        </span>
+                      )}
+                    </div>
                     <div className="flex gap-1.5">
                       <Input
                         value={zipCode}
@@ -1349,7 +1350,7 @@ export function EmployeesContent({
                     </div>
                   </div>
 
-                  <div className="sm:col-span-5 space-y-1">
+                  <div className="sm:col-span-5 flex flex-col gap-2">
                     <Label>Logradouro / Rua</Label>
                     <Input
                       value={addressStreet}
@@ -1360,7 +1361,7 @@ export function EmployeesContent({
                     />
                   </div>
 
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-2 flex flex-col gap-2">
                     <Label>Número</Label>
                     <Input
                       value={addressNumber}
@@ -1371,7 +1372,7 @@ export function EmployeesContent({
                     />
                   </div>
 
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-2 flex flex-col gap-2">
                     <Label>UF</Label>
                     <Input
                       value={addressState}
@@ -1386,8 +1387,8 @@ export function EmployeesContent({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mt-3">
-                  <div className="sm:col-span-4 space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-x-4 gap-y-4">
+                  <div className="sm:col-span-4 flex flex-col gap-2">
                     <Label>Bairro</Label>
                     <Input
                       value={addressNeighborhood}
@@ -1400,7 +1401,7 @@ export function EmployeesContent({
                     />
                   </div>
 
-                  <div className="sm:col-span-3 space-y-1">
+                  <div className="sm:col-span-3 flex flex-col gap-2">
                     <Label>Cidade</Label>
                     <Input
                       value={addressCity}
@@ -1411,7 +1412,7 @@ export function EmployeesContent({
                     />
                   </div>
 
-                  <div className="sm:col-span-5 space-y-1">
+                  <div className="sm:col-span-5 flex flex-col gap-2">
                     <Label>Endereço Consolidado (Impresso na Ficha)</Label>
                     <Input
                       value={address}
@@ -1421,8 +1422,8 @@ export function EmployeesContent({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                  <div className="flex flex-col gap-2">
                     <Label>Celular / WhatsApp</Label>
                     <Input
                       value={mobilePhone}
@@ -1433,7 +1434,7 @@ export function EmployeesContent({
                       placeholder="(95) 99999-9999"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-2">
                     <Label>Telefone Fixo</Label>
                     <Input
                       value={landlinePhone}
@@ -1446,7 +1447,7 @@ export function EmployeesContent({
                       placeholder="(95) 3623-0000"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-2">
                     <Label>E-mail</Label>
                     <Input
                       type="email"
@@ -1462,9 +1463,9 @@ export function EmployeesContent({
 
           {/* TAB 2: DOCUMENTOS */}
           {activeTab === 'DOCUMENTS' && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+            <div className="space-y-5 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>CPF *</Label>
                   <Input
                     value={cpf}
@@ -1473,7 +1474,7 @@ export function EmployeesContent({
                     placeholder="000.000.000-00"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Cédula de Identidade (RG)</Label>
                   <Input
                     value={rgNumber}
@@ -1481,7 +1482,7 @@ export function EmployeesContent({
                     placeholder="Número do RG"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Órgão Emissor / UF</Label>
                   <Input
                     value={rgIssuer}
@@ -1489,7 +1490,7 @@ export function EmployeesContent({
                     placeholder="SSP/RR"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Emissão RG</Label>
                   <Input
                     type="date"
@@ -1499,24 +1500,30 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>CTPS (Carteira Profissional)</Label>
                   <Input
                     value={ctpsNumber}
-                    onChange={(e) => setCtpsNumber(e.target.value)}
-                    placeholder="Nº da CTPS"
+                    onChange={(e) =>
+                      setCtpsNumber(formatCtpsNumberInput(e.target.value))
+                    }
+                    maxLength={9}
+                    placeholder="0000000-0"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Série CTPS</Label>
                   <Input
                     value={ctpsSeries}
-                    onChange={(e) => setCtpsSeries(e.target.value)}
-                    placeholder="Série"
+                    onChange={(e) =>
+                      setCtpsSeries(formatCtpsSeriesInput(e.target.value))
+                    }
+                    maxLength={4}
+                    placeholder="0000"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>UF CTPS</Label>
                   <Input
                     value={ctpsState}
@@ -1525,7 +1532,7 @@ export function EmployeesContent({
                     placeholder="RR"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Expedição CTPS</Label>
                   <Input
                     type="date"
@@ -1535,16 +1542,19 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>PIS / PASEP (NIT)</Label>
                   <Input
                     value={pisNumber}
-                    onChange={(e) => setPisNumber(e.target.value)}
+                    onChange={(e) =>
+                      setPisNumber(formatPisInput(e.target.value))
+                    }
+                    maxLength={14}
                     placeholder="000.00000.00-0"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Data de Cadastro no PIS</Label>
                   <Input
                     type="date"
@@ -1552,7 +1562,7 @@ export function EmployeesContent({
                     onChange={(e) => setPisRegistrationDate(e.target.value)}
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Banco PIS</Label>
                   <Input
                     value={pisBankName}
@@ -1560,7 +1570,7 @@ export function EmployeesContent({
                     placeholder="Caixa Econômica Federal"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Agência PIS</Label>
                   <Input
                     value={pisBankBranch}
@@ -1570,16 +1580,21 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Título de Eleitor</Label>
                   <Input
                     value={voterRegistration}
-                    onChange={(e) => setVoterRegistration(e.target.value)}
-                    placeholder="Nº do Título"
+                    onChange={(e) =>
+                      setVoterRegistration(
+                        formatVoterRegistrationInput(e.target.value)
+                      )
+                    }
+                    maxLength={14}
+                    placeholder="0000 0000 0000"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Zona Eleitoral</Label>
                   <Input
                     value={voterZone}
@@ -1587,7 +1602,7 @@ export function EmployeesContent({
                     placeholder="Zona"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Seção Eleitoral</Label>
                   <Input
                     value={voterSection}
@@ -1597,8 +1612,8 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Certificado Militar</Label>
                   <Input
                     value={militaryDoc}
@@ -1606,23 +1621,29 @@ export function EmployeesContent({
                     placeholder="Nº Reservista"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>CNH (Habilitação)</Label>
                   <Input
                     value={cnhNumber}
-                    onChange={(e) => setCnhNumber(e.target.value)}
-                    placeholder="Nº Registro CNH"
+                    onChange={(e) =>
+                      setCnhNumber(formatCnhInput(e.target.value))
+                    }
+                    maxLength={11}
+                    placeholder="00000000000"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Categoria CNH</Label>
                   <Input
                     value={cnhCategory}
-                    onChange={(e) => setCnhCategory(e.target.value)}
+                    onChange={(e) =>
+                      setCnhCategory(e.target.value.toUpperCase())
+                    }
+                    maxLength={5}
                     placeholder="Ex: AB, B"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Conselho de Classe (COREN/CRF/etc.)</Label>
                   <Input
                     value={classCouncilNumber}
@@ -1636,9 +1657,9 @@ export function EmployeesContent({
 
           {/* TAB 3: CONTRATO, LOTAÇÃO & FGTS */}
           {activeTab === 'CONTRACT' && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="sm:col-span-2 space-y-1">
+            <div className="space-y-5 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="sm:col-span-2 flex flex-col gap-2">
                   <Label>Cargo / Função Inicial *</Label>
                   <Input
                     value={roleTitle}
@@ -1646,7 +1667,7 @@ export function EmployeesContent({
                     placeholder="Ex: Recepcionista, Biomédico(a), Técnico de Enfermagem..."
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Código CBO</Label>
                   <Input
                     value={cboCode}
@@ -1654,7 +1675,7 @@ export function EmployeesContent({
                     placeholder="Ex: 4221-05"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Matrícula eSocial</Label>
                   <Input
                     value={esocialCode}
@@ -1664,8 +1685,8 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Data de Admissão *</Label>
                   <Input
                     type="date"
@@ -1673,7 +1694,7 @@ export function EmployeesContent({
                     onChange={(e) => setAdmissionDate(e.target.value)}
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Salário Inicial (R$) *</Label>
                   <Input
                     type="number"
@@ -1683,12 +1704,12 @@ export function EmployeesContent({
                     placeholder="2500.00"
                   />
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Tipo de Pagamento</Label>
                   <select
                     value={paymentType}
                     onChange={(e) => setPaymentType(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                    className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                   >
                     <option value="Mensal">Mensal</option>
                     <option value="Quinzenal">Quinzenal</option>
@@ -1696,7 +1717,7 @@ export function EmployeesContent({
                     <option value="Horista">Horista</option>
                   </select>
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Carga Horária Semanal</Label>
                   <Input
                     value={workHoursSummary}
@@ -1706,13 +1727,13 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                <div className="flex flex-col gap-2">
                   <Label>Unidade de Lotação</Label>
                   <select
                     value={unitId}
                     onChange={(e) => setUnitId(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                    className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                   >
                     <option value="">Selecione uma unidade...</option>
                     {units.map((u) => (
@@ -1722,12 +1743,12 @@ export function EmployeesContent({
                     ))}
                   </select>
                 </div>
-                <div className="space-y-1">
+                <div className="flex flex-col gap-2">
                   <Label>Setor / Departamento</Label>
                   <select
                     value={sectorId}
                     onChange={(e) => setSectorId(e.target.value)}
-                    className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                    className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                   >
                     <option value="">Selecione um setor...</option>
                     {sectors.map((s) => (
@@ -1739,12 +1760,9 @@ export function EmployeesContent({
                 </div>
               </div>
 
-              <div className="border-t border-outline-variant/20 pt-3">
-                <h4 className="text-xs font-bold uppercase text-on-surface-variant mb-2">
-                  Fundo de Garantia do Tempo de Serviço (FGTS) & Empregador
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="space-y-1">
+              <div className="border-t border-outline-variant/20 pt-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                  <div className="flex flex-col gap-2">
                     <Label>Data de Opção FGTS</Label>
                     <Input
                       type="date"
@@ -1752,7 +1770,7 @@ export function EmployeesContent({
                       onChange={(e) => setFgtsOptionDate(e.target.value)}
                     />
                   </div>
-                  <div className="sm:col-span-2 space-y-1">
+                  <div className="sm:col-span-2 flex flex-col gap-2">
                     <Label>Banco Depositário FGTS</Label>
                     <Input
                       value={fgtsBankAccount}
@@ -1762,22 +1780,22 @@ export function EmployeesContent({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                  <div className="flex flex-col gap-2">
                     <Label>Razão Social do Empregador</Label>
                     <Input
                       value={employerName}
                       onChange={(e) => setEmployerName(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-2">
                     <Label>CNPJ do Empregador</Label>
                     <Input
                       value={employerCnpj}
                       onChange={(e) => setEmployerCnpj(e.target.value)}
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="flex flex-col gap-2">
                     <Label>Endereço do Empregador</Label>
                     <Input
                       value={employerAddress}
@@ -1791,9 +1809,9 @@ export function EmployeesContent({
 
           {/* TAB 4: HORÁRIO SEMANAL & DEPENDENTES */}
           {activeTab === 'SCHEDULE' && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-5 py-3">
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold uppercase text-on-surface-variant">
                     Quadro de Horário de Trabalho Semanal
                   </h4>
@@ -1886,8 +1904,8 @@ export function EmployeesContent({
               </div>
 
               {/* Dependentes / Beneficiários */}
-              <div className="border-t border-outline-variant/20 pt-3">
-                <div className="flex items-center justify-between mb-2">
+              <div className="border-t border-outline-variant/20 pt-4">
+                <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold uppercase text-on-surface-variant">
                     Relação de Beneficiários / Dependentes (Salário-Família /
                     IRRF)
@@ -1909,11 +1927,11 @@ export function EmployeesContent({
                     Nenhum dependente cadastrado.
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {beneficiaries.map((dep, idx) => (
                       <div
                         key={idx}
-                        className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center bg-surface-container-lowest p-2 rounded-lg border border-outline-variant/20"
+                        className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center bg-surface-container-lowest p-2.5 rounded-lg border border-outline-variant/20"
                       >
                         <div className="sm:col-span-5">
                           <Input
@@ -1922,7 +1940,7 @@ export function EmployeesContent({
                               updateBeneficiary(idx, 'name', e.target.value)
                             }
                             placeholder="Nome completo do dependente"
-                            className="h-8 text-xs"
+                            className="h-9 text-xs"
                           />
                         </div>
                         <div className="sm:col-span-3">
@@ -1936,7 +1954,7 @@ export function EmployeesContent({
                                 e.target.value
                               )
                             }
-                            className="h-8 text-xs"
+                            className="h-9 text-xs"
                           />
                         </div>
                         <div className="sm:col-span-3">
@@ -1950,7 +1968,7 @@ export function EmployeesContent({
                               )
                             }
                             placeholder="Parentesco (Ex: Filho(a))"
-                            className="h-8 text-xs"
+                            className="h-9 text-xs"
                           />
                         </div>
                         <div className="sm:col-span-1 flex justify-end">
@@ -1971,7 +1989,7 @@ export function EmployeesContent({
               </div>
 
               {/* Observações Gerais */}
-              <div className="space-y-1">
+              <div className="flex flex-col gap-2">
                 <Label>Observações Gerais da Ficha de Registro</Label>
                 <Textarea
                   value={generalObservations}
@@ -1985,7 +2003,7 @@ export function EmployeesContent({
 
           {/* TAB 5: ACESSO AO SISTEMA (LOGIN HÍBRIDO) */}
           {activeTab === 'ACCESS' && (
-            <div className="space-y-4 py-2">
+            <div className="space-y-5 py-3">
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2">
                 <div className="flex items-center gap-2 text-primary font-semibold text-sm">
                   <ShieldCheck className="h-4 w-4" />
@@ -2002,7 +2020,7 @@ export function EmployeesContent({
                 </p>
               </div>
 
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 <Label>Vincular a um Usuário Existente (Opcional)</Label>
                 <select
                   value={userId}
@@ -2010,7 +2028,7 @@ export function EmployeesContent({
                     setUserId(e.target.value)
                     if (e.target.value) setCreateUserAccount(false)
                   }}
-                  className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                  className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                 >
                   <option value="">Nenhum usuário existente selecionado</option>
                   {users.map((u) => (
@@ -2022,7 +2040,7 @@ export function EmployeesContent({
               </div>
 
               {!editingEmployee && !userId && (
-                <div className="border border-outline-variant/25 rounded-xl p-4 space-y-3">
+                <div className="border border-outline-variant/25 rounded-xl p-4 space-y-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -2037,8 +2055,8 @@ export function EmployeesContent({
                   </label>
 
                   {createUserAccount && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                      <div className="space-y-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 pt-1">
+                      <div className="flex flex-col gap-2">
                         <Label>Senha Inicial</Label>
                         <Input
                           type="password"
@@ -2047,7 +2065,7 @@ export function EmployeesContent({
                           placeholder="Padrão: 6 primeiros dígitos do CPF"
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="flex flex-col gap-2">
                         <Label>Perfil de Permissão (Role)</Label>
                         <select
                           value={accountRole}
@@ -2061,7 +2079,7 @@ export function EmployeesContent({
                                 | 'MANAGER'
                             )
                           }
-                          className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
+                          className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                         >
                           <option value="EMPLOYEE">
                             Colaborador / Recepcionista (EMPLOYEE)
