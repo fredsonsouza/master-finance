@@ -40,6 +40,7 @@ import {
   Building2,
   CheckCircle2,
   Copy,
+  Eye,
   FileDown,
   FileSpreadsheet,
   Filter,
@@ -201,6 +202,47 @@ function toInputDate(value?: string | null): string {
 
 type FormTab = 'PERSONAL' | 'DOCUMENTS' | 'CONTRACT' | 'SCHEDULE' | 'ACCESS'
 
+function CopyableField({
+  label,
+  value,
+  className,
+}: {
+  label: string
+  value?: string | null
+  className?: string
+}) {
+  const displayValue = value && value.trim().length > 0 ? value : '-'
+  const canCopy = displayValue !== '-'
+
+  return (
+    <div className={`flex flex-col gap-2 ${className || ''}`}>
+      <Label className="text-xs text-on-surface-variant">{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <Input
+          readOnly
+          value={displayValue}
+          className="h-9 bg-surface-container-lowest text-xs font-medium cursor-default"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={!canCopy}
+          onClick={() => {
+            if (!canCopy) return
+            navigator.clipboard.writeText(displayValue)
+            toast.success(`${label} copiado: ${displayValue}`)
+          }}
+          title={`Copiar ${label}`}
+          className="h-9 w-9 p-0 shrink-0 cursor-pointer"
+        >
+          <Copy className="h-3.5 w-3.5 text-primary" />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export function EmployeesContent({
   initialEmployees,
   initialSummary,
@@ -222,6 +264,12 @@ export function EmployeesContent({
   const [sectorFilter, setSectorFilter] = useState<string>('ALL')
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  // View Details Modal State
+  const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null)
+  const [viewTab, setViewTab] = useState<
+    'PERSONAL' | 'DOCUMENTS' | 'CONTRACT' | 'SCHEDULE'
+  >('PERSONAL')
 
   // Create / Edit Dialog State
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -871,116 +919,112 @@ export function EmployeesContent({
         </Card>
       </div>
 
-      {/* Filter Bar & Actions */}
+      {/* Top Action Buttons (above search & filters) */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <Link href="/employees/requests">
+          <Button variant="outline" className="gap-2 cursor-pointer">
+            <FileSpreadsheet className="h-4 w-4 text-primary" />
+            Solicitações & Documentos
+          </Button>
+        </Link>
+        <Button onClick={openCreateDialog} className="gap-2 cursor-pointer">
+          <UserPlus className="h-4 w-4" />
+          Novo Colaborador
+        </Button>
+      </div>
+
+      {/* Filter Bar */}
       <Card className="border-outline-variant/20 bg-surface shadow-sm">
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-            <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') loadEmployees()
-                  }}
-                  placeholder="Buscar por Matrícula (ex: MASTER-JSS0001), Nome ou CPF..."
-                  className="pl-9"
-                />
-              </div>
-
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  const val = e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE'
-                  setStatusFilter(val)
-                  loadEmployees({ status: val })
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') loadEmployees()
                 }}
-                className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-              >
-                <option value="ALL">Todos os Status</option>
-                <option value="ACTIVE">Somente Ativos</option>
-                <option value="INACTIVE">Somente Inativos</option>
-              </select>
+                placeholder="Buscar por Matrícula (ex: MASTER-JSS0001), Nome ou CPF..."
+                className="pl-9"
+              />
+            </div>
 
-              <select
-                value={unitFilter}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setUnitFilter(val)
-                  loadEmployees({ unitId: val })
-                }}
-                className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-              >
-                <option value="ALL">Todas as Unidades</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                const val = e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE'
+                setStatusFilter(val)
+                loadEmployees({ status: val })
+              }}
+              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
+            >
+              <option value="ALL">Todos os Status</option>
+              <option value="ACTIVE">Somente Ativos</option>
+              <option value="INACTIVE">Somente Inativos</option>
+            </select>
 
-              <select
-                value={sectorFilter}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setSectorFilter(val)
-                  loadEmployees({ sectorId: val })
-                }}
-                className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-              >
-                <option value="ALL">Todos os Setores</option>
-                {sectors.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+            <select
+              value={unitFilter}
+              onChange={(e) => {
+                const val = e.target.value
+                setUnitFilter(val)
+                loadEmployees({ unitId: val })
+              }}
+              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
+            >
+              <option value="ALL">Todas as Unidades</option>
+              {units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
 
-              <Button
-                variant="outline"
-                onClick={() => loadEmployees()}
-                disabled={isLoadingList}
-                className="gap-1.5 cursor-pointer"
-              >
-                {isLoadingList ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Filter className="h-4 w-4" />
-                )}
-                Filtrar
-              </Button>
+            <select
+              value={sectorFilter}
+              onChange={(e) => {
+                const val = e.target.value
+                setSectorFilter(val)
+                loadEmployees({ sectorId: val })
+              }}
+              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
+            >
+              <option value="ALL">Todos os Setores</option>
+              {sectors.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
 
-              {(search ||
-                statusFilter !== 'ALL' ||
-                unitFilter !== 'ALL' ||
-                sectorFilter !== 'ALL') && (
-                <Button
-                  variant="ghost"
-                  onClick={handleResetFilters}
-                  className="gap-1.5 text-xs cursor-pointer"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Limpar
-                </Button>
+            <Button
+              variant="outline"
+              onClick={() => loadEmployees()}
+              disabled={isLoadingList}
+              className="gap-1.5 cursor-pointer"
+            >
+              {isLoadingList ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Filter className="h-4 w-4" />
               )}
-            </div>
+              Filtrar
+            </Button>
 
-            <div className="flex items-center gap-2">
-              <Link href="/employees/requests">
-                <Button variant="outline" className="gap-2 cursor-pointer">
-                  <FileSpreadsheet className="h-4 w-4 text-primary" />
-                  Solicitações & Documentos
-                </Button>
-              </Link>
+            {(search ||
+              statusFilter !== 'ALL' ||
+              unitFilter !== 'ALL' ||
+              sectorFilter !== 'ALL') && (
               <Button
-                onClick={openCreateDialog}
-                className="gap-2 cursor-pointer"
+                variant="ghost"
+                onClick={handleResetFilters}
+                className="gap-1.5 text-xs cursor-pointer"
               >
-                <UserPlus className="h-4 w-4" />
-                Novo Colaborador
+                <RotateCcw className="h-3.5 w-3.5" />
+                Limpar
               </Button>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -994,10 +1038,7 @@ export function EmployeesContent({
                 <th className="py-3.5 px-4 font-semibold">Matrícula / Nº</th>
                 <th className="py-3.5 px-4 font-semibold">Colaborador</th>
                 <th className="py-3.5 px-4 font-semibold">Cargo & Lotação</th>
-                <th className="py-3.5 px-4 font-semibold">
-                  Admissão & Salário
-                </th>
-                <th className="py-3.5 px-4 font-semibold">Acesso ao Sistema</th>
+                <th className="py-3.5 px-4 font-semibold">Admissão</th>
                 <th className="py-3.5 px-4 font-semibold">Status</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Ações</th>
               </tr>
@@ -1006,7 +1047,7 @@ export function EmployeesContent({
               {employees.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="py-12 text-center text-on-surface-variant"
                   >
                     Nenhum colaborador encontrado com os filtros selecionados.
@@ -1030,33 +1071,43 @@ export function EmployeesContent({
                             handleCopyRegistration(emp.registrationNumber)
                           }
                           title="Copiar Matrícula"
-                          className="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary cursor-pointer"
+                          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewTab('PERSONAL')
+                            setViewingEmployee(emp)
+                          }}
+                          title="Visualizar todos os dados do colaborador"
+                          className="p-1.5 rounded-md hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                       </div>
-                      {emp.esocialCode && (
-                        <div className="text-[11px] text-on-surface-variant mt-1">
-                          eSocial: {emp.esocialCode}
-                        </div>
-                      )}
                     </td>
 
                     <td className="py-3.5 px-4 align-middle">
                       <div className="font-semibold text-on-surface">
                         {emp.fullName}
                       </div>
-                      <div className="text-xs text-on-surface-variant">
-                        CPF: {emp.cpf}
-                        {emp.pisNumber ? ` • PIS: ${emp.pisNumber}` : ''}
+                      <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">
+                        <span>CPF: {formatCpfInput(emp.cpf)}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const formattedCpf = formatCpfInput(emp.cpf)
+                            navigator.clipboard.writeText(formattedCpf)
+                            toast.success(`CPF ${formattedCpf} copiado!`)
+                          }}
+                          title="Copiar CPF"
+                          className="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </button>
                       </div>
-                      {(emp.mobilePhone || emp.email) && (
-                        <div className="text-[11px] text-on-surface-variant/80 mt-0.5">
-                          {[emp.mobilePhone, emp.email]
-                            .filter(Boolean)
-                            .join(' • ')}
-                        </div>
-                      )}
                     </td>
 
                     <td className="py-3.5 px-4 align-middle">
@@ -1067,7 +1118,6 @@ export function EmployeesContent({
                       <div className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
                         <Building2 className="h-3 w-3" />
                         {emp.unit?.name || 'Sem unidade'}
-                        {emp.sector?.name ? ` • ${emp.sector.name}` : ''}
                       </div>
                     </td>
 
@@ -1075,31 +1125,9 @@ export function EmployeesContent({
                       <div className="font-medium text-on-surface">
                         {formatDateBr(emp.admissionDate)}
                       </div>
-                      <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-                        {formatCurrencyBrl(emp.salary)} (
-                        {emp.paymentType || 'Mensal'})
-                      </div>
-                      <div className="text-[11px] text-on-surface-variant">
+                      <div className="text-xs text-on-surface-variant mt-0.5">
                         {emp.workHoursSummary || '44h semanais'}
                       </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 align-middle">
-                      {emp.user ? (
-                        <div>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-xs font-medium text-sky-700 dark:text-sky-300">
-                            <ShieldCheck className="h-3 w-3" />@
-                            {emp.user.username}
-                          </span>
-                          <div className="text-[11px] text-on-surface-variant mt-0.5">
-                            Perfil: {emp.user.role}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-on-surface-variant italic">
-                          Sem conta vinculada
-                        </span>
-                      )}
                     </td>
 
                     <td className="py-3.5 px-4 align-middle">
@@ -1179,6 +1207,459 @@ export function EmployeesContent({
           </table>
         </div>
       </Card>
+
+      {/* View All Employee Data Modal (with Copy button on every field) */}
+      <Dialog
+        open={Boolean(viewingEmployee)}
+        onOpenChange={(open) => !open && setViewingEmployee(null)}
+      >
+        <DialogContent className="max-w-5xl xl:max-w-6xl w-[95vw] sm:p-7 max-h-[92vh] overflow-y-auto">
+          {viewingEmployee && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex flex-wrap items-center justify-between gap-3 text-xl font-display">
+                  <span>
+                    Ficha Completa do Colaborador — {viewingEmployee.fullName}
+                  </span>
+                  <span className="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1 font-mono text-xs font-bold text-primary border border-primary/20">
+                    <IdCard className="h-4 w-4 shrink-0" />
+                    {viewingEmployee.registrationNumber}
+                  </span>
+                </DialogTitle>
+                <DialogDescription>
+                  Visualize todos os dados cadastrais do colaborador. Clique no
+                  ícone ao lado de qualquer campo para copiar seu conteúdo para
+                  a área de transferência.
+                </DialogDescription>
+              </DialogHeader>
+
+              {/* View Navigation Tabs */}
+              <div className="flex flex-wrap gap-2 border-b border-outline-variant/25 pb-3 mt-1">
+                {(
+                  [
+                    {
+                      id: 'PERSONAL',
+                      label: '1. Dados Pessoais & Endereço',
+                    },
+                    {
+                      id: 'DOCUMENTS',
+                      label: '2. Documentos (CPF/CTPS/PIS)',
+                    },
+                    {
+                      id: 'CONTRACT',
+                      label: '3. Contrato, Lotação & FGTS',
+                    },
+                    {
+                      id: 'SCHEDULE',
+                      label: '4. Horário, Dependentes & Observações',
+                    },
+                  ] as const
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setViewTab(tab.id)}
+                    className={`px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      viewTab === tab.id
+                        ? 'bg-primary text-on-primary shadow-sm'
+                        : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {viewTab === 'PERSONAL' && (
+                <div className="space-y-5 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Matrícula"
+                      value={viewingEmployee.registrationNumber}
+                    />
+                    <CopyableField
+                      label="Nome Completo"
+                      value={viewingEmployee.fullName}
+                      className="sm:col-span-2"
+                    />
+                    <CopyableField
+                      label="Data de Nascimento"
+                      value={formatDateBr(viewingEmployee.birthDate)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Estado Civil"
+                      value={viewingEmployee.maritalStatus}
+                    />
+                    <CopyableField
+                      label="Cor / Raça"
+                      value={viewingEmployee.raceColor}
+                    />
+                    <CopyableField
+                      label="Naturalidade (Cidade/UF)"
+                      value={viewingEmployee.birthPlace}
+                    />
+                    <CopyableField
+                      label="Nacionalidade"
+                      value={viewingEmployee.nationality}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Filiação — Nome do Pai"
+                      value={viewingEmployee.fatherName}
+                    />
+                    <CopyableField
+                      label="Filiação — Nome da Mãe"
+                      value={viewingEmployee.motherName}
+                    />
+                  </div>
+
+                  <div className="border-t border-outline-variant/20 pt-5 space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                      <CopyableField
+                        label="CEP"
+                        value={
+                          viewingEmployee.zipCode
+                            ? formatCepInput(viewingEmployee.zipCode)
+                            : null
+                        }
+                      />
+                      <CopyableField
+                        label="Endereço Residencial Completo"
+                        value={viewingEmployee.address}
+                        className="sm:col-span-3"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                      <CopyableField
+                        label="Celular / WhatsApp"
+                        value={
+                          viewingEmployee.mobilePhone
+                            ? formatMobilePhoneInput(
+                                viewingEmployee.mobilePhone
+                              )
+                            : null
+                        }
+                      />
+                      <CopyableField
+                        label="Telefone Fixo"
+                        value={
+                          viewingEmployee.landlinePhone
+                            ? formatLandlinePhoneInput(
+                                viewingEmployee.landlinePhone
+                              )
+                            : null
+                        }
+                      />
+                      <CopyableField
+                        label="E-mail"
+                        value={viewingEmployee.email}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewTab === 'DOCUMENTS' && (
+                <div className="space-y-5 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="CPF"
+                      value={formatCpfInput(viewingEmployee.cpf)}
+                    />
+                    <CopyableField
+                      label="Cédula de Identidade (RG)"
+                      value={viewingEmployee.rgNumber}
+                    />
+                    <CopyableField
+                      label="Órgão Emissor / UF"
+                      value={viewingEmployee.rgIssuer}
+                    />
+                    <CopyableField
+                      label="Data de Emissão RG"
+                      value={formatDateBr(viewingEmployee.rgIssueDate)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="CTPS (Carteira Profissional)"
+                      value={
+                        viewingEmployee.ctpsNumber
+                          ? formatCtpsNumberInput(viewingEmployee.ctpsNumber)
+                          : null
+                      }
+                    />
+                    <CopyableField
+                      label="Série CTPS"
+                      value={
+                        viewingEmployee.ctpsSeries
+                          ? formatCtpsSeriesInput(viewingEmployee.ctpsSeries)
+                          : null
+                      }
+                    />
+                    <CopyableField
+                      label="UF CTPS"
+                      value={viewingEmployee.ctpsState}
+                    />
+                    <CopyableField
+                      label="Expedição CTPS"
+                      value={formatDateBr(viewingEmployee.ctpsIssueDate)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="PIS / PASEP (NIT)"
+                      value={
+                        viewingEmployee.pisNumber
+                          ? formatPisInput(viewingEmployee.pisNumber)
+                          : null
+                      }
+                    />
+                    <CopyableField
+                      label="Data de Cadastro no PIS"
+                      value={formatDateBr(viewingEmployee.pisRegistrationDate)}
+                    />
+                    <CopyableField
+                      label="Banco PIS"
+                      value={viewingEmployee.pisBankName}
+                    />
+                    <CopyableField
+                      label="Agência PIS"
+                      value={viewingEmployee.pisBankBranch}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Título de Eleitor"
+                      value={
+                        viewingEmployee.voterRegistration
+                          ? formatVoterRegistrationInput(
+                              viewingEmployee.voterRegistration
+                            )
+                          : null
+                      }
+                    />
+                    <CopyableField
+                      label="Zona Eleitoral"
+                      value={viewingEmployee.voterZone}
+                    />
+                    <CopyableField
+                      label="Seção Eleitoral"
+                      value={viewingEmployee.voterSection}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Certificado Militar"
+                      value={viewingEmployee.militaryDoc}
+                    />
+                    <CopyableField
+                      label="CNH (Habilitação)"
+                      value={viewingEmployee.cnhNumber}
+                    />
+                    <CopyableField
+                      label="Categoria CNH"
+                      value={viewingEmployee.cnhCategory}
+                    />
+                    <CopyableField
+                      label="Conselho de Classe"
+                      value={viewingEmployee.classCouncilNumber}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {viewTab === 'CONTRACT' && (
+                <div className="space-y-5 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Cargo / Função"
+                      value={viewingEmployee.roleTitle}
+                      className="sm:col-span-2"
+                    />
+                    <CopyableField
+                      label="Código CBO"
+                      value={viewingEmployee.cboCode}
+                    />
+                    <CopyableField
+                      label="Matrícula eSocial"
+                      value={viewingEmployee.esocialCode}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Data de Admissão"
+                      value={formatDateBr(viewingEmployee.admissionDate)}
+                    />
+                    <CopyableField
+                      label="Salário Base"
+                      value={formatCurrencyBrl(viewingEmployee.salary)}
+                    />
+                    <CopyableField
+                      label="Tipo de Pagamento"
+                      value={viewingEmployee.paymentType || 'Mensal'}
+                    />
+                    <CopyableField
+                      label="Carga Horária Semanal"
+                      value={viewingEmployee.workHoursSummary || '44h semanais'}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Unidade de Lotação"
+                      value={viewingEmployee.unit?.name || 'Sem unidade'}
+                    />
+                    <CopyableField
+                      label="Setor / Departamento"
+                      value={viewingEmployee.sector?.name || 'Sem setor'}
+                    />
+                    <CopyableField
+                      label="Status Contratual"
+                      value={
+                        viewingEmployee.status === 'ACTIVE'
+                          ? 'Ativo'
+                          : 'Inativo / Desligado'
+                      }
+                    />
+                  </div>
+
+                  <div className="border-t border-outline-variant/20 pt-5 space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                      <CopyableField
+                        label="Data de Opção FGTS"
+                        value={formatDateBr(viewingEmployee.fgtsOptionDate)}
+                      />
+                      <CopyableField
+                        label="Banco Depositário FGTS"
+                        value={viewingEmployee.fgtsBankAccount}
+                        className="sm:col-span-2"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                      <CopyableField
+                        label="Razão Social do Empregador"
+                        value={viewingEmployee.employerName}
+                      />
+                      <CopyableField
+                        label="CNPJ do Empregador"
+                        value={viewingEmployee.employerCnpj}
+                      />
+                      <CopyableField
+                        label="Endereço do Empregador"
+                        value={viewingEmployee.employerAddress}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewTab === 'SCHEDULE' && (
+                <div className="space-y-5 py-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                    <CopyableField
+                      label="Carga Horária Semanal"
+                      value={viewingEmployee.workHoursSummary || '44h semanais'}
+                    />
+                    <CopyableField
+                      label="Intervalo Intrajornada"
+                      value={viewingEmployee.breakHoursSummary || '01:00h'}
+                    />
+                  </div>
+
+                  {Array.isArray(viewingEmployee.beneficiaries) &&
+                    viewingEmployee.beneficiaries.length > 0 && (
+                      <div className="border-t border-outline-variant/20 pt-4 space-y-3">
+                        <Label className="text-xs font-bold uppercase text-on-surface-variant">
+                          Beneficiários / Dependentes
+                        </Label>
+                        {viewingEmployee.beneficiaries.map((dep, idx) => (
+                          <div
+                            key={idx}
+                            className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/20"
+                          >
+                            <CopyableField
+                              label="Nome do Dependente"
+                              value={dep.name}
+                            />
+                            <CopyableField
+                              label="Data de Nascimento"
+                              value={formatDateBr(dep.birthDate)}
+                            />
+                            <CopyableField
+                              label="Parentesco"
+                              value={dep.relationship}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  <div className="border-t border-outline-variant/20 pt-4">
+                    <CopyableField
+                      label="Observações Gerais"
+                      value={viewingEmployee.generalObservations}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-outline-variant/20 pt-4 mt-4">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDownloadRegistrationPdf(viewingEmployee)
+                    }
+                    disabled={downloadingId === viewingEmployee.id}
+                    className="gap-1.5 cursor-pointer"
+                  >
+                    {downloadingId === viewingEmployee.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileDown className="h-4 w-4 text-primary" />
+                    )}
+                    Baixar Ficha PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const emp = viewingEmployee
+                      setViewingEmployee(null)
+                      openEditDialog(emp)
+                    }}
+                    className="gap-1.5 cursor-pointer"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Editar Dados
+                  </Button>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setViewingEmployee(null)}
+                  className="cursor-pointer"
+                >
+                  Fechar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create / Edit Employee Modal */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
