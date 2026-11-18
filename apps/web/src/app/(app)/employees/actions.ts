@@ -10,6 +10,7 @@ import {
   getEmployeeRequests,
   getEmployees,
   updateEmployeeApi,
+  updateEmployeePhotoApi,
   updateEmployeeRequestStatusApi,
 } from '@/http/employees'
 import { revalidatePath, updateTag } from 'next/cache'
@@ -117,6 +118,30 @@ export async function updateEmployeeAction(
       message: await extractErrorMessage(
         error,
         'Erro ao atualizar ficha do colaborador.'
+      ),
+    }
+  }
+}
+
+export async function updateEmployeePhotoAction(
+  id: string,
+  photoUrl: string | null
+) {
+  try {
+    const { token } = await auth()
+    const res = await updateEmployeePhotoApi(token, id, photoUrl)
+    updateTag('employees')
+    revalidatePath('/employees')
+    return {
+      success: true,
+      photoUrl: res.photoUrl,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: await extractErrorMessage(
+        error,
+        'Erro ao atualizar foto 3x4 do colaborador.'
       ),
     }
   }

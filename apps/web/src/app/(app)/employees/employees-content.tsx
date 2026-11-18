@@ -35,9 +35,11 @@ import {
   formatVoterRegistrationInput,
   lookupAddressByCep,
 } from '@/utils/cep-lookup'
+import { processImageTo3x4DataUrl } from '@/utils/employee-photo'
 import {
   Briefcase,
   Building2,
+  Camera,
   CheckCircle2,
   Copy,
   Eye,
@@ -53,13 +55,14 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  Upload,
   UserCheck,
   UserPlus,
   UserX,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   changeEmployeeStatusAction,
@@ -290,6 +293,9 @@ export function EmployeesContent({
 
   // Form Fields
   const [fullName, setFullName] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement | null>(null)
   const [esocialCode, setEsocialCode] = useState('')
   const [cpf, setCpf] = useState('')
   const [rgNumber, setRgNumber] = useState('')
@@ -501,10 +507,34 @@ export function EmployeesContent({
     }
   }
 
+  async function handlePhotoFileChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsProcessingPhoto(true)
+    try {
+      const processedDataUrl = await processImageTo3x4DataUrl(file)
+      setPhotoUrl(processedDataUrl)
+      toast.success('Foto 3x4 enquadrada e otimizada com sucesso!')
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Erro ao processar a foto selecionada.'
+      toast.error(msg)
+    } finally {
+      setIsProcessingPhoto(false)
+      event.target.value = ''
+    }
+  }
+
   function openCreateDialog() {
     setEditingEmployee(null)
     setActiveTab('PERSONAL')
     setFullName('')
+    setPhotoUrl(null)
     setEsocialCode('')
     setCpf('')
     setRgNumber('')
@@ -573,6 +603,7 @@ export function EmployeesContent({
     setEditingEmployee(emp)
     setActiveTab('PERSONAL')
     setFullName(emp.fullName)
+    setPhotoUrl(emp.photoUrl || null)
     setEsocialCode(emp.esocialCode || '')
     setCpf(formatCpfInput(emp.cpf))
     setRgNumber(emp.rgNumber || '')
@@ -674,6 +705,7 @@ export function EmployeesContent({
     try {
       const payload: Record<string, unknown> = {
         fullName: fullName.trim(),
+        photoUrl: photoUrl || null,
         esocialCode: esocialCode.trim() || null,
         cpf: formatCpfInput(cpf),
         rgNumber: rgNumber.trim() || null,
@@ -1088,23 +1120,43 @@ export function EmployeesContent({
                     </td>
 
                     <td className="py-3.5 px-4 align-middle">
-                      <div className="font-semibold text-on-surface">
-                        {emp.fullName}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">
-                        <span>CPF: {formatCpfInput(emp.cpf)}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const formattedCpf = formatCpfInput(emp.cpf)
-                            navigator.clipboard.writeText(formattedCpf)
-                            toast.success(`CPF ${formattedCpf} copiado!`)
-                          }}
-                          title="Copiar CPF"
-                          className="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </button>
+                      <div className="flex items-center gap-3">
+                        <div className="h-11 w-8.5 rounded-md border border-outline-variant/30 bg-surface-container-low overflow-hidden shrink-0 flex items-center justify-center">
+                          {emp.photoUrl ? (
+                            <img
+                              src={emp.photoUrl}
+                              alt={emp.fullName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[11px] font-bold text-primary">
+                              {previewInitialsFromName(emp.fullName).slice(
+                                0,
+                                2
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-on-surface">
+                            {emp.fullName}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">
+                            <span>CPF: {formatCpfInput(emp.cpf)}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const formattedCpf = formatCpfInput(emp.cpf)
+                                navigator.clipboard.writeText(formattedCpf)
+                                toast.success(`CPF ${formattedCpf} copiado!`)
+                              }}
+                              title="Copiar CPF"
+                              className="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -1270,39 +1322,66 @@ export function EmployeesContent({
 
               {viewTab === 'PERSONAL' && (
                 <div className="space-y-5 py-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
-                    <CopyableField
-                      label="Matrícula"
-                      value={viewingEmployee.registrationNumber}
-                    />
-                    <CopyableField
-                      label="Nome Completo"
-                      value={viewingEmployee.fullName}
-                      className="sm:col-span-2"
-                    />
-                    <CopyableField
-                      label="Data de Nascimento"
-                      value={formatDateBr(viewingEmployee.birthDate)}
-                    />
-                  </div>
+                  <div className="flex flex-col sm:flex-row gap-5 items-start">
+                    {/* Quadro Foto 3x4 */}
+                    <div className="flex flex-col items-center gap-1.5 shrink-0 mx-auto sm:mx-0">
+                      <div className="w-[108px] h-[144px] rounded-lg border-2 border-outline-variant/35 bg-surface-container-low overflow-hidden shadow-sm flex flex-col items-center justify-center">
+                        {viewingEmployee.photoUrl ? (
+                          <img
+                            src={viewingEmployee.photoUrl}
+                            alt={`Foto 3x4 de ${viewingEmployee.fullName}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center p-2 text-on-surface-variant">
+                            <Camera className="h-6 w-6 opacity-40 mb-1" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">
+                              Foto 3x4
+                            </span>
+                            <span className="text-[9px] opacity-70">
+                              Sem foto
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
-                    <CopyableField
-                      label="Estado Civil"
-                      value={viewingEmployee.maritalStatus}
-                    />
-                    <CopyableField
-                      label="Cor / Raça"
-                      value={viewingEmployee.raceColor}
-                    />
-                    <CopyableField
-                      label="Naturalidade (Cidade/UF)"
-                      value={viewingEmployee.birthPlace}
-                    />
-                    <CopyableField
-                      label="Nacionalidade"
-                      value={viewingEmployee.nationality}
-                    />
+                    <div className="flex-1 w-full space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                        <CopyableField
+                          label="Matrícula"
+                          value={viewingEmployee.registrationNumber}
+                        />
+                        <CopyableField
+                          label="Nome Completo"
+                          value={viewingEmployee.fullName}
+                          className="sm:col-span-2"
+                        />
+                        <CopyableField
+                          label="Data de Nascimento"
+                          value={formatDateBr(viewingEmployee.birthDate)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                        <CopyableField
+                          label="Estado Civil"
+                          value={viewingEmployee.maritalStatus}
+                        />
+                        <CopyableField
+                          label="Cor / Raça"
+                          value={viewingEmployee.raceColor}
+                        />
+                        <CopyableField
+                          label="Naturalidade (Cidade/UF)"
+                          value={viewingEmployee.birthPlace}
+                        />
+                        <CopyableField
+                          label="Nacionalidade"
+                          value={viewingEmployee.nationality}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
@@ -1710,63 +1789,147 @@ export function EmployeesContent({
           {/* TAB 1: DADOS PESSOAIS & ENDEREÇO */}
           {activeTab === 'PERSONAL' && (
             <div className="space-y-5 py-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
-                <div className="sm:col-span-2 flex flex-col gap-2">
-                  <Label>Nome Completo do Empregado *</Label>
-                  <Input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Ex: JOÃO SILVA SANTOS"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Data de Nascimento</Label>
-                  <Input
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                  />
-                </div>
-              </div>
+              {/* Input oculto de arquivo para Foto 3x4 */}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handlePhotoFileChange}
+                className="hidden"
+              />
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
-                <div className="flex flex-col gap-2">
-                  <Label>Estado Civil</Label>
-                  <select
-                    value={maritalStatus}
-                    onChange={(e) => setMaritalStatus(e.target.value)}
-                    className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+              <div className="flex flex-col sm:flex-row gap-5 items-start">
+                {/* Moldura Foto 3x4 Interativa */}
+                <div className="flex flex-col items-center gap-2 shrink-0 mx-auto sm:mx-0">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isProcessingPhoto}
+                    title="Clique para enviar ou alterar a Foto 3x4"
+                    className="w-[114px] h-[152px] rounded-lg border-2 border-dashed border-primary/35 hover:border-primary bg-surface-container-lowest overflow-hidden relative group transition-all shadow-sm flex flex-col items-center justify-center cursor-pointer"
                   >
-                    <option value="Solteiro(a)">Solteiro(a)</option>
-                    <option value="Casado(a)">Casado(a)</option>
-                    <option value="União Estável">União Estável</option>
-                    <option value="Divorciado(a)">Divorciado(a)</option>
-                    <option value="Viúvo(a)">Viúvo(a)</option>
-                  </select>
+                    {isProcessingPhoto ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 text-primary p-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="text-[10px] font-semibold">
+                          Ajustando 3x4...
+                        </span>
+                      </div>
+                    ) : photoUrl ? (
+                      <>
+                        <img
+                          src={photoUrl}
+                          alt="Foto 3x4 do Colaborador"
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-2 text-center">
+                          <Camera className="h-5 w-5 mb-1" />
+                          <span className="text-[10px] font-semibold">
+                            Trocar Foto
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center p-2 text-on-surface-variant group-hover:text-primary transition-colors">
+                        <Camera className="h-7 w-7 opacity-60 mb-1.5" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">
+                          Foto 3x4
+                        </span>
+                        <span className="text-[10px] opacity-75 mt-0.5 leading-tight">
+                          Clique para enviar
+                        </span>
+                      </div>
+                    )}
+                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={isProcessingPhoto}
+                      className="h-7 px-2 text-[11px] gap-1 cursor-pointer"
+                    >
+                      <Upload className="h-3 w-3" />
+                      {photoUrl ? 'Trocar' : 'Enviar'}
+                    </Button>
+                    {photoUrl && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPhotoUrl(null)}
+                        title="Remover Foto 3x4"
+                        className="h-7 w-7 p-0 text-rose-600 hover:text-rose-700 cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Cor / Raça</Label>
-                  <Input
-                    value={raceColor}
-                    onChange={(e) => setRaceColor(e.target.value)}
-                    placeholder="Ex: Branca, Parda..."
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Naturalidade (Cidade/UF)</Label>
-                  <Input
-                    value={birthPlace}
-                    onChange={(e) => setBirthPlace(e.target.value)}
-                    placeholder="Ex: Boa Vista/RR"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Nacionalidade</Label>
-                  <Input
-                    value={nationality}
-                    onChange={(e) => setNationality(e.target.value)}
-                    placeholder="Brasileira"
-                  />
+
+                {/* Campos Principais ao lado da Foto 3x4 */}
+                <div className="flex-1 w-full space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
+                    <div className="sm:col-span-2 flex flex-col gap-2">
+                      <Label>Nome Completo do Empregado *</Label>
+                      <Input
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Ex: JOÃO SILVA SANTOS"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Data de Nascimento</Label>
+                      <Input
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                    <div className="flex flex-col gap-2">
+                      <Label>Estado Civil</Label>
+                      <select
+                        value={maritalStatus}
+                        onChange={(e) => setMaritalStatus(e.target.value)}
+                        className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                      >
+                        <option value="Solteiro(a)">Solteiro(a)</option>
+                        <option value="Casado(a)">Casado(a)</option>
+                        <option value="União Estável">União Estável</option>
+                        <option value="Divorciado(a)">Divorciado(a)</option>
+                        <option value="Viúvo(a)">Viúvo(a)</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Cor / Raça</Label>
+                      <Input
+                        value={raceColor}
+                        onChange={(e) => setRaceColor(e.target.value)}
+                        placeholder="Ex: Branca, Parda..."
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Naturalidade (Cidade/UF)</Label>
+                      <Input
+                        value={birthPlace}
+                        onChange={(e) => setBirthPlace(e.target.value)}
+                        placeholder="Ex: Boa Vista/RR"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Nacionalidade</Label>
+                      <Input
+                        value={nationality}
+                        onChange={(e) => setNationality(e.target.value)}
+                        placeholder="Brasileira"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

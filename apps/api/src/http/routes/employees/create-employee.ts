@@ -1,6 +1,7 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { validateAndNormalizeEmployeePhoto } from '@/utils/employee-photo'
 import { formatRegistrationNumber } from '@/utils/employee-registration'
 import { defineAbilityFor } from '@saas/auth'
 import { hash } from 'bcryptjs'
@@ -23,6 +24,7 @@ export async function createEmployee(app: FastifyInstance) {
     .post(
       '/employees',
       {
+        bodyLimit: 2_097_152, // 2 MB limit to support employee record + 3x4 photo
         schema: {
           tags: ['employees'],
           summary: 'Create a new employee record (Ficha de Registro)',
@@ -223,7 +225,7 @@ export async function createEmployee(app: FastifyInstance) {
               body.employerAddress ||
               'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR',
             fullName: body.fullName.trim(),
-            photoUrl: body.photoUrl || null,
+            photoUrl: validateAndNormalizeEmployeePhoto(body.photoUrl) ?? null,
             birthDate: parseOptionalDate(body.birthDate),
             birthPlace: body.birthPlace || null,
             nationality: body.nationality || 'Brasileira',

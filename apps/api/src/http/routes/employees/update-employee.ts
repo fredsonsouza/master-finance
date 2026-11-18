@@ -1,6 +1,7 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
+import { validateAndNormalizeEmployeePhoto } from '@/utils/employee-photo'
 import { defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -23,6 +24,7 @@ export async function updateEmployee(app: FastifyInstance) {
     .put(
       '/employees/:id',
       {
+        bodyLimit: 2_097_152, // 2 MB limit to support employee record + 3x4 photo
         schema: {
           tags: ['employees'],
           summary: 'Update an employee record (Ficha de Registro)',
@@ -192,13 +194,17 @@ export async function updateEmployee(app: FastifyInstance) {
           dataToUpdate.userId = body.userId
         }
 
+        if (body.photoUrl !== undefined) {
+          dataToUpdate.photoUrl =
+            validateAndNormalizeEmployeePhoto(body.photoUrl) ?? null
+        }
+
         const directFields = [
           'esocialCode',
           'employerName',
           'employerCnpj',
           'employerAddress',
           'fullName',
-          'photoUrl',
           'birthPlace',
           'nationality',
           'maritalStatus',

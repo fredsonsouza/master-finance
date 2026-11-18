@@ -233,6 +233,23 @@ export async function updateEmployeeApi(
   })
 }
 
+export async function updateEmployeePhotoApi(
+  token: string,
+  id: string,
+  photoUrl: string | null
+) {
+  return api
+    .patch(`employees/${id}/photo`, {
+      headers: { Authorization: `Bearer ${token}` },
+      json: { photoUrl },
+    })
+    .json<{
+      employeeId: string
+      registrationNumber: string
+      photoUrl: string | null
+    }>()
+}
+
 export async function changeEmployeeStatusApi(
   token: string,
   id: string,

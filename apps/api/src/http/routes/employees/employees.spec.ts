@@ -16,6 +16,7 @@ import { getEmployee } from './get-employee'
 import { getEmployeeRequests } from './get-employee-requests'
 import { getEmployees } from './get-employees'
 import { updateEmployee } from './update-employee'
+import { updateEmployeePhoto } from './update-employee-photo'
 import { updateEmployeeRequestStatus } from './update-employee-request-status'
 import { verifyEmployeeDocument } from './verify-employee-document'
 
@@ -80,6 +81,7 @@ describe('Employees & HR Document Requests Unit Tests', () => {
     await app.register(getEmployees)
     await app.register(getEmployee)
     await app.register(updateEmployee)
+    await app.register(updateEmployeePhoto)
     await app.register(changeEmployeeStatus)
     await app.register(createEmployeeRequest)
     await app.register(getEmployeeRequests)
@@ -334,5 +336,103 @@ describe('Employees & HR Document Requests Unit Tests', () => {
     expect(body.document.verificationCode).toBe('MC-DOC-20261114-A1B2C3')
     expect(body.document.employee.cpfMasked).toBe('***.456.789-**')
     expect(body.document.employee.registrationNumber).toBe('MASTER-JSS0001')
+  })
+
+  test('should allow HR to upload and remove a 3x4 photo via PATCH /employees/:id/photo and reject spoofed files', async () => {
+    const validJpegBytes = Buffer.alloc(48, 0xaa)
+    validJpegBytes[0] = 0xff
+    validJpegBytes[1] = 0xd8
+    validJpegBytes[2] = 0xff
+    const validPhotoDataUrl = `data:image/jpeg;base64,${validJpegBytes.toString('base64')}`
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'HR',
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employee.findUnique).mockResolvedValueOnce({
+      id: employeeId,
+      fullName: 'João da Silva Santos',
+      registrationNumber: 'MASTER-JSS0001',
+    } as any)
+
+    vi.mocked(prisma.employee.update).mockResolvedValueOnce({
+      id: employeeId,
+      fullName: 'João da Silva Santos',
+      registrationNumber: 'MASTER-JSS0001',
+      photoUrl: validPhotoDataUrl,
+    } as any)
+
+    const uploadRes = await app.inject({
+      method: 'PATCH',
+      url: `/employees/${employeeId}/photo`,
+      payload: {
+        photoUrl: validPhotoDataUrl,
+      },
+    })
+
+    expect(uploadRes.statusCode).toBe(200)
+    expect(uploadRes.json()).toEqual({
+      employeeId,
+      registrationNumber: 'MASTER-JSS0001',
+      photoUrl: validPhotoDataUrl,
+    })
+
+    // Test photo removal (photoUrl: null)
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'HR',
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employee.findUnique).mockResolvedValueOnce({
+      id: employeeId,
+      fullName: 'João da Silva Santos',
+      registrationNumber: 'MASTER-JSS0001',
+    } as any)
+
+    vi.mocked(prisma.employee.update).mockResolvedValueOnce({
+      id: employeeId,
+      fullName: 'João da Silva Santos',
+      registrationNumber: 'MASTER-JSS0001',
+      photoUrl: null,
+    } as any)
+
+    const removeRes = await app.inject({
+      method: 'PATCH',
+      url: `/employees/${employeeId}/photo`,
+      payload: {
+        photoUrl: null,
+      },
+    })
+
+    expect(removeRes.statusCode).toBe(200)
+    expect(removeRes.json().photoUrl).toBeNull()
+
+    // Test rejection of invalid binary payload disguised as JPEG
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'HR',
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employee.findUnique).mockResolvedValueOnce({
+      id: employeeId,
+      fullName: 'João da Silva Santos',
+      registrationNumber: 'MASTER-JSS0001',
+    } as any)
+
+    const spoofedPayload = `data:image/jpeg;base64,${Buffer.from('not-a-valid-jpeg-binary-header').toString('base64')}`
+
+    const invalidRes = await app.inject({
+      method: 'PATCH',
+      url: `/employees/${employeeId}/photo`,
+      payload: {
+        photoUrl: spoofedPayload,
+      },
+    })
+
+    expect(invalidRes.statusCode).toBe(400)
   })
 })

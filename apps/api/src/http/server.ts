@@ -85,6 +85,7 @@ import { getEmployee } from './routes/employees/get-employee'
 import { getEmployeeRequests } from './routes/employees/get-employee-requests'
 import { getEmployees } from './routes/employees/get-employees'
 import { updateEmployee } from './routes/employees/update-employee'
+import { updateEmployeePhoto } from './routes/employees/update-employee-photo'
 import { updateEmployeeRequestStatus } from './routes/employees/update-employee-request-status'
 import { verifyEmployeeDocument } from './routes/employees/verify-employee-document'
 
@@ -206,6 +207,7 @@ app.register(createEmployee)
 app.register(getEmployees)
 app.register(getEmployee)
 app.register(updateEmployee)
+app.register(updateEmployeePhoto)
 app.register(changeEmployeeStatus)
 app.register(createEmployeeRequest)
 app.register(getEmployeeRequests)
