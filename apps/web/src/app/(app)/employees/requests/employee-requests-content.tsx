@@ -685,9 +685,7 @@ export function EmployeeRequestsContent({
                   Tipo & Documento Solicitado
                 </th>
                 <th className="py-3.5 px-4 font-semibold">Status</th>
-                <th className="py-3.5 px-4 font-semibold">
-                  Assinatura Eletrônica / QR Code
-                </th>
+                <th className="py-3.5 px-4 font-semibold">Assinatura</th>
                 <th className="py-3.5 px-4 font-semibold">Data</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Ações</th>
               </tr>
@@ -716,13 +714,10 @@ export function EmployeeRequestsContent({
                         <div className="font-semibold text-on-surface">
                           {req.employee.fullName}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary">
-                            <IdCard className="h-3 w-3" />
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span className="inline-flex whitespace-nowrap items-center gap-1 rounded bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-bold text-primary border border-primary/20">
+                            <IdCard className="h-3 w-3 shrink-0" />
                             {req.employee.registrationNumber}
-                          </span>
-                          <span className="text-xs text-on-surface-variant">
-                            {req.employee.roleTitle}
                           </span>
                         </div>
                       </td>
@@ -743,11 +738,6 @@ export function EmployeeRequestsContent({
                         <div className="font-semibold text-on-surface mt-1">
                           {req.title}
                         </div>
-                        {req.description && (
-                          <div className="text-xs text-on-surface-variant line-clamp-2 mt-0.5">
-                            {req.description}
-                          </div>
-                        )}
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="text-xs text-rose-600 font-medium mt-1">
                             Motivo do Indeferimento: {req.rejectionReason}
@@ -757,14 +747,14 @@ export function EmployeeRequestsContent({
 
                       <td className="py-3.5 px-4 align-middle">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusCfg.badgeClass}`}
+                          className={`inline-flex whitespace-nowrap items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusCfg.badgeClass}`}
                         >
                           {req.status === 'COMPLETED' ? (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
                           ) : req.status === 'REJECTED' ? (
-                            <XCircle className="h-3.5 w-3.5" />
+                            <XCircle className="h-3.5 w-3.5 shrink-0" />
                           ) : (
-                            <Clock className="h-3.5 w-3.5" />
+                            <Clock className="h-3.5 w-3.5 shrink-0" />
                           )}
                           {statusCfg.label}
                         </span>
@@ -776,11 +766,11 @@ export function EmployeeRequestsContent({
                             <Link
                               href={`/verify/${req.verificationCode}`}
                               target="_blank"
-                              className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline"
+                              className="inline-flex whitespace-nowrap items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline"
                             >
-                              <QrCode className="h-3.5 w-3.5" />
+                              <QrCode className="h-3.5 w-3.5 shrink-0" />
                               {req.verificationCode}
-                              <ExternalLink className="h-3 w-3" />
+                              <ExternalLink className="h-3 w-3 shrink-0" />
                             </Link>
                             <div className="text-[11px] text-on-surface-variant mt-0.5">
                               Assinado por {req.issuedBy?.name || 'RH'} em{' '}
