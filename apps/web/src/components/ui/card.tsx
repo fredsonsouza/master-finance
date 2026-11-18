@@ -51,9 +51,19 @@ CardDescription.displayName = 'CardDescription'
 const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={`p-6 pt-0 ${className || ''}`} {...props} />
-))
+>(({ className, ...props }, ref) => {
+  const hasCustomTopPadding = className
+    ? /\b(p-\d|py-\d|pt-\d)/.test(className)
+    : false
+  const basePadding = hasCustomTopPadding ? '' : 'p-6 pt-0'
+  return (
+    <div
+      ref={ref}
+      className={`${basePadding} ${className || ''}`.trim()}
+      {...props}
+    />
+  )
+})
 CardContent.displayName = 'CardContent'
 
 const CardFooter = React.forwardRef<

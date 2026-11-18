@@ -548,136 +548,130 @@ export function EmployeeRequestsContent({
         </Card>
       </div>
 
-      {/* Filter Bar & Actions */}
-      <Card className="border-outline-variant/20 bg-surface shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-            <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') loadRequests()
-                  }}
-                  placeholder="Buscar por título, matrícula (MASTER-XXXX) ou código MC-DOC..."
-                  className="pl-9"
-                />
-              </div>
+      {/* Top Action Buttons */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        {isHrManager && (
+          <Link href="/employees">
+            <Button variant="outline" className="gap-2 cursor-pointer">
+              <Users className="h-4 w-4 text-primary" />
+              Quadro de Colaboradores
+            </Button>
+          </Link>
+        )}
 
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  const val = e.target.value as 'ALL' | RequestStatus
-                  setStatusFilter(val)
-                  loadRequests({ status: val })
-                }}
-                className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
-              >
-                <option value="ALL">Todos os Status</option>
-                <option value="OPEN">Em Aberto</option>
-                <option value="IN_PROGRESS">Em Elaboração</option>
-                <option value="COMPLETED">Finalizados & Assinados</option>
-                <option value="REJECTED">Indeferidos</option>
-              </select>
+        <Button onClick={openCreateModal} className="gap-2 cursor-pointer">
+          <FilePlus2 className="h-4 w-4" />
+          {isHrManager
+            ? 'Emitir / Registrar Documento'
+            : 'Solicitar Documento ao RH'}
+        </Button>
+      </div>
 
-              <select
-                value={typeFilter}
-                onChange={(e) => {
-                  const val = e.target.value as 'ALL' | DocumentType
-                  setTypeFilter(val)
-                  loadRequests({ type: val })
-                }}
-                className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
-              >
-                <option value="ALL">Todos os Tipos</option>
-                <option value="DECLARATION">Declarações</option>
-                <option value="WARNING">Advertências / Disciplinar</option>
-                <option value="RECEIPT">Recibos / Comprovantes</option>
-              </select>
-
-              {isHrManager && employees.length > 0 && (
-                <select
-                  value={employeeFilter}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setEmployeeFilter(val)
-                    loadRequests({ employeeId: val })
-                  }}
-                  className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm max-w-[220px]"
-                >
-                  <option value="ALL">Todos os Colaboradores</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.registrationNumber} — {emp.fullName}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              <Button
-                variant="outline"
-                onClick={() => loadRequests()}
-                disabled={isLoadingList}
-                className="gap-1.5 cursor-pointer"
-              >
-                {isLoadingList ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Filter className="h-4 w-4" />
-                )}
-                Filtrar
-              </Button>
-
-              {(search ||
-                statusFilter !== 'ALL' ||
-                typeFilter !== 'ALL' ||
-                employeeFilter !== 'ALL') && (
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setSearch('')
-                    setStatusFilter('ALL')
-                    setTypeFilter('ALL')
-                    setEmployeeFilter('ALL')
-                    loadRequests({
-                      search: '',
-                      status: 'ALL',
-                      type: 'ALL',
-                      employeeId: 'ALL',
-                    })
-                  }}
-                  className="gap-1.5 text-xs cursor-pointer"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Limpar
-                </Button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {isHrManager && (
-                <Link href="/employees">
-                  <Button variant="outline" className="gap-2 cursor-pointer">
-                    <Users className="h-4 w-4 text-primary" />
-                    Quadro de Colaboradores
-                  </Button>
-                </Link>
-              )}
-
-              <Button
-                onClick={openCreateModal}
-                className="gap-2 cursor-pointer"
-              >
-                <FilePlus2 className="h-4 w-4" />
-                {isHrManager
-                  ? 'Emitir / Registrar Documento'
-                  : 'Solicitar Documento ao RH'}
-              </Button>
-            </div>
+      {/* Filter Bar */}
+      <Card className="border-outline-variant/20 bg-surface shadow-sm p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') loadRequests()
+              }}
+              placeholder="Buscar por título, matrícula (MASTER-XXXX) ou código MC-DOC..."
+              className="pl-9 h-10"
+            />
           </div>
-        </CardContent>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              const val = e.target.value as 'ALL' | RequestStatus
+              setStatusFilter(val)
+              loadRequests({ status: val })
+            }}
+            className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <option value="ALL">Todos os Status</option>
+            <option value="OPEN">Em Aberto</option>
+            <option value="IN_PROGRESS">Em Elaboração</option>
+            <option value="COMPLETED">Finalizados & Assinados</option>
+            <option value="REJECTED">Indeferidos</option>
+          </select>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => {
+              const val = e.target.value as 'ALL' | DocumentType
+              setTypeFilter(val)
+              loadRequests({ type: val })
+            }}
+            className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <option value="ALL">Todos os Tipos</option>
+            <option value="DECLARATION">Declarações</option>
+            <option value="WARNING">Advertências / Disciplinar</option>
+            <option value="RECEIPT">Recibos / Comprovantes</option>
+          </select>
+
+          {isHrManager && employees.length > 0 && (
+            <select
+              value={employeeFilter}
+              onChange={(e) => {
+                const val = e.target.value
+                setEmployeeFilter(val)
+                loadRequests({ employeeId: val })
+              }}
+              className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface max-w-[240px] focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+            >
+              <option value="ALL">Todos os Colaboradores</option>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.registrationNumber} — {emp.fullName}
+                </option>
+              ))}
+            </select>
+          )}
+
+          <Button
+            variant="outline"
+            onClick={() => loadRequests()}
+            disabled={isLoadingList}
+            className="h-10 gap-1.5 cursor-pointer"
+          >
+            {isLoadingList ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Filter className="h-4 w-4" />
+            )}
+            Filtrar
+          </Button>
+
+          {(search ||
+            statusFilter !== 'ALL' ||
+            typeFilter !== 'ALL' ||
+            employeeFilter !== 'ALL') && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearch('')
+                setStatusFilter('ALL')
+                setTypeFilter('ALL')
+                setEmployeeFilter('ALL')
+                loadRequests({
+                  search: '',
+                  status: 'ALL',
+                  type: 'ALL',
+                  employeeId: 'ALL',
+                })
+              }}
+              className="h-10 gap-1.5 text-xs cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          )}
+        </div>
       </Card>
 
       {/* Requests Table */}

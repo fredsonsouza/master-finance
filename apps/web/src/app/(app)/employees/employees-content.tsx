@@ -934,99 +934,97 @@ export function EmployeesContent({
       </div>
 
       {/* Filter Bar */}
-      <Card className="border-outline-variant/20 bg-surface shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') loadEmployees()
-                }}
-                placeholder="Buscar por Matrícula (ex: MASTER-JSS0001), Nome ou CPF..."
-                className="pl-9"
-              />
-            </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => {
-                const val = e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE'
-                setStatusFilter(val)
-                loadEmployees({ status: val })
+      <Card className="border-outline-variant/20 bg-surface shadow-sm p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="h-4 w-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') loadEmployees()
               }}
-              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-            >
-              <option value="ALL">Todos os Status</option>
-              <option value="ACTIVE">Somente Ativos</option>
-              <option value="INACTIVE">Somente Inativos</option>
-            </select>
-
-            <select
-              value={unitFilter}
-              onChange={(e) => {
-                const val = e.target.value
-                setUnitFilter(val)
-                loadEmployees({ unitId: val })
-              }}
-              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-            >
-              <option value="ALL">Todas as Unidades</option>
-              {units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={sectorFilter}
-              onChange={(e) => {
-                const val = e.target.value
-                setSectorFilter(val)
-                loadEmployees({ sectorId: val })
-              }}
-              className="h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm text-on-surface"
-            >
-              <option value="ALL">Todos os Setores</option>
-              {sectors.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
-            <Button
-              variant="outline"
-              onClick={() => loadEmployees()}
-              disabled={isLoadingList}
-              className="gap-1.5 cursor-pointer"
-            >
-              {isLoadingList ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Filter className="h-4 w-4" />
-              )}
-              Filtrar
-            </Button>
-
-            {(search ||
-              statusFilter !== 'ALL' ||
-              unitFilter !== 'ALL' ||
-              sectorFilter !== 'ALL') && (
-              <Button
-                variant="ghost"
-                onClick={handleResetFilters}
-                className="gap-1.5 text-xs cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Limpar
-              </Button>
-            )}
+              placeholder="Buscar por Matrícula (ex: MASTER-JSS0001), Nome ou CPF..."
+              className="pl-9 h-10"
+            />
           </div>
-        </CardContent>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              const val = e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE'
+              setStatusFilter(val)
+              loadEmployees({ status: val })
+            }}
+            className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <option value="ALL">Todos os Status</option>
+            <option value="ACTIVE">Somente Ativos</option>
+            <option value="INACTIVE">Somente Inativos</option>
+          </select>
+
+          <select
+            value={unitFilter}
+            onChange={(e) => {
+              const val = e.target.value
+              setUnitFilter(val)
+              loadEmployees({ unitId: val })
+            }}
+            className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <option value="ALL">Todas as Unidades</option>
+            {units.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={sectorFilter}
+            onChange={(e) => {
+              const val = e.target.value
+              setSectorFilter(val)
+              loadEmployees({ sectorId: val })
+            }}
+            className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          >
+            <option value="ALL">Todos os Setores</option>
+            {sectors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+
+          <Button
+            variant="outline"
+            onClick={() => loadEmployees()}
+            disabled={isLoadingList}
+            className="h-10 gap-1.5 cursor-pointer"
+          >
+            {isLoadingList ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Filter className="h-4 w-4" />
+            )}
+            Filtrar
+          </Button>
+
+          {(search ||
+            statusFilter !== 'ALL' ||
+            unitFilter !== 'ALL' ||
+            sectorFilter !== 'ALL') && (
+            <Button
+              variant="ghost"
+              onClick={handleResetFilters}
+              className="h-10 gap-1.5 text-xs cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Limpar
+            </Button>
+          )}
+        </div>
       </Card>
 
       {/* Employees Table */}
