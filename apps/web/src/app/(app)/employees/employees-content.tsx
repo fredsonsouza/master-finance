@@ -37,6 +37,8 @@ import {
 } from '@/utils/cep-lookup'
 import { processImageTo3x4DataUrl } from '@/utils/employee-photo'
 import {
+  ArrowDown,
+  ArrowUp,
   Briefcase,
   Building2,
   Camera,
@@ -265,8 +267,24 @@ export function EmployeesContent({
   >('ALL')
   const [unitFilter, setUnitFilter] = useState<string>('ALL')
   const [sectorFilter, setSectorFilter] = useState<string>('ALL')
+  const [admissionSortOrder, setAdmissionSortOrder] = useState<
+    'asc' | 'desc' | null
+  >(null)
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const sortedEmployees = useMemo(() => {
+    if (!admissionSortOrder) return employees
+    return [...employees].sort((a, b) => {
+      const timeA = new Date(a.admissionDate).getTime() || 0
+      const timeB = new Date(b.admissionDate).getTime() || 0
+      return admissionSortOrder === 'asc' ? timeA - timeB : timeB - timeA
+    })
+  }, [employees, admissionSortOrder])
+
+  function handleToggleAdmissionSort() {
+    setAdmissionSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+  }
 
   // View Details Modal State
   const [viewingEmployee, setViewingEmployee] = useState<Employee | null>(null)
@@ -1068,13 +1086,42 @@ export function EmployeesContent({
                 <th className="py-3.5 px-4 font-semibold">Matrícula / Nº</th>
                 <th className="py-3.5 px-4 font-semibold">Colaborador</th>
                 <th className="py-3.5 px-4 font-semibold">Cargo & Lotação</th>
-                <th className="py-3.5 px-4 font-semibold">Admissão</th>
+                <th className="py-3.5 px-4 font-semibold">
+                  <button
+                    type="button"
+                    onClick={handleToggleAdmissionSort}
+                    title={
+                      admissionSortOrder === 'asc'
+                        ? 'Ordenado por Admissão (Crescente) — Clique para Decrescente'
+                        : 'Ordenar por Data de Admissão (Crescente / Decrescente)'
+                    }
+                    className="inline-flex items-center gap-1.5 uppercase hover:text-primary transition-colors cursor-pointer select-none group"
+                  >
+                    <span>Admissão</span>
+                    <span className="inline-flex items-center -space-x-1">
+                      <ArrowUp
+                        className={`h-3.5 w-3.5 transition-all ${
+                          admissionSortOrder === 'asc'
+                            ? 'text-primary opacity-100 scale-110'
+                            : 'opacity-45 group-hover:opacity-80'
+                        }`}
+                      />
+                      <ArrowDown
+                        className={`h-3.5 w-3.5 transition-all ${
+                          admissionSortOrder === 'desc'
+                            ? 'text-primary opacity-100 scale-110'
+                            : 'opacity-45 group-hover:opacity-80'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </th>
                 <th className="py-3.5 px-4 font-semibold">Status</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/15">
-              {employees.length === 0 ? (
+              {sortedEmployees.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -1084,7 +1131,7 @@ export function EmployeesContent({
                   </td>
                 </tr>
               ) : (
-                employees.map((emp) => (
+                sortedEmployees.map((emp) => (
                   <tr
                     key={emp.id}
                     className="hover:bg-surface-container-lowest/60 transition-colors"
