@@ -116,12 +116,28 @@ interface DocumentTemplatePreset {
   key: string
   type: DocumentType
   title: string
-  buildContent: (emp?: {
-    fullName: string
-    cpf: string
-    registrationNumber: string
-    roleTitle: string
-  }) => string
+  buildContent: (
+    emp?: {
+      fullName: string
+      cpf: string
+      registrationNumber: string
+      roleTitle: string
+      birthDate?: string | null
+    },
+    extra?: {
+      dayOffDate?: string
+    }
+  ) => string
+}
+
+function formatBirthDayMonth(birthDate?: string | null): string {
+  if (!birthDate) return ''
+  const datePart = birthDate.split('T')[0]
+  if (datePart && /^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [, m, d] = datePart.split('-')
+    return `${d}/${m}`
+  }
+  return ''
 }
 
 const DOCUMENT_TEMPLATES: DocumentTemplatePreset[] = [
@@ -138,6 +154,16 @@ const DOCUMENT_TEMPLATES: DocumentTemplatePreset[] = [
     title: 'Declaração de Jornada e Horário de Trabalho',
     buildContent: (emp) =>
       `Declaramos para os devidos fins de comprovação junto a instituições de ensino, órgãos públicos ou terceiros que ${emp?.fullName || '[NOME DO COLABORADOR]'}, inscrito(a) no CPF sob o nº ${emp?.cpf || '[CPF]'} e matrícula ${emp?.registrationNumber || '[MATRÍCULA]'}, exerce a função de ${emp?.roleTitle || '[CARGO]'} na empresa GERENCIACLIN LTDA, cumprindo carga horária semanal de 44 (quarenta e quatro) horas presenciais.\n\nEsta declaração é emitida e assinada eletronicamente pelo Departamento de Recursos Humanos.`,
+  },
+  {
+    key: 'DECLARATION_DAY_OFF',
+    type: 'DECLARATION',
+    title: 'Solicitação de Day-Off (Folga de Aniversário)',
+    buildContent: (emp, extra) => {
+      const bday = formatBirthDayMonth(emp?.birthDate)
+      const dayOffStr = extra?.dayOffDate?.trim() || '[DATA DA FOLGA]'
+      return `Declaramos e formalizamos para os devidos fins que o(a) colaborador(a) ${emp?.fullName || '[NOME DO COLABORADOR]'}, inscrito(a) no CPF sob o nº ${emp?.cpf || '[CPF]'} e portador(a) da matrícula institucional ${emp?.registrationNumber || '[MATRÍCULA]'}, ocupante do cargo de ${emp?.roleTitle || '[CARGO]'} na empresa GERENCIACLIN LTDA (CNPJ 59.162.564/0001-73), faz jus à concessão do benefício institucional de DAY-OFF (Folga de Aniversário) em decorrência da celebração de seu natalício${bday ? ` (${bday})` : ''}.\n\nFica registrada e autorizada a fruição de 01 (um) dia de folga remunerada na data de ${dayOffStr}, sem qualquer prejuízo à sua remuneração ou descanso semanal remunerado, devendo este documento ser apresentado à liderança imediata e arquivado junto ao controle de jornada do Departamento de Recursos Humanos.`
+    },
   },
   {
     key: 'WARNING_ESCRITA',
@@ -225,6 +251,7 @@ export function EmployeeRequestsContent({
   const [extraReferenceItem, setExtraReferenceItem] = useState<string>('')
   const [extraOccurrenceDate, setExtraOccurrenceDate] = useState<string>('')
   const [extraReason, setExtraReason] = useState<string>('')
+  const [extraDayOffDate, setExtraDayOffDate] = useState<string>('')
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false)
 
   // HR Elaborate / Finalize Modal State
@@ -267,27 +294,35 @@ export function EmployeeRequestsContent({
     }
   }
 
-  function applyTemplatePreset(templateKey: string, empId: string) {
+  function applyTemplatePreset(
+    templateKey: string,
+    empId: string,
+    customDayOffDate?: string
+  ) {
     const preset = DOCUMENT_TEMPLATES.find((t) => t.key === templateKey)
     if (!preset) return
 
     const emp = employees.find((e) => e.id === empId)
+    const dayOff =
+      customDayOffDate !== undefined ? customDayOffDate : extraDayOffDate
     setSelectedTemplateKey(preset.key)
     setReqType(preset.type)
     setReqTitle(preset.title)
-    setReqDocumentContent(preset.buildContent(emp))
+    setReqDocumentContent(preset.buildContent(emp, { dayOffDate: dayOff }))
   }
 
   function openCreateModal() {
     const defaultEmpId = currentUser.employeeId || employees[0]?.id || ''
+    const todayBr = new Date().toLocaleDateString('pt-BR')
     setSelectedEmployeeId(defaultEmpId)
     setReqDescription('')
     setExtraAmount('')
     setExtraReferenceItem('')
-    setExtraOccurrenceDate(new Date().toLocaleDateString('pt-BR'))
+    setExtraOccurrenceDate(todayBr)
     setExtraReason('')
+    setExtraDayOffDate(todayBr)
     setReqAutoComplete(isHrManager)
-    applyTemplatePreset('DECLARATION_VINCULO', defaultEmpId)
+    applyTemplatePreset('DECLARATION_VINCULO', defaultEmpId, todayBr)
     setIsCreateOpen(true)
   }
 
@@ -309,6 +344,12 @@ export function EmployeeRequestsContent({
       if (reqDescription.trim()) {
         templateData.notes = reqDescription.trim()
       }
+      if (
+        selectedTemplateKey === 'DECLARATION_DAY_OFF' &&
+        extraDayOffDate.trim()
+      ) {
+        templateData.dayOffDate = extraDayOffDate.trim()
+      }
       if (reqType === 'RECEIPT') {
         if (extraReferenceItem.trim())
           templateData.referenceItem = extraReferenceItem.trim()
@@ -322,7 +363,10 @@ export function EmployeeRequestsContent({
 
       const finalDescription = isHrManager
         ? reqDocumentContent.trim() || reqDescription.trim() || reqTitle.trim()
-        : reqDescription.trim() || reqTitle.trim()
+        : selectedTemplateKey === 'DECLARATION_DAY_OFF' &&
+            extraDayOffDate.trim()
+          ? `Solicitação de Day-Off (Folga de Aniversário) para a data ${extraDayOffDate.trim()}.${reqDescription.trim() ? ` ${reqDescription.trim()}` : ''}`
+          : reqDescription.trim() || reqTitle.trim()
 
       const parsedAmount =
         reqType === 'RECEIPT' && extraAmount.trim()
@@ -379,13 +423,21 @@ export function EmployeeRequestsContent({
     setManageTitle(req.title)
     setManageRejectionReason(req.rejectionReason || '')
 
-    if (req.description && req.description.trim().length > 35) {
+    if (req.description && req.description.trim().length > 85) {
       setManageContent(req.description)
     } else {
+      const payload = (req.templateData || {}) as Record<string, unknown>
       const matchingPreset =
+        DOCUMENT_TEMPLATES.find((t) => t.key === req.subtype) ||
         DOCUMENT_TEMPLATES.find((t) => t.type === req.type) ||
         DOCUMENT_TEMPLATES[0]
-      setManageContent(matchingPreset.buildContent(req.employee))
+      setManageContent(
+        matchingPreset.buildContent(req.employee, {
+          dayOffDate: payload.dayOffDate
+            ? String(payload.dayOffDate)
+            : undefined,
+        })
+      )
     }
   }
 
@@ -919,7 +971,19 @@ export function EmployeeRequestsContent({
                 <Label>Categoria do Documento *</Label>
                 <select
                   value={reqType}
-                  onChange={(e) => setReqType(e.target.value as DocumentType)}
+                  onChange={(e) => {
+                    const nextType = e.target.value as DocumentType
+                    setReqType(nextType)
+                    const firstOfCategory = DOCUMENT_TEMPLATES.find(
+                      (t) => t.type === nextType
+                    )
+                    if (firstOfCategory) {
+                      applyTemplatePreset(
+                        firstOfCategory.key,
+                        selectedEmployeeId
+                      )
+                    }
+                  }}
                   className="w-full h-10 rounded-lg border border-outline-variant/30 bg-surface-container-lowest px-3 text-sm"
                 >
                   <option value="DECLARATION">Declaração Institucional</option>
@@ -941,6 +1005,25 @@ export function EmployeeRequestsContent({
                 placeholder="Ex: Declaração de Vínculo Empregatício"
               />
             </div>
+
+            {selectedTemplateKey === 'DECLARATION_DAY_OFF' && (
+              <div className="bg-primary/5 border border-primary/20 p-3 rounded-lg space-y-1">
+                <Label>Data da Folga de Aniversário (Day-Off) *</Label>
+                <Input
+                  value={extraDayOffDate}
+                  onChange={(e) => {
+                    const nextDate = e.target.value
+                    setExtraDayOffDate(nextDate)
+                    applyTemplatePreset(
+                      'DECLARATION_DAY_OFF',
+                      selectedEmployeeId,
+                      nextDate
+                    )
+                  }}
+                  placeholder="Ex: 20/11/2026"
+                />
+              </div>
+            )}
 
             {isHrManager && reqType === 'WARNING' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-rose-500/5 border border-rose-500/20 p-3 rounded-lg">

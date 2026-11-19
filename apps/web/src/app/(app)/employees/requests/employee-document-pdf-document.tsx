@@ -425,6 +425,27 @@ export function EmployeeDocumentPdfDocument({
 
           {/* CORPO DO DOCUMENTO */}
           <View style={styles.bodyBox}>
+            {request.type === 'DECLARATION' && Boolean(payload.dayOffDate) && (
+              <View style={styles.highlightBox}>
+                <View style={styles.highlightRow}>
+                  <Text style={styles.highlightLabel}>
+                    Benefício Institucional:
+                  </Text>
+                  <Text style={styles.highlightValue}>
+                    Day-Off (Folga Remunerada de Aniversário)
+                  </Text>
+                </View>
+                <View style={[styles.highlightRow, { marginBottom: 0 }]}>
+                  <Text style={styles.highlightLabel}>
+                    Data da Folga Concedida:
+                  </Text>
+                  <Text style={styles.highlightValue}>
+                    {String(payload.dayOffDate)}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {request.type === 'WARNING' &&
               (Boolean(payload.occurrenceDate) ||
                 Boolean(payload.reason) ||
