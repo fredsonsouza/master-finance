@@ -75,23 +75,19 @@ const STATUS_CONFIG: Record<
 > = {
   OPEN: {
     label: 'Em Aberto',
-    badgeClass:
-      'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25',
+    badgeClass: 'bg-amber-500/15 text-amber-800 border-amber-600/30',
   },
   IN_PROGRESS: {
     label: 'Em Elaboração',
-    badgeClass:
-      'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/25',
+    badgeClass: 'bg-sky-500/15 text-sky-800 border-sky-600/30',
   },
   COMPLETED: {
     label: 'Finalizado & Assinado',
-    badgeClass:
-      'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+    badgeClass: 'bg-emerald-700/15 text-emerald-800 border-emerald-700/30',
   },
   REJECTED: {
     label: 'Indeferido',
-    badgeClass:
-      'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25',
+    badgeClass: 'bg-rose-500/15 text-rose-800 border-rose-600/30',
   },
 }
 
@@ -108,13 +104,11 @@ const TYPE_CONFIG: Record<
   },
   WARNING: {
     label: 'Advertência / Disciplinar',
-    badgeClass:
-      'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
+    badgeClass: 'bg-rose-500/10 text-rose-800 border-rose-600/25',
   },
   RECEIPT: {
     label: 'Recibo / Comprovante',
-    badgeClass:
-      'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+    badgeClass: 'bg-emerald-700/15 text-emerald-800 border-emerald-700/30',
   },
 }
 
@@ -723,20 +717,22 @@ export function EmployeeRequestsContent({
                       </td>
 
                       <td className="py-3.5 px-4 align-middle">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${typeCfg.badgeClass}`}
-                        >
-                          {req.type === 'WARNING' ? (
-                            <AlertTriangle className="h-3 w-3" />
-                          ) : req.type === 'RECEIPT' ? (
-                            <Receipt className="h-3 w-3" />
-                          ) : (
-                            <FileText className="h-3 w-3" />
-                          )}
-                          {typeCfg.label}
-                        </span>
-                        <div className="font-semibold text-on-surface mt-1">
+                        <div className="font-semibold text-on-surface">
                           {req.title}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span
+                            className={`inline-flex whitespace-nowrap items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold ${typeCfg.badgeClass}`}
+                          >
+                            {req.type === 'WARNING' ? (
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                            ) : req.type === 'RECEIPT' ? (
+                              <Receipt className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <FileText className="h-3 w-3 shrink-0" />
+                            )}
+                            {typeCfg.label}
+                          </span>
                         </div>
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="text-xs text-rose-600 font-medium mt-1">
@@ -763,18 +759,20 @@ export function EmployeeRequestsContent({
                       <td className="py-3.5 px-4 align-middle">
                         {req.status === 'COMPLETED' && req.verificationCode ? (
                           <div>
-                            <Link
-                              href={`/verify/${req.verificationCode}`}
-                              target="_blank"
-                              className="inline-flex whitespace-nowrap items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 font-mono text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline"
-                            >
-                              <QrCode className="h-3.5 w-3.5 shrink-0" />
-                              {req.verificationCode}
-                              <ExternalLink className="h-3 w-3 shrink-0" />
-                            </Link>
-                            <div className="text-[11px] text-on-surface-variant mt-0.5">
+                            <div className="text-[11px] text-on-surface-variant">
                               Assinado por {req.issuedBy?.name || 'RH'} em{' '}
                               {formatDateTimeBr(req.signedAt)}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1">
+                              <Link
+                                href={`/verify/${req.verificationCode}`}
+                                target="_blank"
+                                className="inline-flex whitespace-nowrap items-center gap-1 rounded-md bg-emerald-700/15 border border-emerald-700/30 px-2 py-0.5 font-mono text-xs font-bold text-emerald-800 hover:underline"
+                              >
+                                <QrCode className="h-3.5 w-3.5 shrink-0" />
+                                {req.verificationCode}
+                                <ExternalLink className="h-3 w-3 shrink-0" />
+                              </Link>
                             </div>
                           </div>
                         ) : (
@@ -1015,14 +1013,14 @@ export function EmployeeRequestsContent({
                   />
                 </div>
 
-                <label className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 cursor-pointer">
+                <label className="flex items-center gap-2 rounded-lg border border-emerald-700/30 bg-emerald-700/10 p-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={reqAutoComplete}
                     onChange={(e) => setReqAutoComplete(e.target.checked)}
                     className="h-4 w-4"
                   />
-                  <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">
+                  <span className="text-xs font-semibold text-emerald-800">
                     Finalizar e Assinar Eletronicamente agora (gera Código de
                     Verificação + Hash SHA-256 + QR Code imediatamente)
                   </span>
