@@ -60,7 +60,7 @@ describe('Update Item Unit Test', () => {
   test('should successfully update an item with category by INVENTORY user', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'INVENTORY',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'transactions:manage', 'items:manage', 'settings:structure'],
     } as any)
 
     vi.mocked(prisma.item.findUnique).mockResolvedValueOnce({

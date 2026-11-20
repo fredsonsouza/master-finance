@@ -92,7 +92,7 @@ describe('Update Category Unit Test', () => {
   test('should allow MANAGER role to update a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'reports:view', 'transactions:manage', 'items:manage', 'cash_closures:manage', 'collections:manage', 'evaluations:manage', 'employees:manage', 'hr_reports:manage', 'settings:structure'],
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValueOnce({
@@ -121,7 +121,7 @@ describe('Update Category Unit Test', () => {
   test('should allow INVENTORY role to update a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'INVENTORY',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'transactions:manage', 'items:manage', 'settings:structure'],
     } as any)
 
     vi.mocked(prisma.category.findUnique).mockResolvedValueOnce({
@@ -168,7 +168,7 @@ describe('Update Category Unit Test', () => {
   test('should block FINANCIAL role from updating a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'FINANCIAL',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'cash_closures:manage'],
     } as any)
 
     const response = await app.inject({
@@ -185,7 +185,7 @@ describe('Update Category Unit Test', () => {
   test('should block SELLER role from updating a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'SELLER',
+      role: 'EMPLOYEE', permissions: ['cash_closures:create', 'evaluations:receive'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
@@ -203,7 +203,7 @@ describe('Update Category Unit Test', () => {
   test('should block FISCAL role from updating a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'FISCAL',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'collections:manage'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 

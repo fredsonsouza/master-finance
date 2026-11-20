@@ -4,6 +4,7 @@ import {
   type AuditLogPagination,
   getLogs,
 } from '@/http/get-logs'
+import { getDefaultHomeRoute, hasPermission } from '@/lib/permissions'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { LogsContent } from './logs-content'
@@ -31,8 +32,8 @@ export default async function LogsPage({ searchParams }: LogsPageProps) {
   const { user, token } = await auth()
   const params = await searchParams
 
-  if (user.role !== 'ADMIN') {
-    redirect('/')
+  if (!hasPermission(user, 'logs:view')) {
+    redirect(getDefaultHomeRoute(user))
   }
 
   const page = Number(params.page) || 1

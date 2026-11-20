@@ -1,22 +1,24 @@
+import type { DepartmentType, Permission, Role } from '@/lib/permissions'
 import { api } from './api-client'
 
 export interface User {
   id: string
   name: string
   username: string
-  role:
-    | 'ADMIN'
-    | 'MANAGER'
-    | 'EMPLOYEE'
-    | 'FINANCIAL'
-    | 'SELLER'
-    | 'COLLECTOR'
-    | 'FISCAL'
-    | 'INVENTORY'
-    | 'ANALYST'
-    | 'HR'
+  role: Role
+  permissions: Permission[]
   unitId: string | null
   avatarUrl: string | null
+  employee?: {
+    id: string
+    registrationNumber: string
+    status: 'ACTIVE' | 'INACTIVE'
+    department: {
+      id: string
+      name: string
+      type: DepartmentType
+    } | null
+  } | null
 }
 
 export interface UserPagination {
@@ -31,20 +33,34 @@ interface GetUsersResponse {
   pagination: UserPagination
 }
 
+export interface GetUsersOptions {
+  permission?: Permission | null
+  departmentType?: DepartmentType | null
+  onlyActive?: boolean
+}
+
 export async function getUsers(
   token: string,
   unitId?: string | null,
-  role?: string | null,
+  role?: Role | string | null,
   search?: string | null,
   page?: number,
-  perPage?: number
+  perPage?: number,
+  options?: GetUsersOptions
 ) {
   const searchParams: Record<string, string> = {}
   if (unitId) searchParams.unitId = unitId
-  if (role) searchParams.role = role
+  if (role && (role === 'ADMIN' || role === 'EMPLOYEE')) {
+    searchParams.role = role
+  }
   if (search) searchParams.search = search
   if (page) searchParams.page = String(page)
   if (perPage) searchParams.perPage = String(perPage)
+  if (options?.permission) searchParams.permission = options.permission
+  if (options?.departmentType) {
+    searchParams.departmentType = options.departmentType
+  }
+  if (options?.onlyActive) searchParams.onlyActive = 'true'
 
   const result = await api
     .get('users', {

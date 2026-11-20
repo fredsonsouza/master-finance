@@ -46,7 +46,7 @@ describe('Get Units Unit Test', () => {
   test('should allow MANAGER to view all units', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'reports:view', 'transactions:manage', 'items:manage', 'cash_closures:manage', 'collections:manage', 'evaluations:manage', 'employees:manage', 'hr_reports:manage', 'settings:structure'],
     } as any)
 
     const date = new Date('2026-05-23')

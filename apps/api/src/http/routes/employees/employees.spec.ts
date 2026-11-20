@@ -93,7 +93,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
   test('should allow HR user to create an employee and auto-generate MASTER-XXXX registrationNumber', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 
@@ -154,7 +155,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
   test('should allow HR to inactivate and activate an employee via PATCH /employees/:id/status', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 
@@ -259,7 +261,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
   test('should allow HR to complete a request and generate electronic signature + SHA-256 hash', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 
@@ -321,7 +324,7 @@ describe('Employees & HR Document Requests Unit Tests', () => {
       },
       issuedBy: {
         name: 'Maria RH',
-        role: 'HR',
+        role: 'EMPLOYEE',
       },
     } as any)
 
@@ -347,7 +350,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
 
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 
@@ -382,7 +386,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
     // Test photo removal (photoUrl: null)
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 
@@ -413,7 +418,8 @@ describe('Employees & HR Document Requests Unit Tests', () => {
     // Test rejection of invalid binary payload disguised as JPEG
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: hrUserId,
-      role: 'HR',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
       unitId: null,
     } as any)
 

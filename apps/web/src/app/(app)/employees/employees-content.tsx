@@ -1,5 +1,6 @@
 'use client'
 
+import { PermissionsSelector } from '@/components/permissions-selector'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -12,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import type { Department } from '@/http/departments'
 import type {
   BeneficiaryItem,
   Employee,
@@ -19,9 +21,14 @@ import type {
   PaginationMeta,
   WorkScheduleDay,
 } from '@/http/employees'
-import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import type { User } from '@/http/get-users'
+import {
+  DEPARTMENT_TYPE_LABELS,
+  type Permission,
+  ROLE_LABELS,
+  type Role,
+} from '@/lib/permissions'
 import {
   composeFullAddress,
   formatCepInput,
@@ -79,8 +86,10 @@ interface Props {
   initialSummary: EmployeesSummary
   initialPagination: PaginationMeta
   units: Unit[]
-  sectors: Sector[]
+  departments: Department[]
   users: User[]
+  currentUserRole: Role
+  currentUserPermissions: Permission[]
 }
 
 const DEFAULT_WORK_SCHEDULE: WorkScheduleDay[] = [
@@ -253,8 +262,10 @@ export function EmployeesContent({
   initialSummary,
   initialPagination,
   units,
-  sectors,
+  departments,
   users,
+  currentUserRole,
+  currentUserPermissions,
 }: Props) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [summary, setSummary] = useState(initialSummary)
@@ -266,7 +277,7 @@ export function EmployeesContent({
     'ALL' | 'ACTIVE' | 'INACTIVE'
   >('ALL')
   const [unitFilter, setUnitFilter] = useState<string>('ALL')
-  const [sectorFilter, setSectorFilter] = useState<string>('ALL')
+  const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
   const [admissionSortOrder, setAdmissionSortOrder] = useState<
     'asc' | 'desc' | null
   >(null)
@@ -379,13 +390,12 @@ export function EmployeesContent({
   )
 
   const [unitId, setUnitId] = useState<string>('')
-  const [sectorId, setSectorId] = useState<string>('')
+  const [departmentId, setDepartmentId] = useState<string>('')
   const [userId, setUserId] = useState<string>('')
   const [createUserAccount, setCreateUserAccount] = useState(true)
   const [accountPassword, setAccountPassword] = useState('')
-  const [accountRole, setAccountRole] = useState<
-    'EMPLOYEE' | 'HR' | 'COLLECTOR' | 'FISCAL' | 'MANAGER'
-  >('EMPLOYEE')
+  const [accountRole, setAccountRole] = useState<Role>('EMPLOYEE')
+  const [accountPermissions, setAccountPermissions] = useState<Permission[]>([])
 
   const [beneficiaries, setBeneficiaries] = useState<BeneficiaryItem[]>([])
   const [generalObservations, setGeneralObservations] = useState('')
@@ -401,20 +411,20 @@ export function EmployeesContent({
     search?: string
     status?: 'ALL' | 'ACTIVE' | 'INACTIVE'
     unitId?: string
-    sectorId?: string
+    departmentId?: string
   }) {
     setIsLoadingList(true)
     try {
       const targetSearch = overrides?.search ?? search
       const targetStatus = overrides?.status ?? statusFilter
       const targetUnit = overrides?.unitId ?? unitFilter
-      const targetSector = overrides?.sectorId ?? sectorFilter
+      const targetDepartment = overrides?.departmentId ?? departmentFilter
 
       const res = await fetchEmployeesAction({
         search: targetSearch.trim() || undefined,
         status: targetStatus === 'ALL' ? undefined : targetStatus,
         unitId: targetUnit === 'ALL' ? undefined : targetUnit,
-        sectorId: targetSector === 'ALL' ? undefined : targetSector,
+        departmentId: targetDepartment === 'ALL' ? undefined : targetDepartment,
         page: 1,
         perPage: 50,
       })
@@ -435,12 +445,12 @@ export function EmployeesContent({
     setSearch('')
     setStatusFilter('ALL')
     setUnitFilter('ALL')
-    setSectorFilter('ALL')
+    setDepartmentFilter('ALL')
     loadEmployees({
       search: '',
       status: 'ALL',
       unitId: 'ALL',
-      sectorId: 'ALL',
+      departmentId: 'ALL',
     })
   }
 
@@ -607,11 +617,12 @@ export function EmployeesContent({
     setFgtsOptionDate(new Date().toISOString().split('T')[0])
     setFgtsBankAccount('Caixa Econômica Federal')
     setUnitId('')
-    setSectorId('')
+    setDepartmentId('')
     setUserId('')
     setCreateUserAccount(true)
     setAccountPassword('')
     setAccountRole('EMPLOYEE')
+    setAccountPermissions([])
     setBeneficiaries([])
     setGeneralObservations('')
     setIsFormOpen(true)
@@ -683,11 +694,12 @@ export function EmployeesContent({
     setFgtsOptionDate(toInputDate(emp.fgtsOptionDate))
     setFgtsBankAccount(emp.fgtsBankAccount || '')
     setUnitId(emp.unitId || '')
-    setSectorId(emp.sectorId || '')
+    setDepartmentId(emp.departmentId || '')
     setUserId(emp.userId || '')
     setCreateUserAccount(false)
     setAccountPassword('')
     setAccountRole('EMPLOYEE')
+    setAccountPermissions([])
     setBeneficiaries(
       Array.isArray(emp.beneficiaries)
         ? emp.beneficiaries.map((b) => ({ ...b }))
@@ -773,7 +785,7 @@ export function EmployeesContent({
         fgtsOptionDate: fgtsOptionDate || null,
         fgtsBankAccount: fgtsBankAccount.trim() || null,
         unitId: unitId || null,
-        sectorId: sectorId || null,
+        departmentId: departmentId || null,
         userId: userId || null,
         beneficiaries: beneficiaries.filter((b) => b.name.trim().length > 0),
         generalObservations: generalObservations.trim() || null,
@@ -787,6 +799,7 @@ export function EmployeesContent({
         payload.createAccount = {
           password: defaultPass,
           role: accountRole,
+          permissions: accountRole === 'ADMIN' ? [] : accountPermissions,
         }
       }
 
@@ -1031,18 +1044,18 @@ export function EmployeesContent({
           </select>
 
           <select
-            value={sectorFilter}
+            value={departmentFilter}
             onChange={(e) => {
               const val = e.target.value
-              setSectorFilter(val)
-              loadEmployees({ sectorId: val })
+              setDepartmentFilter(val)
+              loadEmployees({ departmentId: val })
             }}
             className="h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
           >
-            <option value="ALL">Todos os Setores</option>
-            {sectors.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
+            <option value="ALL">Todos os Departamentos</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
               </option>
             ))}
           </select>
@@ -1064,7 +1077,7 @@ export function EmployeesContent({
           {(search ||
             statusFilter !== 'ALL' ||
             unitFilter !== 'ALL' ||
-            sectorFilter !== 'ALL') && (
+            departmentFilter !== 'ALL') && (
             <Button
               variant="ghost"
               onClick={handleResetFilters}
@@ -1212,9 +1225,16 @@ export function EmployeesContent({
                         <Briefcase className="h-3.5 w-3.5 text-primary" />
                         {emp.roleTitle}
                       </div>
-                      <div className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
-                        <Building2 className="h-3 w-3" />
-                        {emp.unit?.name || 'Sem unidade'}
+                      <div className="text-xs text-on-surface-variant flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          {emp.unit?.name || 'Sem unidade'}
+                        </span>
+                        {emp.department && (
+                          <span className="inline-flex items-center rounded bg-sky-50 border border-sky-200 px-1.5 py-0.2 text-[10px] font-medium text-sky-700">
+                            {emp.department.name}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -1645,8 +1665,12 @@ export function EmployeesContent({
                       value={viewingEmployee.unit?.name || 'Sem unidade'}
                     />
                     <CopyableField
-                      label="Setor / Departamento"
-                      value={viewingEmployee.sector?.name || 'Sem setor'}
+                      label="Departamento (RH)"
+                      value={
+                        viewingEmployee.department?.name ||
+                        viewingEmployee.sector?.name ||
+                        'Sem departamento'
+                      }
                     />
                     <CopyableField
                       label="Status Contratual"
@@ -2433,16 +2457,19 @@ export function EmployeesContent({
                   </select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Label>Setor / Departamento</Label>
+                  <Label>Departamento (RH)</Label>
                   <select
-                    value={sectorId}
-                    onChange={(e) => setSectorId(e.target.value)}
+                    value={departmentId}
+                    onChange={(e) => setDepartmentId(e.target.value)}
                     className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                   >
-                    <option value="">Selecione um setor...</option>
-                    {sectors.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
+                    <option value="">Selecione um departamento...</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                        {d.type !== 'GENERAL'
+                          ? ` — ${DEPARTMENT_TYPE_LABELS[d.type].badge}`
+                          : ''}
                       </option>
                     ))}
                   </select>
@@ -2702,10 +2729,9 @@ export function EmployeesContent({
                 <p className="text-xs text-on-surface-variant leading-relaxed">
                   Ao vincular uma conta de usuário ao colaborador, ele poderá
                   acessar o sistema informando tanto seu{' '}
-                  <strong>nome de usuário</strong> quanto sua{' '}
-                  <strong>matrícula ({registrationPreview})</strong> para
-                  solicitar declarações, recibos e baixar documentos assinados
-                  pelo RH.
+                  <strong>matrícula ({registrationPreview})</strong> ou seu{' '}
+                  <strong>CPF</strong> para acessar o sistema — não é necessário
+                  criar um nome de usuário manual.
                 </p>
               </div>
 
@@ -2722,7 +2748,7 @@ export function EmployeesContent({
                   <option value="">Nenhum usuário existente selecionado</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>
-                      {u.name} (@{u.username} — {u.role})
+                      {u.name} ({u.username} — {ROLE_LABELS[u.role] || u.role})
                     </option>
                   ))}
                 </select>
@@ -2738,49 +2764,54 @@ export function EmployeesContent({
                       className="h-4 w-4 rounded border-outline-variant"
                     />
                     <span className="text-sm font-semibold text-on-surface">
-                      Criar automaticamente conta de acesso para este
-                      colaborador
+                      Criar automaticamente conta de acesso (login via Matrícula
+                      ou CPF)
                     </span>
                   </label>
 
                   {createUserAccount && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 pt-1">
-                      <div className="flex flex-col gap-2">
-                        <Label>Senha Inicial</Label>
-                        <Input
-                          type="password"
-                          value={accountPassword}
-                          onChange={(e) => setAccountPassword(e.target.value)}
-                          placeholder="Padrão: 6 primeiros dígitos do CPF"
-                        />
+                    <div className="space-y-4 pt-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                        <div className="flex flex-col gap-2">
+                          <Label>Senha Inicial</Label>
+                          <Input
+                            type="password"
+                            value={accountPassword}
+                            onChange={(e) => setAccountPassword(e.target.value)}
+                            placeholder="Padrão: 6 primeiros dígitos do CPF"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Label>Perfil Base</Label>
+                          <select
+                            value={accountRole}
+                            onChange={(e) =>
+                              setAccountRole(e.target.value as Role)
+                            }
+                            className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                          >
+                            <option value="EMPLOYEE">
+                              Colaborador (Permissões abaixo)
+                            </option>
+                            {currentUserRole === 'ADMIN' && (
+                              <option value="ADMIN">
+                                Administrador (Acesso Total)
+                              </option>
+                            )}
+                          </select>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Label>Perfil de Permissão (Role)</Label>
-                        <select
-                          value={accountRole}
-                          onChange={(e) =>
-                            setAccountRole(
-                              e.target.value as
-                                | 'EMPLOYEE'
-                                | 'HR'
-                                | 'COLLECTOR'
-                                | 'FISCAL'
-                                | 'MANAGER'
-                            )
-                          }
-                          className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                        >
-                          <option value="EMPLOYEE">
-                            Colaborador / Recepcionista (EMPLOYEE)
-                          </option>
-                          <option value="HR">Recursos Humanos (HR)</option>
-                          <option value="COLLECTOR">
-                            Coletador(a) (COLLECTOR)
-                          </option>
-                          <option value="FISCAL">Fiscal (FISCAL)</option>
-                          <option value="MANAGER">Gerente (MANAGER)</option>
-                        </select>
-                      </div>
+
+                      {accountRole === 'EMPLOYEE' && (
+                        <div className="border-t border-outline-variant/20 pt-3">
+                          <PermissionsSelector
+                            value={accountPermissions}
+                            onChange={setAccountPermissions}
+                            actorRole={currentUserRole}
+                            actorPermissions={currentUserPermissions}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

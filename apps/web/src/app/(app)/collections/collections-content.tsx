@@ -29,7 +29,7 @@ interface Props {
   activeUnitId: string | null
   collectors: User[]
   units: Unit[]
-  currentUserRole: string
+  canManageCollections: boolean
 }
 
 export function CollectionsContent({
@@ -37,7 +37,7 @@ export function CollectionsContent({
   activeUnitId,
   collectors,
   units,
-  currentUserRole,
+  canManageCollections,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState('')
   const [unitFilter, setUnitFilter] = useState<string>('ALL')
@@ -149,7 +149,7 @@ export function CollectionsContent({
             Exportar PDF
           </Button>
 
-          {currentUserRole !== 'COLLECTOR' && (
+          {canManageCollections && (
             <Button
               onClick={() => setIsCreateOpen(true)}
               className="gap-2 bg-primary text-on-primary hover:bg-primary/90 cursor-pointer"
@@ -173,9 +173,7 @@ export function CollectionsContent({
               <th className="p-4 font-medium">Coletador</th>
               <th className="p-4 font-medium">Motivo</th>
               <th className="p-4 font-medium">Pendência / Avisado</th>
-              {currentUserRole !== 'COLLECTOR' && (
-                <th className="p-4  width: 100px"></th>
-              )}
+              {canManageCollections && <th className="p-4  width: 100px"></th>}
             </tr>
           </thead>
           <tbody>
@@ -274,7 +272,7 @@ export function CollectionsContent({
                         </div>
                       </div>
                     </td>
-                    {currentUserRole !== 'COLLECTOR' && (
+                    {canManageCollections && (
                       <td className="p-4 text-right whitespace-nowrap">
                         <Button
                           variant="ghost"

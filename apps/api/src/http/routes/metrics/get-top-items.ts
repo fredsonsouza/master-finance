@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -39,7 +39,8 @@ export async function getTopItems(app: FastifyInstance) {
       },
       async (request, reply) => {
         const userId = await request.getCurrentUserId()
-        const { month, type, unitId } = request.query
+        const { month, type } = request.query
+        let { unitId } = request.query
 
         const requestingUser = await prisma.user.findUnique({
           where: { id: userId },
@@ -53,12 +54,20 @@ export async function getTopItems(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'Metric')) {
           throw new UnauthorizedError(
             'You do not have permission to view metrics.'
           )
+        }
+
+        if (
+          !hasPermission(requestingUser, 'scope:all_units') &&
+          requestingUser.unitId
+        ) {
+          unitId = requestingUser.unitId
         }
 
         const transactions = await prisma.transaction.findMany({

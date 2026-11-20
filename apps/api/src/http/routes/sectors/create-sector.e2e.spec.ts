@@ -17,7 +17,7 @@ test('[E2E] Create Sector', async () => {
       name: 'Manager User',
       username: 'manager-create-sector',
       password_hash: await hash('123456', 1),
-      role: 'MANAGER',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'reports:view', 'transactions:manage', 'items:manage', 'cash_closures:manage', 'collections:manage', 'evaluations:manage', 'employees:manage', 'hr_reports:manage', 'settings:structure'],
     },
   })
 

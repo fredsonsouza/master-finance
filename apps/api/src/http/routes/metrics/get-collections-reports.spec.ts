@@ -43,10 +43,11 @@ describe('Get Collections Reports Unit Test', () => {
     await app.register(getCollectionsReports)
   })
 
-  test('should return report data for a FISCAL', async () => {
+  test('should return report data for user with collections:manage', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'FISCAL',
+      role: 'EMPLOYEE',
+      permissions: ['scope:all_units', 'collections:manage'],
     } as any)
 
     vi.mocked(prisma.collection.findMany).mockResolvedValueOnce([

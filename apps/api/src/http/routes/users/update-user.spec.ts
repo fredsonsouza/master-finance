@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    auditLog: {
+      create: vi.fn(),
+    },
   },
 }))
 
@@ -45,27 +48,36 @@ describe('Update User Unit Test', () => {
     await app.register(updateUser)
   })
 
-  test('should successfully update user details', async () => {
+  test('should successfully update user details and PBAC permissions', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'ADMIN',
+      permissions: [],
     } as any)
 
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '223e4567-e89b-12d3-a456-426614174001',
       name: 'Old Name',
+      username: 'olduser',
       role: 'EMPLOYEE',
+      permissions: [],
       unitId: '423e4567-e89b-12d3-a456-426614174003',
     } as any)
 
-    vi.mocked(prisma.user.update).mockResolvedValue({} as any)
+    vi.mocked(prisma.user.update).mockResolvedValue({
+      id: '223e4567-e89b-12d3-a456-426614174001',
+      name: 'New Name',
+      username: 'olduser',
+      role: 'EMPLOYEE',
+    } as any)
 
     const response = await app.inject({
       method: 'PUT',
       url: '/users/223e4567-e89b-12d3-a456-426614174001',
       payload: {
         name: 'New Name',
-        role: 'MANAGER',
+        role: 'EMPLOYEE',
+        permissions: ['dashboard:view', 'transactions:manage'],
       },
     })
 
@@ -74,16 +86,72 @@ describe('Update User Unit Test', () => {
       where: { id: '223e4567-e89b-12d3-a456-426614174001' },
       data: {
         name: 'New Name',
-        role: 'MANAGER',
-        unitId: '423e4567-e89b-12d3-a456-426614174003', // unchanged
+        role: 'EMPLOYEE',
+        permissions: ['dashboard:view', 'transactions:manage'],
+        unitId: '423e4567-e89b-12d3-a456-426614174003',
       },
     })
+  })
+
+  test('should block non-ADMIN HR user from escalating privileges to ADMIN or logs:view', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage', 'users:manage'],
+    } as any)
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '223e4567-e89b-12d3-a456-426614174001',
+      name: 'Target',
+      username: 'target',
+      role: 'EMPLOYEE',
+      permissions: [],
+      unitId: null,
+    } as any)
+
+    const resAdmin = await app.inject({
+      method: 'PUT',
+      url: '/users/223e4567-e89b-12d3-a456-426614174001',
+      payload: {
+        role: 'ADMIN',
+      },
+    })
+
+    expect(resAdmin.statusCode).toBe(401)
+    expect(prisma.user.update).not.toHaveBeenCalled()
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage', 'users:manage'],
+    } as any)
+
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '223e4567-e89b-12d3-a456-426614174001',
+      name: 'Target',
+      username: 'target',
+      role: 'EMPLOYEE',
+      permissions: [],
+      unitId: null,
+    } as any)
+
+    const resLogs = await app.inject({
+      method: 'PUT',
+      url: '/users/223e4567-e89b-12d3-a456-426614174001',
+      payload: {
+        permissions: ['logs:view'],
+      },
+    })
+
+    expect(resLogs.statusCode).toBe(401)
+    expect(prisma.user.update).not.toHaveBeenCalled()
   })
 
   test('should return 400 if target user not found', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'ADMIN',
+      permissions: [],
     } as any)
 
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)

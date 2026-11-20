@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -105,7 +105,8 @@ export async function getEvaluations(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'Evaluation')) {
           throw new UnauthorizedError(
@@ -125,8 +126,8 @@ export async function getEvaluations(app: FastifyInstance) {
         } = request.query
         let { sellerId } = request.query
 
-        // If SELLER role, force filtering by own sellerId
-        if (requestingUser.role === 'SELLER') {
+        // If user does not have evaluations:manage, restrict to their own evaluations
+        if (!hasPermission(requestingUser, 'evaluations:manage')) {
           sellerId = requestingUser.id
         }
 

@@ -35,7 +35,20 @@ test('[E2E] Transactions Flow', async () => {
       name: 'Finance Manager',
       username: 'finance-manager',
       password_hash: await hash('123456', 1),
-      role: 'MANAGER',
+      role: 'EMPLOYEE',
+      permissions: [
+        'scope:all_units',
+        'dashboard:view',
+        'reports:view',
+        'transactions:manage',
+        'items:manage',
+        'cash_closures:manage',
+        'collections:manage',
+        'evaluations:manage',
+        'employees:manage',
+        'hr_reports:manage',
+        'settings:structure',
+      ],
     },
   })
 

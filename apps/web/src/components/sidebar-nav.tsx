@@ -12,7 +12,6 @@ import {
   IdCard,
   LayoutDashboard,
   Package,
-  Settings,
   Star,
   Syringe,
   UserCheck,
@@ -24,25 +23,31 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
 interface SidebarNavProps {
-  userRole: string
+  canViewDashboard: boolean
   canViewStock: boolean
+  canViewTransactions: boolean
+  canViewItems: boolean
   canViewFinancial: boolean
   canViewEvaluations: boolean
   canViewCollections: boolean
   canViewReports: boolean
+  onlyCollectionsReports: boolean
+  canManageEmployees: boolean
   canViewLogs: boolean
-  canViewSettings: boolean
 }
 
 export function SidebarNav({
-  userRole,
+  canViewDashboard,
   canViewStock,
+  canViewTransactions,
+  canViewItems,
   canViewFinancial,
   canViewEvaluations,
   canViewCollections,
   canViewReports,
+  onlyCollectionsReports,
+  canManageEmployees,
   canViewLogs,
-  canViewSettings,
 }: SidebarNavProps) {
   const pathname = usePathname()
 
@@ -55,9 +60,6 @@ export function SidebarNav({
     pathname.startsWith('/hr-reports') ||
     isEmployeesActive
 
-  const canManageEmployees =
-    userRole === 'ADMIN' || userRole === 'MANAGER' || userRole === 'HR'
-
   const [isStockOpen, setIsStockOpen] = useState(true)
   const [isFinancialOpen, setIsFinancialOpen] = useState(true)
   const [isRhOpen, setIsRhOpen] = useState(true)
@@ -66,21 +68,19 @@ export function SidebarNav({
   return (
     <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
       {/* Visão Geral */}
-      {userRole !== 'INVENTORY' &&
-        userRole !== 'ANALYST' &&
-        userRole !== 'SELLER' && (
-          <Link
-            href="/"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === '/'
-                ? 'bg-primary/10 text-primary font-semibold'
-                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-            }`}
-          >
-            <LayoutDashboard className="h-4 w-4 shrink-0" />
-            <span>Visão Geral</span>
-          </Link>
-        )}
+      {canViewDashboard && (
+        <Link
+          href="/"
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            pathname === '/'
+              ? 'bg-primary/10 text-primary font-semibold'
+              : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+          }`}
+        >
+          <LayoutDashboard className="h-4 w-4 shrink-0" />
+          <span>Visão Geral</span>
+        </Link>
+      )}
 
       {/* Menu Colapsável: ESTOQUE */}
       {canViewStock && (
@@ -109,28 +109,32 @@ export function SidebarNav({
 
           {isStockOpen && (
             <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
-              <Link
-                href="/transactions"
-                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  pathname.startsWith('/transactions')
-                    ? 'bg-primary/15 text-primary font-semibold'
-                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                }`}
-              >
-                <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" />
-                <span>Transações</span>
-              </Link>
-              <Link
-                href="/items"
-                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  pathname.startsWith('/items')
-                    ? 'bg-primary/15 text-primary font-semibold'
-                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                }`}
-              >
-                <Package className="h-3.5 w-3.5 shrink-0" />
-                <span>Catálogo de Itens</span>
-              </Link>
+              {canViewTransactions && (
+                <Link
+                  href="/transactions"
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    pathname.startsWith('/transactions')
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  }`}
+                >
+                  <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" />
+                  <span>Transações</span>
+                </Link>
+              )}
+              {canViewItems && (
+                <Link
+                  href="/items"
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    pathname.startsWith('/items')
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  }`}
+                >
+                  <Package className="h-3.5 w-3.5 shrink-0" />
+                  <span>Catálogo de Itens</span>
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -213,23 +217,21 @@ export function SidebarNav({
                 }`}
               >
                 <Star className="h-3.5 w-3.5 shrink-0" />
-                <span>Meus Atendimentos</span>
+                <span>Atendimentos</span>
               </Link>
             )}
 
-            {userRole !== 'SELLER' && userRole !== 'FINANCIAL' && (
-              <Link
-                href="/hr-reports"
-                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  pathname.startsWith('/hr-reports')
-                    ? 'bg-primary/15 text-primary font-semibold'
-                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                }`}
-              >
-                <FileText className="h-3.5 w-3.5 shrink-0" />
-                <span>Relatórios dos Setores</span>
-              </Link>
-            )}
+            <Link
+              href="/hr-reports"
+              className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                pathname.startsWith('/hr-reports')
+                  ? 'bg-primary/15 text-primary font-semibold'
+                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              <span>Relatórios de Atividades</span>
+            </Link>
 
             {/* Submenu aninhado: Colaboradores */}
             <div className="space-y-1 pt-0.5">
@@ -320,7 +322,7 @@ export function SidebarNav({
             >
               <BarChart3 className="h-4 w-4 shrink-0" />
               <span>
-                {userRole === 'FISCAL'
+                {onlyCollectionsReports
                   ? 'Relatório Recoletas'
                   : 'Relatórios Analíticos'}
               </span>

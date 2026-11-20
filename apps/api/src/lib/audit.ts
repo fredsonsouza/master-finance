@@ -14,6 +14,7 @@ export async function logAction({
     | 'USER'
     | 'UNIT'
     | 'SECTOR'
+    | 'DEPARTMENT'
     | 'ITEM'
     | 'TRANSACTION'
     | 'CASH_CLOSURE'

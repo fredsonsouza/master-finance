@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 
 import { auth } from '@/auth/auth'
 import { getActiveUnit } from '@/components/unit-switcher-action'
+import { hasPermission } from '@/lib/permissions'
 
 export async function createTransactionAction(data: FormData) {
   const { token, user } = await auth()
@@ -15,11 +16,7 @@ export async function createTransactionAction(data: FormData) {
   }
 
   let unitId = user.unitId
-  if (
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'INVENTORY'
-  ) {
+  if (hasPermission(user, 'scope:all_units')) {
     const selectedUnitId = data.get('unitId') as string
     if (selectedUnitId) {
       unitId = selectedUnitId

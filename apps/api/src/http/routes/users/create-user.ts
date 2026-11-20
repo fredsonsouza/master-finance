@@ -1,7 +1,13 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import {
+  type Permission,
+  canGrantAccess,
+  defineAbilityFor,
+  permissionSchema,
+  roleSchema,
+} from '@saas/auth'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -17,28 +23,18 @@ export async function createUser(app: FastifyInstance) {
       '/users/admin',
       {
         schema: {
-          summary: 'Create a new user by Admin/Manager',
+          summary: 'Create a new user with PBAC permissions',
           tags: ['users'],
           security: [{ bearerAuth: [] }],
           body: z.object({
-            name: z.string(),
+            name: z.string().min(2),
             username: z
               .string()
               .min(3)
               .regex(/^[a-zA-Z0-9_.\- ]+$/),
             password: z.string().min(4),
-            role: z.enum([
-              'ADMIN',
-              'MANAGER',
-              'EMPLOYEE',
-              'FINANCIAL',
-              'SELLER',
-              'COLLECTOR',
-              'FISCAL',
-              'INVENTORY',
-              'ANALYST',
-              'HR',
-            ]),
+            role: roleSchema.default('EMPLOYEE'),
+            permissions: z.array(permissionSchema).default([]),
             unitId: z.string().uuid().nullable().optional(),
           }),
         },
@@ -57,16 +53,30 @@ export async function createUser(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('manage', 'User')) {
           throw new UnauthorizedError('You are not allowed to create users.')
         }
 
-        const { name, username, password, role, unitId } = request.body
+        const { name, username, password, role, permissions, unitId } =
+          request.body
 
-        if (role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
-          throw new UnauthorizedError('Only admins can create other admins.')
+        const uniquePermissions =
+          role === 'ADMIN' ? [] : Array.from(new Set(permissions))
+
+        const grantCheck = canGrantAccess(
+          {
+            role: requestingUser.role,
+            permissions: requestingUser.permissions as Permission[],
+          },
+          role,
+          uniquePermissions
+        )
+
+        if (!grantCheck.allowed) {
+          throw new UnauthorizedError(grantCheck.reason)
         }
 
         const userWithSameUsername = await prisma.user.findUnique({
@@ -85,6 +95,7 @@ export async function createUser(app: FastifyInstance) {
             username,
             password_hash,
             role,
+            permissions: uniquePermissions,
             unitId,
           },
         })
@@ -94,7 +105,7 @@ export async function createUser(app: FastifyInstance) {
           action: 'CREATE',
           resource: 'USER',
           resourceId: user.id,
-          details: `Cadastrou o usuário ${name} (${username}) com a permissão ${role}`,
+          details: `Cadastrou o usuário ${name} (${username}) como ${role} com ${uniquePermissions.length} permissões`,
         })
 
         return reply.status(201).send({ userId: user.id })

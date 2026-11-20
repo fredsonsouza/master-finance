@@ -73,6 +73,7 @@ describe('Get User Unit Test', () => {
         name: 'John',
         username: 'john',
         role: 'EMPLOYEE',
+        permissions: [],
         unitId: '423e4567-e89b-12d3-a456-426614174003',
         avatarUrl: null,
       },
@@ -82,7 +83,8 @@ describe('Get User Unit Test', () => {
   test('should return 404 if user does not exist', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
+      role: 'EMPLOYEE',
+      permissions: ['users:manage'],
     } as any)
 
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)

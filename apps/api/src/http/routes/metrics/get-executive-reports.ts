@@ -1,5 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -62,14 +63,19 @@ export async function getExecutiveReports(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        if (
-          requestingUser.role !== 'MANAGER' &&
-          requestingUser.role !== 'ADMIN'
-        ) {
+        if (!hasPermission(requestingUser, 'reports:view')) {
           throw new UnauthorizedError()
         }
 
-        const { unitId, month } = request.query
+        let { unitId } = request.query
+        const { month } = request.query
+
+        if (
+          !hasPermission(requestingUser, 'scope:all_units') &&
+          requestingUser.unitId
+        ) {
+          unitId = requestingUser.unitId
+        }
 
         // Fetch ALL transactions for the selected unit to calculate historical monthly flow
         const transactions = await prisma.transaction.findMany({

@@ -3,6 +3,11 @@ import { getActiveUnit } from '@/components/unit-switcher-action'
 import { type Collection, getCollections } from '@/http/collections'
 import { type Unit, getUnits } from '@/http/get-units'
 import { type User, getUsers } from '@/http/get-users'
+import {
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+} from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { CollectionsContent } from './collections-content'
 
@@ -11,15 +16,8 @@ export const dynamic = 'force-dynamic'
 export default async function CollectionsPage() {
   const { user, token } = await auth()
 
-  if (
-    user.role !== 'ADMIN' &&
-    user.role !== 'MANAGER' &&
-    user.role !== 'HR' &&
-    user.role !== 'EMPLOYEE' &&
-    user.role !== 'FISCAL' &&
-    user.role !== 'COLLECTOR'
-  ) {
-    redirect('/')
+  if (!hasAnyPermission(user, ['collections:manage', 'collections:execute'])) {
+    redirect(getDefaultHomeRoute(user))
   }
 
   const activeUnitId = await getActiveUnit()
@@ -28,25 +26,24 @@ export default async function CollectionsPage() {
   let collectors: User[] = []
   let units: Unit[] = []
 
-  const isGlobalUser =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'FISCAL'
+  const canManageCollections = hasPermission(user, 'collections:manage')
+  const hasAllUnits = hasPermission(user, 'scope:all_units')
 
   try {
-    if (activeUnitId || isGlobalUser || user.role === 'COLLECTOR') {
-      const collectionsUnitId = isGlobalUser ? null : activeUnitId
+    if (activeUnitId || hasAllUnits || canManageCollections) {
+      const collectionsUnitId = hasAllUnits ? null : activeUnitId
       const [collectionsRes, usersRes, unitsRes] = await Promise.all([
         getCollections(token, collectionsUnitId).catch(() => ({
           collections: [],
         })),
-        user.role !== 'COLLECTOR'
-          ? getUsers(token, null, 'COLLECTOR', null, 1, 200).catch(() => ({
+        canManageCollections
+          ? getUsers(token, null, null, null, 1, 200, {
+              departmentType: 'COLLECTION',
+            }).catch(() => ({
               users: [],
             }))
           : Promise.resolve({ users: [] }),
-        isGlobalUser
+        hasAllUnits || canManageCollections
           ? getUnits(token).catch(() => ({ units: [] }))
           : Promise.resolve({ units: [] }),
       ])
@@ -72,7 +69,7 @@ export default async function CollectionsPage() {
         </div>
       </div>
 
-      {!activeUnitId && !isGlobalUser && user.role !== 'COLLECTOR' ? (
+      {!activeUnitId && !hasAllUnits && !canManageCollections ? (
         <div className="text-center py-12 text-on-surface-variant">
           Selecione uma unidade no menu superior para visualizar as recoletas.
         </div>
@@ -82,7 +79,7 @@ export default async function CollectionsPage() {
           activeUnitId={activeUnitId}
           collectors={collectors}
           units={units}
-          currentUserRole={user.role}
+          canManageCollections={canManageCollections}
         />
       )}
     </div>

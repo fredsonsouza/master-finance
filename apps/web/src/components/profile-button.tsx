@@ -25,19 +25,17 @@ interface ProfileButtonProps {
     username: string | null
     role: string
     unit?: { id: string; name: string } | null
+    employee?: {
+      registrationNumber: string
+      roleTitle: string
+      department?: { id: string; name: string } | null
+    } | null
   }
 }
 
 const roleNames: Record<string, string> = {
   ADMIN: 'Administrador',
-  MANAGER: 'Gerente',
-  EMPLOYEE: 'Funcionário',
-  FINANCIAL: 'Financeiro',
-  SELLER: 'Caixa',
-  COLLECTOR: 'Coletador',
-  FISCAL: 'Fiscal',
-  INVENTORY: 'Estoque',
-  ANALYST: 'Analista',
+  EMPLOYEE: 'Colaborador',
 }
 
 export function ProfileButton({ user }: ProfileButtonProps) {
@@ -76,7 +74,7 @@ export function ProfileButton({ user }: ProfileButtonProps) {
                 {user.name || user.username}
               </p>
               <p className="text-on-surface-variant text-xs">
-                {roleNames[user.role] || user.role}
+                {user.employee?.roleTitle || roleNames[user.role] || user.role}
               </p>
             </div>
             <div className="bg-primary-container text-on-primary-container flex h-10 w-10 items-center justify-center rounded-full font-bold shadow-sm">
@@ -105,18 +103,24 @@ export function ProfileButton({ user }: ProfileButtonProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Username</Label>
+                <Label>Identificador / Matrícula</Label>
                 <Input
                   disabled
-                  value={user.username || ''}
+                  value={
+                    user.employee?.registrationNumber || user.username || ''
+                  }
                   className="bg-surface-container opacity-70"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Cargo</Label>
+                <Label>Perfil</Label>
                 <Input
                   disabled
-                  value={roleNames[user.role] || user.role}
+                  value={
+                    user.employee?.roleTitle
+                      ? `${user.employee.roleTitle} (${roleNames[user.role] || user.role})`
+                      : roleNames[user.role] || user.role
+                  }
                   className="bg-surface-container opacity-70"
                 />
               </div>

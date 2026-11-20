@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -56,7 +56,8 @@ export async function createTransaction(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         const { type, date, unitId, sectorId, items } = request.body
 

@@ -1,35 +1,34 @@
+import type { DepartmentType, Permission, Role } from '@/lib/permissions'
 import { api } from './api-client'
 
-interface GetProfileResponse {
-  user: {
+export interface ProfileUser {
+  id: string
+  name: string | null
+  username: string | null
+  avatarUrl?: string | null
+  forcePasswordChange: boolean
+  role: Role
+  permissions: Permission[]
+  unitId: string | null
+  unit?: {
     id: string
-    name: string | null
-    username: string | null
-    avatarUrl?: string | null
-    forcePasswordChange: boolean
-    role:
-      | 'ADMIN'
-      | 'MANAGER'
-      | 'EMPLOYEE'
-      | 'FINANCIAL'
-      | 'SELLER'
-      | 'COLLECTOR'
-      | 'FISCAL'
-      | 'INVENTORY'
-      | 'ANALYST'
-      | 'HR'
-    unitId: string | null
-    unit?: {
+    name: string
+  } | null
+  employee?: {
+    id: string
+    registrationNumber: string
+    status: 'ACTIVE' | 'INACTIVE'
+    roleTitle: string
+    department?: {
       id: string
       name: string
+      type: DepartmentType
     } | null
-    employee?: {
-      id: string
-      registrationNumber: string
-      status: 'ACTIVE' | 'INACTIVE'
-      roleTitle: string
-    } | null
-  }
+  } | null
+}
+
+interface GetProfileResponse {
+  user: ProfileUser
 }
 
 export async function getProfile(token: string) {

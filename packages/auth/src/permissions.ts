@@ -1,6 +1,7 @@
 import type { AbilityBuilder } from '@casl/ability'
 import type { AppAbility } from '.'
 import type { User } from './models/user'
+import { hasPermission } from './permission-catalog'
 import type { Role } from './roles'
 
 type PermissionsByRole = (
@@ -13,54 +14,18 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('manage', 'all')
   },
 
-  MANAGER(_, { can }) {
-    can('get', 'Item')
-    can('get', 'User')
-    can('get', 'Evaluation')
-    can('get', 'Category')
-    can('manage', 'Category')
-    can('manage', 'Sector')
-    can('manage', 'Unit')
-    can('manage', 'Transaction')
-    can('manage', 'Metric')
-    can('manage', 'CashClosure')
-    can('manage', 'Collection')
-    can('manage', 'HrReport')
-    can('manage', 'Employee')
-    can('manage', 'EmployeeRequest')
-  },
-
-  HR(_, { can }) {
-    can('manage', 'Employee')
-    can('manage', 'EmployeeRequest')
-    can('manage', 'HrReport')
-    can('manage', 'Evaluation')
-    can('manage', 'User')
-    can('manage', 'Item')
-    can('manage', 'Transaction')
-    can('manage', 'Metric')
-    can('manage', 'CashClosure')
-    can('manage', 'Collection')
-    can('get', 'Unit')
-    can('get', 'Sector')
-    can('get', 'Category')
-  },
-
-  FINANCIAL(user, { can }) {
-    can('manage', 'CashClosure')
-    can('manage', 'Metric')
-    can('get', 'Sector')
-    can('get', 'Unit')
-    can('get', 'User')
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
-
   EMPLOYEE(user, { can }) {
-    can('get', 'Sector')
-    can('get', 'Item')
-    can('get', 'Category')
-    can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+    const hasAllUnits = hasPermission(user, 'scope:all_units')
+
+    // Base self-service permissions granted to every active employee
+    can('get', 'Department')
+
+    if (hasAllUnits) {
+      can('get', 'Unit')
+    }
+
+    can('create', 'EmployeeRequest')
+    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
 
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
@@ -73,95 +38,108 @@ export const permissions: Record<Role, PermissionsByRole> = {
       status: { $eq: 'DRAFT' },
     })
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
+    // Analytics & Dashboard
+    if (hasPermission(user, 'dashboard:view')) {
+      can('get', 'Metric')
+    }
 
-  SELLER(user, { can }) {
-    can('create', 'CashClosure')
-    can('get', 'CashClosure', { unitId: { $eq: user.unitId } })
-    can('update', 'CashClosure', ['cashDate', 'value', 'observation'], {
-      userId: { $eq: user.id },
-      status: { $eq: 'OPEN' },
-    })
+    if (hasPermission(user, 'reports:view')) {
+      can('manage', 'Metric')
+    }
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
+    // Inventory & Transactions
+    if (hasPermission(user, 'transactions:manage')) {
+      can('get', 'Sector')
+      can('get', 'Item')
+      can('get', 'Category')
 
-  COLLECTOR(user, { can }) {
-    can('get', 'Collection', { unitId: { $eq: user.unitId } })
+      if (hasAllUnits) {
+        can('manage', 'Transaction')
+      } else if (user.unitId) {
+        can('manage', 'Transaction', { unitId: { $eq: user.unitId } })
+      }
+    }
 
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
-    can('delete', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
+    if (hasPermission(user, 'items:manage')) {
+      can('manage', 'Item')
+      can('manage', 'Category')
+      can('get', 'Sector')
+    }
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
+    // Financial (Cash Closures)
+    if (hasPermission(user, 'cash_closures:create')) {
+      can('create', 'CashClosure')
+      if (hasAllUnits) {
+        can('get', 'CashClosure')
+      } else if (user.unitId) {
+        can('get', 'CashClosure', { unitId: { $eq: user.unitId } })
+      }
+      can('update', 'CashClosure', ['cashDate', 'value', 'observation'], {
+        userId: { $eq: user.id },
+        status: { $eq: 'OPEN' },
+      })
+    }
 
-  FISCAL(user, { can }) {
-    can('manage', 'Collection')
-    can('get', 'User')
-    can('get', 'Unit')
+    if (hasPermission(user, 'cash_closures:manage')) {
+      can('manage', 'CashClosure')
+      can('get', 'User')
+      can('get', 'Sector')
+      can('get', 'Unit')
+    }
 
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
-    can('delete', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
+    // Operations (Collections)
+    if (hasPermission(user, 'collections:execute')) {
+      if (hasAllUnits) {
+        can('get', 'Collection')
+      } else if (user.unitId) {
+        can('get', 'Collection', { unitId: { $eq: user.unitId } })
+      }
+    }
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
+    if (hasPermission(user, 'collections:manage')) {
+      can('manage', 'Collection')
+      can('get', 'User')
+      can('get', 'Unit')
+    }
 
-  INVENTORY(user, { can }) {
-    can('manage', 'Transaction')
-    can('manage', 'Item')
-    can('manage', 'Unit')
-    can('manage', 'Sector')
-    can('manage', 'Category')
+    // Operations (Evaluations)
+    if (hasPermission(user, 'evaluations:receive')) {
+      can('get', 'Evaluation')
+    }
 
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
-    can('delete', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
+    if (hasPermission(user, 'evaluations:manage')) {
+      can('manage', 'Evaluation')
+      can('get', 'User')
+      can('get', 'Unit')
+    }
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
-  },
+    // Human Resources
+    if (hasPermission(user, 'employees:manage')) {
+      can('manage', 'Employee')
+      can('manage', 'EmployeeRequest')
+      can('manage', 'Department')
+      can('get', 'User')
+      can('get', 'Unit')
+    }
 
-  ANALYST(user, { can }) {
-    can('create', 'HrReport')
-    can('get', 'HrReport', { userId: { $eq: user.id } })
-    can('update', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
-    can('delete', 'HrReport', {
-      userId: { $eq: user.id },
-      status: { $eq: 'DRAFT' },
-    })
+    if (hasPermission(user, 'hr_reports:manage')) {
+      can('manage', 'HrReport')
+      can('get', 'User')
+      can('get', 'Unit')
+    }
 
-    can('create', 'EmployeeRequest')
-    can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
+    // Administration
+    if (hasPermission(user, 'users:manage')) {
+      can('manage', 'User')
+      can('get', 'Department')
+      can('get', 'Unit')
+    }
+
+    if (hasPermission(user, 'settings:structure')) {
+      can('manage', 'Unit')
+      can('manage', 'Sector')
+      can('manage', 'Category')
+      can('manage', 'Department')
+    }
   },
 }

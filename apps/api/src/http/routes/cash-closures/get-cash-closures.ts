@@ -1,8 +1,10 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { UnauthorizedError } from '../_errors/unauthorized-error'
 
 export async function getCashClosures(app: FastifyInstance) {
   app
@@ -76,6 +78,23 @@ export async function getCashClosures(app: FastifyInstance) {
         const userId = await request.getCurrentUserId()
         const user = await prisma.user.findUnique({ where: { id: userId } })
 
+        if (!user) {
+          throw new UnauthorizedError()
+        }
+
+        const ability = defineAbilityFor({
+          id: user.id,
+          role: user.role,
+          unitId: user.unitId,
+          permissions: user.permissions as Permission[],
+        })
+
+        if (ability.cannot('get', 'CashClosure')) {
+          throw new UnauthorizedError(
+            'You are not allowed to view cash closures.'
+          )
+        }
+
         // Filtro base:
         const where: any = {}
 
@@ -106,9 +125,9 @@ export async function getCashClosures(app: FastifyInstance) {
           }
         }
 
-        // Se for SELLER e não tiver global access, restringe mais:
-        if (user?.role === 'SELLER' || user?.role === 'EMPLOYEE') {
-          where.unitId = user.unitId // Força filtro na unidade do usuário
+        // Se não tiver escopo global de unidades, restringe à unidade vinculada ao usuário:
+        if (!hasPermission(user, 'scope:all_units') && user.unitId) {
+          where.unitId = user.unitId
         }
 
         const [totalCount, closures] = await Promise.all([

@@ -8,12 +8,18 @@ import { createUser } from '@/http/create-user'
 import { deleteSector } from '@/http/delete-sector'
 import { deleteUnit } from '@/http/delete-unit'
 import { deleteUser } from '@/http/delete-user'
+import {
+  createDepartmentApi,
+  deleteDepartmentApi,
+  updateDepartmentApi,
+} from '@/http/departments'
 import { getUsers } from '@/http/get-users'
 import { resetPassword } from '@/http/reset-password'
 import { updateCategory } from '@/http/update-category'
 import { updateSector } from '@/http/update-sector'
 import { updateUnit } from '@/http/update-unit'
 import { updateUser } from '@/http/update-user'
+import type { DepartmentType, Permission, Role } from '@/lib/permissions'
 import { revalidatePath, updateTag } from 'next/cache'
 
 export async function fetchUsersAction(params?: {
@@ -67,22 +73,93 @@ export async function createSectorAction(data: FormData) {
   }
 }
 
+export async function createDepartmentAction(data: {
+  name: string
+  type: DepartmentType
+}) {
+  const { token } = await auth()
+  try {
+    await createDepartmentApi(token, data)
+    updateTag('departments')
+    revalidatePath('/settings')
+    revalidatePath('/employees')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao criar departamento.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function updateDepartmentAction(
+  id: string,
+  data: { name?: string; type?: DepartmentType }
+) {
+  const { token } = await auth()
+  try {
+    await updateDepartmentApi(token, id, data)
+    updateTag('departments')
+    revalidatePath('/settings')
+    revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao atualizar departamento.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
+export async function deleteDepartmentAction(id: string) {
+  const { token } = await auth()
+  try {
+    await deleteDepartmentApi(token, id)
+    updateTag('departments')
+    revalidatePath('/settings')
+    revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
+    return { success: true, message: null }
+  } catch (err: unknown) {
+    let msg = 'Erro ao excluir departamento.'
+    if (err && typeof err === 'object' && 'response' in err) {
+      try {
+        const e = await (err as any).response.clone().json()
+        if (e?.message) msg = e.message
+      } catch {}
+    }
+    return { success: false, message: msg }
+  }
+}
+
 export async function createUserAction(data: FormData) {
   const { token } = await auth()
   const name = data.get('name') as string
   const username = data.get('username') as string
   const password = data.get('password') as string
-  const role = data.get('role') as
-    | 'ADMIN'
-    | 'MANAGER'
-    | 'EMPLOYEE'
-    | 'FINANCIAL'
-    | 'SELLER'
-    | 'COLLECTOR'
-    | 'FISCAL'
-    | 'INVENTORY'
-    | 'ANALYST'
+  const role = (data.get('role') as Role) || 'EMPLOYEE'
   const unitId = data.get('unitId') as string | null
+  const permissionsJson = data.get('permissionsJson') as string | null
+
+  let permissions: Permission[] = []
+  if (permissionsJson) {
+    try {
+      permissions = JSON.parse(permissionsJson) as Permission[]
+    } catch {
+      permissions = []
+    }
+  }
 
   try {
     await createUser(token, {
@@ -90,6 +167,7 @@ export async function createUserAction(data: FormData) {
       username,
       password,
       role,
+      permissions: role === 'ADMIN' ? [] : permissions,
       unitId: unitId || null,
     })
     updateTag('users')
@@ -106,7 +184,7 @@ export async function createUserAction(data: FormData) {
         const response = (err as any).response
         const e = await response.json()
         if (e?.message) msg = e.message
-      } catch (parseErr) {}
+      } catch {}
     }
     return { success: false, message: msg }
   }
@@ -198,22 +276,24 @@ export async function updateUserAction(id: string, data: FormData) {
   const { token } = await auth()
   const name = data.get('name') as string
   const password = data.get('password') as string | undefined
-  const role = data.get('role') as
-    | 'ADMIN'
-    | 'MANAGER'
-    | 'EMPLOYEE'
-    | 'FINANCIAL'
-    | 'SELLER'
-    | 'COLLECTOR'
-    | 'FISCAL'
-    | 'INVENTORY'
-    | 'ANALYST'
+  const role = (data.get('role') as Role) || undefined
   const unitId = data.get('unitId') as string | null
+  const permissionsJson = data.get('permissionsJson') as string | null
+
+  let permissions: Permission[] | undefined
+  if (permissionsJson !== null) {
+    try {
+      permissions = JSON.parse(permissionsJson) as Permission[]
+    } catch {
+      permissions = undefined
+    }
+  }
 
   try {
     await updateUser(token, id, {
       name: name || undefined,
-      role: role || undefined,
+      role,
+      permissions: role === 'ADMIN' ? [] : permissions,
       unitId: unitId || null,
       password:
         password && password.trim().length > 0 ? password.trim() : undefined,

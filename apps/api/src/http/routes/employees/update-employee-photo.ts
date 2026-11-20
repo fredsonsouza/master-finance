@@ -2,7 +2,7 @@ import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
 import { validateAndNormalizeEmployeePhoto } from '@/utils/employee-photo'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -53,6 +53,7 @@ export async function updateEmployeePhoto(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId ?? undefined,
+          permissions: requestingUser.permissions as Permission[],
         })
 
         if (ability.cannot('update', 'Employee')) {

@@ -1,5 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { hasAnyPermission, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -55,14 +56,23 @@ export async function getCollectionsReports(app: FastifyInstance) {
         }
 
         if (
-          requestingUser.role !== 'MANAGER' &&
-          requestingUser.role !== 'ADMIN' &&
-          requestingUser.role !== 'FISCAL'
+          !hasAnyPermission(requestingUser, [
+            'reports:view',
+            'collections:manage',
+          ])
         ) {
           throw new UnauthorizedError()
         }
 
-        const { unitId, month } = request.query
+        let { unitId } = request.query
+        const { month } = request.query
+
+        if (
+          !hasPermission(requestingUser, 'scope:all_units') &&
+          requestingUser.unitId
+        ) {
+          unitId = requestingUser.unitId
+        }
 
         const collections = await prisma.collection.findMany({
           where: { unitId },

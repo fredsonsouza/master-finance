@@ -114,9 +114,21 @@ export interface Employee {
   userId: string | null
   unitId: string | null
   sectorId: string | null
+  departmentId?: string | null
   unit?: { id: string; name: string } | null
   sector?: { id: string; name: string } | null
-  user?: { id: string; name: string; username: string; role: string } | null
+  department?: {
+    id: string
+    name: string
+    type: 'GENERAL' | 'RECEPTION' | 'COLLECTION'
+  } | null
+  user?: {
+    id: string
+    name: string
+    username: string
+    role: string
+    permissions?: string[]
+  } | null
   requests?: EmployeeRequestItem[]
   createdAt: string
   updatedAt: string
@@ -175,6 +187,7 @@ export async function getEmployees(
     status?: 'ACTIVE' | 'INACTIVE'
     unitId?: string
     sectorId?: string
+    departmentId?: string
     page?: number
     perPage?: number
   }
@@ -184,6 +197,7 @@ export async function getEmployees(
   if (params?.status) searchParams.status = params.status
   if (params?.unitId) searchParams.unitId = params.unitId
   if (params?.sectorId) searchParams.sectorId = params.sectorId
+  if (params?.departmentId) searchParams.departmentId = params.departmentId
   if (params?.page) searchParams.page = String(params.page)
   if (params?.perPage) searchParams.perPage = String(params.perPage)
 

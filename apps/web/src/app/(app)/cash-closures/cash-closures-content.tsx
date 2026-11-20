@@ -44,7 +44,7 @@ interface Props {
   sectors: Sector[]
   units: Unit[]
   users: User[]
-  userRole: string
+  canManageCashClosures: boolean
   userId: string
   activeUnitId: string | null
 }
@@ -55,7 +55,7 @@ export function CashClosuresContent({
   sectors,
   units,
   users,
-  userRole,
+  canManageCashClosures,
   userId,
   activeUnitId,
 }: Props) {
@@ -87,7 +87,7 @@ export function CashClosuresContent({
 
   const [isExportingPdf, setIsExportingPdf] = useState(false)
 
-  const isFinancial = ['ADMIN', 'MANAGER', 'HR', 'FINANCIAL'].includes(userRole)
+  const isFinancial = canManageCashClosures
 
   const loadClosures = useCallback(
     (

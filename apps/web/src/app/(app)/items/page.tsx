@@ -1,6 +1,11 @@
 import { auth } from '@/auth/auth'
 import { type Category, getCategories } from '@/http/get-categories'
 import { type Item, getItems } from '@/http/get-items'
+import {
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+} from '@/lib/permissions'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { CreateItemDialog } from './create-item-dialog'
@@ -14,11 +19,11 @@ export const metadata: Metadata = {
 export default async function ItemsPage() {
   const { user, token } = await auth()
 
-  if (!['ADMIN', 'MANAGER', 'INVENTORY', 'EMPLOYEE'].includes(user.role)) {
-    redirect('/')
+  if (!hasAnyPermission(user, ['transactions:manage', 'items:manage'])) {
+    redirect(getDefaultHomeRoute(user))
   }
 
-  const canManage = user.role === 'ADMIN' || user.role === 'INVENTORY'
+  const canManage = hasPermission(user, 'items:manage')
 
   let items: Item[] = []
   let pagination = { page: 1, perPage: 20, totalCount: 0, totalPages: 1 }

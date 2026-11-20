@@ -61,6 +61,7 @@ interface Props {
     id: string
     name: string
     role: string
+    isHrManager: boolean
     registrationNumber: string | null
     employeeId: string | null
   }
@@ -214,10 +215,7 @@ export function EmployeeRequestsContent({
   employees,
   currentUser,
 }: Props) {
-  const isHrManager =
-    currentUser.role === 'ADMIN' ||
-    currentUser.role === 'MANAGER' ||
-    currentUser.role === 'HR'
+  const isHrManager = currentUser.isHrManager
 
   const [requests, setRequests] =
     useState<EmployeeRequestItem[]>(initialRequests)

@@ -1,5 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -64,8 +65,10 @@ export async function getLogs(app: FastifyInstance) {
           throw new UnauthorizedError()
         }
 
-        if (requestingUser.role !== 'ADMIN') {
-          throw new UnauthorizedError('Acesso restrito a administradores.')
+        if (!hasPermission(requestingUser, 'logs:view')) {
+          throw new UnauthorizedError(
+            'Você não tem permissão para visualizar logs de auditoria.'
+          )
         }
 
         const { resource, action, search, startDate, endDate, page, perPage } =

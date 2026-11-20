@@ -46,10 +46,11 @@ describe('Get Evaluations Unit Test', () => {
     await app.register(getEvaluations)
   })
 
-  test('should allow MANAGER/ADMIN to view evaluations', async () => {
+  test('should allow user with evaluations:manage to view evaluations', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'MANAGER',
+      role: 'EMPLOYEE',
+      permissions: ['evaluations:manage'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
@@ -104,10 +105,11 @@ describe('Get Evaluations Unit Test', () => {
     })
   })
 
-  test('should block SELLER from viewing evaluations', async () => {
+  test('should block basic EMPLOYEE without evaluation permissions from viewing evaluations', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'SELLER',
+      role: 'EMPLOYEE',
+      permissions: [],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 

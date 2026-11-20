@@ -1,13 +1,14 @@
 import { auth } from '@/auth/auth'
+import { type Department, getDepartments } from '@/http/departments'
 import {
   type Employee,
   type EmployeesSummary,
   type PaginationMeta,
   getEmployees,
 } from '@/http/employees'
-import { type Sector, getSectors } from '@/http/get-sectors'
 import { type Unit, getUnits } from '@/http/get-units'
 import { type User, getUsers } from '@/http/get-users'
+import { hasPermission } from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { EmployeesContent } from './employees-content'
 
@@ -16,7 +17,7 @@ export const dynamic = 'force-dynamic'
 export default async function EmployeesPage() {
   const { user, token } = await auth()
 
-  if (user.role !== 'ADMIN' && user.role !== 'MANAGER' && user.role !== 'HR') {
+  if (!hasPermission(user, 'employees:manage')) {
     redirect('/employees/requests')
   }
 
@@ -33,20 +34,21 @@ export default async function EmployeesPage() {
     totalPages: 0,
   }
   let units: Unit[] = []
-  let sectors: Sector[] = []
+  let departments: Department[] = []
   let users: User[] = []
 
   try {
-    const [employeesRes, unitsRes, sectorsRes, usersRes] = await Promise.all([
-      getEmployees(token, { page: 1, perPage: 50 }).catch(() => ({
-        employees: [],
-        summary: { totalCount: 0, activeCount: 0, inactiveCount: 0 },
-        pagination: { page: 1, perPage: 50, totalCount: 0, totalPages: 0 },
-      })),
-      getUnits(token).catch(() => ({ units: [] })),
-      getSectors(token).catch(() => ({ sectors: [] })),
-      getUsers(token, null, null, null, 1, 200).catch(() => ({ users: [] })),
-    ])
+    const [employeesRes, unitsRes, departmentsRes, usersRes] =
+      await Promise.all([
+        getEmployees(token, { page: 1, perPage: 50 }).catch(() => ({
+          employees: [],
+          summary: { totalCount: 0, activeCount: 0, inactiveCount: 0 },
+          pagination: { page: 1, perPage: 50, totalCount: 0, totalPages: 0 },
+        })),
+        getUnits(token).catch(() => ({ units: [] })),
+        getDepartments(token).catch(() => ({ departments: [] })),
+        getUsers(token, null, null, null, 1, 200).catch(() => ({ users: [] })),
+      ])
 
     employees = employeesRes.employees || []
     summary = employeesRes.summary || {
@@ -61,7 +63,7 @@ export default async function EmployeesPage() {
       totalPages: 0,
     }
     units = unitsRes.units || []
-    sectors = sectorsRes.sectors || []
+    departments = departmentsRes.departments || []
     users = usersRes.users || []
   } catch (err) {
     console.error(err)
@@ -75,8 +77,8 @@ export default async function EmployeesPage() {
             Quadro de Colaboradores
           </h1>
           <p className="text-on-surface-variant">
-            Gerencie fichas de registro de empregados, matrículas padronizadas
-            (MASTER-XXXX), status contratual e exportação oficial em PDF
+            Gerencie fichas de registro de empregados, departamentos, matrículas
+            padronizadas (MASTER-XXXX) e acessos por permissão (PBAC)
           </p>
         </div>
       </div>
@@ -86,8 +88,10 @@ export default async function EmployeesPage() {
         initialSummary={summary}
         initialPagination={pagination}
         units={units}
-        sectors={sectors}
+        departments={departments}
         users={users}
+        currentUserRole={user.role}
+        currentUserPermissions={user.permissions || []}
       />
     </div>
   )

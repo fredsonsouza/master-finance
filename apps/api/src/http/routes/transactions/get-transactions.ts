@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -86,7 +86,8 @@ export async function getTransactions(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'Transaction')) {
           throw new UnauthorizedError(
@@ -97,7 +98,7 @@ export async function getTransactions(app: FastifyInstance) {
         let { unitId, itemId, month, type, search, page, perPage } =
           request.query
 
-        if (requestingUser.role === 'EMPLOYEE') {
+        if (!hasPermission(requestingUser, 'scope:all_units')) {
           if (!requestingUser.unitId) {
             return reply.status(200).send({
               transactions: [],

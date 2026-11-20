@@ -98,10 +98,11 @@ describe('Get Cash Closures Unit Test', () => {
     )
   })
 
-  test('should filter by SELLER unitId automatically', async () => {
+  test('should filter by unitId automatically when user lacks scope:all_units', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'SELLER',
+      role: 'EMPLOYEE',
+      permissions: ['cash_closures:create'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
@@ -126,7 +127,8 @@ describe('Get Cash Closures Unit Test', () => {
   test('should filter by search term on user name', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'FINANCIAL',
+      role: 'EMPLOYEE',
+      permissions: ['scope:all_units', 'cash_closures:manage'],
     } as any)
 
     vi.mocked(prisma.cashClosure.count).mockResolvedValueOnce(1)

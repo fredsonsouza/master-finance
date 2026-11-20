@@ -1,7 +1,7 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -57,13 +57,17 @@ export async function createCashClosure(app: FastifyInstance) {
           id: user.id,
           role: user.role,
           unitId: user.unitId,
-        } as any)
+          permissions: user.permissions as Permission[],
+        })
 
         if (
           ability.cannot('create', {
             __typename: 'CashClosure',
             unitId,
-          } as any)
+          } as any) ||
+          (!hasPermission(user, 'scope:all_units') &&
+            user.unitId &&
+            unitId !== user.unitId)
         ) {
           throw new UnauthorizedError(
             'You are not allowed to create cash closures in this unit.'
@@ -81,10 +85,7 @@ export async function createCashClosure(app: FastifyInstance) {
         }
 
         const finalUserId =
-          (user.role === 'FINANCIAL' ||
-            user.role === 'MANAGER' ||
-            user.role === 'ADMIN') &&
-          targetUserId
+          hasPermission(user, 'cash_closures:manage') && targetUserId
             ? targetUserId
             : currentUserId
 

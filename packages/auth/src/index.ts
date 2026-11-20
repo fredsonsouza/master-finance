@@ -7,7 +7,14 @@ import {
 import z from 'zod'
 import type { User } from './models/user'
 import { permissions } from './permissions'
+import { cashClosureSubject } from './subjects/cash-closure'
 import { categorySubject } from './subjects/category'
+import { collectionSubject } from './subjects/collection'
+import { departmentSubject } from './subjects/department'
+import { employeeSubject } from './subjects/employee'
+import { employeeRequestSubject } from './subjects/employee-request'
+import { evaluationSubject } from './subjects/evaluation'
+import { hrReportSubject } from './subjects/hr-report'
 import { itemSubject } from './subjects/item'
 import { metricSubject } from './subjects/metric'
 import { sectorSubject } from './subjects/sector'
@@ -15,16 +22,29 @@ import { transactionSubject } from './subjects/transaction'
 import { unitSubject } from './subjects/unit'
 import { userSubject } from './subjects/user'
 
-import { cashClosureSubject } from './subjects/cash-closure'
-import { collectionSubject } from './subjects/collection'
-import { employeeSubject } from './subjects/employee'
-import { employeeRequestSubject } from './subjects/employee-request'
-import { evaluationSubject } from './subjects/evaluation'
-import { hrReportSubject } from './subjects/hr-report'
+export {
+  PERMISSIONS,
+  PERMISSION_GROUPS,
+  PERMISSION_PRESETS,
+  PRIVILEGED_PERMISSIONS,
+  canGrantAccess,
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+  permissionSchema,
+  type Permission,
+  type PermissionDefinition,
+  type PermissionGroup,
+  type PermissionPreset,
+  type PermissionSubjectUser,
+} from './permission-catalog'
+export { roleSchema, type Role } from './roles'
+export { userSchema, type User } from './models/user'
 
 const appAbilitiesSchema = z.union([
   categorySubject,
   sectorSubject,
+  departmentSubject,
   userSubject,
   itemSubject,
   unitSubject,

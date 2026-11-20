@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { hasAnyPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -41,16 +42,37 @@ export async function getPublicSeller(app: FastifyInstance) {
           name: true,
           avatarUrl: true,
           role: true,
+          permissions: true,
           unit: {
             select: {
               id: true,
               name: true,
             },
           },
+          employee: {
+            select: {
+              status: true,
+              department: {
+                select: {
+                  type: true,
+                },
+              },
+            },
+          },
         },
       })
 
-      if (!seller || !['SELLER', 'ADMIN', 'MANAGER'].includes(seller.role)) {
+      const isEligibleSeller =
+        seller &&
+        seller.employee?.status !== 'INACTIVE' &&
+        (seller.role === 'ADMIN' ||
+          hasAnyPermission(seller, [
+            'evaluations:receive',
+            'evaluations:manage',
+          ]) ||
+          seller.employee?.department?.type === 'RECEPTION')
+
+      if (!isEligibleSeller) {
         throw new BadRequestError('Recepcionista não encontrada.')
       }
 

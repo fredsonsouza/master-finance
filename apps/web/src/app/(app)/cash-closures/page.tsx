@@ -8,6 +8,11 @@ import { getUnits } from '@/http/get-units'
 import type { Unit } from '@/http/get-units'
 import { getUsers } from '@/http/get-users'
 import type { User } from '@/http/get-users'
+import {
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+} from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { CashClosuresContent } from './cash-closures-content'
 
@@ -16,10 +21,14 @@ export const dynamic = 'force-dynamic'
 export default async function CashClosuresPage() {
   const { user, token } = await auth()
 
-  if (!['ADMIN', 'MANAGER', 'FINANCIAL', 'SELLER'].includes(user.role)) {
-    redirect('/')
+  if (
+    !hasAnyPermission(user, ['cash_closures:create', 'cash_closures:manage'])
+  ) {
+    redirect(getDefaultHomeRoute(user))
   }
 
+  const canManageCashClosures = hasPermission(user, 'cash_closures:manage')
+  const hasAllUnits = hasPermission(user, 'scope:all_units')
   const activeUnitId = await getActiveUnit()
 
   let closures: CashClosure[] = []
@@ -43,15 +52,19 @@ export default async function CashClosuresPage() {
     pagination = res.pagination
 
     if (activeUnitId) {
-      const sRes = await getSectors(token)
+      const sRes = await getSectors(token).catch(() => ({ sectors: [] }))
       sectors = sRes.sectors
     }
 
-    if (user.role !== 'SELLER' && user.role !== 'EMPLOYEE') {
-      const uRes = await getUnits(token)
+    if (canManageCashClosures || hasAllUnits) {
+      const uRes = await getUnits(token).catch(() => ({ units: [] }))
       units = uRes.units
+    }
 
-      const usersRes = await getUsers(token, activeUnitId, null, null, 1, 200)
+    if (canManageCashClosures) {
+      const usersRes = await getUsers(token, activeUnitId, null, null, 1, 200, {
+        onlyActive: true,
+      }).catch(() => ({ users: [] }))
       users = usersRes.users
     }
   } catch (error) {
@@ -65,7 +78,7 @@ export default async function CashClosuresPage() {
       sectors={sectors}
       units={units}
       users={users}
-      userRole={user.role}
+      canManageCashClosures={canManageCashClosures}
       userId={user.id}
       activeUnitId={activeUnitId}
     />

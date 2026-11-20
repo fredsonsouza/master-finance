@@ -10,32 +10,48 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { Department } from '@/http/departments'
 import type { Category } from '@/http/get-categories'
 import type { Sector } from '@/http/get-sectors'
 import type { Unit } from '@/http/get-units'
 import type { User, UserPagination } from '@/http/get-users'
 import {
+  DEPARTMENT_TYPE_LABELS,
+  type DepartmentType,
+  type Permission,
+  ROLE_LABELS,
+  type Role,
+  getPermissionLabel,
+} from '@/lib/permissions'
+import {
+  Briefcase,
   Building2,
   ChevronLeft,
   ChevronRight,
-  Filter,
   KeyRound,
   Loader2,
   Pencil,
+  Plus,
   Search,
+  Shield,
   Tag,
   Trash2,
   UserCheck,
   X,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
+  createDepartmentAction,
+  deleteDepartmentAction,
   deleteSectorAction,
   deleteUnitAction,
   deleteUserAction,
   fetchUsersAction,
+  updateDepartmentAction,
 } from './actions'
 import { CreateCategoryDialog } from './create-category-dialog'
 import { CreateSectorDialog } from './create-sector-dialog'
@@ -52,9 +68,20 @@ interface SettingsContentProps {
   userPagination?: UserPagination
   units: Unit[]
   sectors: Sector[]
+  departments: Department[]
   categories?: Category[]
   activeUnitId: string | null
-  currentUserRole: string
+  currentUserRole: Role
+  currentUserPermissions: Permission[]
+  canManageUsers: boolean
+  canManageStructure: boolean
+  canManageDepartments: boolean
+}
+
+const DEPARTMENT_TYPE_BADGE_CLASSES: Record<DepartmentType, string> = {
+  GENERAL: 'bg-slate-100 text-slate-700 border-slate-200',
+  RECEPTION: 'bg-sky-50 text-sky-700 border-sky-200',
+  COLLECTION: 'bg-emerald-50 text-emerald-700 border-emerald-200',
 }
 
 export function SettingsContent({
@@ -62,14 +89,23 @@ export function SettingsContent({
   userPagination,
   units,
   sectors,
+  departments,
   categories = [],
   activeUnitId,
   currentUserRole,
+  currentUserPermissions,
+  canManageUsers,
+  canManageStructure,
+  canManageDepartments,
 }: SettingsContentProps) {
-  const isAdmin =
-    !currentUserRole ||
-    currentUserRole.toUpperCase() === 'ADMIN' ||
-    currentUserRole.toUpperCase() === 'HR'
+  const router = useRouter()
+  const isAdmin = currentUserRole === 'ADMIN'
+
+  const defaultTab = canManageUsers
+    ? 'users'
+    : canManageDepartments
+      ? 'departments'
+      : 'units'
 
   const [usersState, setUsersState] = useState<User[]>(users)
   const [userPaginationState, setUserPaginationState] =
@@ -88,6 +124,7 @@ export function SettingsContent({
   const [selectedUnitFilter, setSelectedUnitFilter] = useState('')
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
 
+  const [searchDepartments, setSearchDepartments] = useState('')
   const [searchUnits, setSearchUnits] = useState('')
   const [searchSectors, setSearchSectors] = useState('')
   const [searchCategories, setSearchCategories] = useState('')
@@ -96,6 +133,16 @@ export function SettingsContent({
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [resettingPasswordUser, setResettingPasswordUser] =
     useState<User | null>(null)
+
+  const [isDepartmentDialogOpen, setIsDepartmentDialogOpen] = useState(false)
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(
+    null
+  )
+  const [deptName, setDeptName] = useState('')
+  const [deptType, setDeptType] = useState<DepartmentType>('GENERAL')
+  const [isSavingDepartment, setIsSavingDepartment] = useState(false)
+  const [deletingDepartment, setDeletingDepartment] =
+    useState<Department | null>(null)
 
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null)
   const [deletingUnit, setDeletingUnit] = useState<Unit | null>(null)
@@ -107,8 +154,20 @@ export function SettingsContent({
 
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const filteredDepartments = departments.filter((d) =>
+    d.name.toLowerCase().includes(searchDepartments.toLowerCase())
+  )
+
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchCategories.toLowerCase())
+  )
+
+  const filteredUnits = units.filter((u) =>
+    u.name.toLowerCase().includes(searchUnits.toLowerCase())
+  )
+
+  const filteredSectors = sectors.filter((s) =>
+    s.name.toLowerCase().includes(searchSectors.toLowerCase())
   )
 
   async function loadUsersPage(
@@ -164,38 +223,63 @@ export function SettingsContent({
     await loadUsersPage(1, '', '', '')
   }
 
-  const filteredUnits = units.filter((u) =>
-    u.name.toLowerCase().includes(searchUnits.toLowerCase())
-  )
-
-  const filteredSectors = sectors.filter((s) =>
-    s.name.toLowerCase().includes(searchSectors.toLowerCase())
-  )
-
-  const roleColors: Record<string, string> = {
-    ADMIN: 'bg-primary text-on-primary',
-    MANAGER: 'bg-success text-on-success',
-    EMPLOYEE: 'bg-surface-variant text-on-surface-variant',
-    SELLER: 'bg-sky-500 text-white',
-    FINANCIAL: 'bg-amber-500 text-white',
-    COLLECTOR: 'bg-emerald-500 text-white',
-    FISCAL: 'bg-purple-500 text-white',
-    INVENTORY: 'bg-slate-600 text-white',
-    ANALYST: 'bg-teal-600 text-white',
-    HR: 'bg-rose-600 text-white',
+  function openCreateDepartment() {
+    setEditingDepartment(null)
+    setDeptName('')
+    setDeptType('GENERAL')
+    setIsDepartmentDialogOpen(true)
   }
 
-  const roleNames: Record<string, string> = {
-    ADMIN: 'Administrador',
-    MANAGER: 'Gerente',
-    EMPLOYEE: 'Funcionário',
-    SELLER: 'Caixa',
-    FINANCIAL: 'Financeiro',
-    COLLECTOR: 'Coletador',
-    FISCAL: 'Fiscal',
-    INVENTORY: 'Estoque',
-    ANALYST: 'Analista',
-    HR: 'RH (Recursos Humanos)',
+  function openEditDepartment(dept: Department) {
+    setEditingDepartment(dept)
+    setDeptName(dept.name)
+    setDeptType(dept.type)
+    setIsDepartmentDialogOpen(true)
+  }
+
+  async function handleSaveDepartment(e: React.FormEvent) {
+    e.preventDefault()
+    if (!deptName.trim()) {
+      toast.error('Informe o nome do departamento.')
+      return
+    }
+    setIsSavingDepartment(true)
+    const res = editingDepartment
+      ? await updateDepartmentAction(editingDepartment.id, {
+          name: deptName.trim(),
+          type: deptType,
+        })
+      : await createDepartmentAction({
+          name: deptName.trim(),
+          type: deptType,
+        })
+
+    if (res.success) {
+      toast.success(
+        editingDepartment
+          ? 'Departamento atualizado com sucesso!'
+          : 'Departamento criado com sucesso!'
+      )
+      setIsDepartmentDialogOpen(false)
+      router.refresh()
+    } else {
+      toast.error(res.message || 'Erro ao salvar departamento.')
+    }
+    setIsSavingDepartment(false)
+  }
+
+  async function confirmDeleteDepartment() {
+    if (!deletingDepartment) return
+    setIsDeleting(true)
+    const result = await deleteDepartmentAction(deletingDepartment.id)
+    if (result.success) {
+      toast.success('Departamento excluído com sucesso!')
+      setDeletingDepartment(null)
+      router.refresh()
+    } else {
+      toast.error(result.message || 'Erro ao excluir departamento.')
+    }
+    setIsDeleting(false)
   }
 
   async function confirmDeleteUser() {
@@ -239,31 +323,29 @@ export function SettingsContent({
   }
 
   return (
-    <Tabs
-      defaultValue={currentUserRole === 'INVENTORY' ? 'units' : 'users'}
-      className="w-full"
-    >
-      <TabsList className="mb-4">
-        {currentUserRole !== 'INVENTORY' && (
-          <TabsTrigger value="users">Usuários</TabsTrigger>
+    <Tabs defaultValue={defaultTab} className="w-full">
+      <TabsList className="mb-4 flex flex-wrap h-auto gap-1">
+        {canManageUsers && <TabsTrigger value="users">Usuários</TabsTrigger>}
+        {canManageDepartments && (
+          <TabsTrigger value="departments">Departamentos (RH)</TabsTrigger>
         )}
-        {currentUserRole !== 'HR' && (
+        {canManageStructure && (
           <>
             <TabsTrigger value="units">Unidades</TabsTrigger>
-            <TabsTrigger value="sectors">Setores</TabsTrigger>
+            <TabsTrigger value="sectors">Setores (Estoque)</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
           </>
         )}
       </TabsList>
 
-      {currentUserRole !== 'INVENTORY' && (
+      {canManageUsers && (
         <TabsContent value="users">
           <Card className="border-surface-container shadow-sm">
             <CardHeader className="flex flex-col gap-4 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="text-xl font-bold text-primary">
-                    Usuários Cadastrados
+                    Usuários e Permissões (PBAC)
                   </CardTitle>
                   {userPaginationState.totalCount > 0 && (
                     <p className="text-xs text-on-surface-variant font-medium mt-1">
@@ -280,13 +362,13 @@ export function SettingsContent({
                   )}
                 </div>
 
-                {(currentUserRole === 'ADMIN' || currentUserRole === 'HR') && (
-                  <CreateUserDialog
-                    units={units}
-                    activeUnitId={activeUnitId}
-                    currentUserRole={currentUserRole}
-                  />
-                )}
+                <CreateUserDialog
+                  units={units}
+                  activeUnitId={activeUnitId}
+                  currentUserRole={currentUserRole}
+                  currentUserPermissions={currentUserPermissions}
+                  onCreated={() => loadUsersPage(1)}
+                />
               </div>
 
               {/* USER FILTERS & SEARCH CONTROL BAR */}
@@ -294,11 +376,10 @@ export function SettingsContent({
                 onSubmit={handleUserSearchSubmit}
                 className="flex flex-col md:flex-row items-stretch md:items-center gap-3 pt-2"
               >
-                {/* Search Bar */}
                 <div className="relative flex-1">
                   <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
                   <Input
-                    placeholder="Buscar por nome ou username..."
+                    placeholder="Buscar por nome, matrícula ou username..."
                     className="bg-surface pl-8 h-9 text-xs"
                     value={searchUsers}
                     onChange={(e) => setSearchUsers(e.target.value)}
@@ -314,7 +395,6 @@ export function SettingsContent({
                   )}
                 </div>
 
-                {/* Role Filter */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <UserCheck className="h-4 w-4 text-primary hidden sm:block" />
                   <select
@@ -322,16 +402,12 @@ export function SettingsContent({
                     onChange={(e) => handleRoleFilterChange(e.target.value)}
                     className="h-9 rounded-md border border-outline bg-surface text-on-surface px-2.5 text-xs font-medium focus:ring-1 focus:ring-primary cursor-pointer w-full md:w-44"
                   >
-                    <option value="">Todos os Cargos</option>
-                    {Object.entries(roleNames).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
+                    <option value="">Todos os Perfis</option>
+                    <option value="ADMIN">Administrador</option>
+                    <option value="EMPLOYEE">Colaborador</option>
                   </select>
                 </div>
 
-                {/* Unit Filter */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Building2 className="h-4 w-4 text-primary hidden sm:block" />
                   <select
@@ -348,7 +424,6 @@ export function SettingsContent({
                   </select>
                 </div>
 
-                {/* Submit & Clear Buttons */}
                 <div className="flex items-center gap-2">
                   <Button
                     type="submit"
@@ -409,15 +484,19 @@ export function SettingsContent({
                     <table className="w-full text-left text-sm">
                       <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
                         <tr>
-                          <th className="px-6 py-3 font-semibold">Nome</th>
-                          <th className="px-6 py-3 font-semibold">Username</th>
-                          <th className="px-6 py-3 font-semibold">Cargo</th>
-                          <th className="px-6 py-3 font-semibold">Unidade</th>
-                          {isAdmin && (
-                            <th className="px-6 py-3 text-right font-semibold">
-                              Ações
-                            </th>
-                          )}
+                          <th className="px-4 py-3 font-semibold">
+                            Colaborador
+                          </th>
+                          <th className="px-4 py-3 font-semibold">
+                            Perfil & Permissões
+                          </th>
+                          <th className="px-4 py-3 font-semibold">
+                            Departamento
+                          </th>
+                          <th className="px-4 py-3 font-semibold">Unidade</th>
+                          <th className="px-4 py-3 text-right font-semibold">
+                            Ações
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-surface-container divide-y">
@@ -425,46 +504,104 @@ export function SettingsContent({
                           const uUnit = units.find(
                             (unit) => unit.id === u.unitId
                           )
+                          const perms = u.permissions ?? []
+                          const canEditTarget = isAdmin || u.role !== 'ADMIN'
 
                           return (
                             <tr
                               key={u.id}
                               className="hover:bg-surface-container-lowest transition-colors"
                             >
-                              <td className="text-on-surface px-6 py-4 font-medium">
-                                {u.name}
+                              <td className="px-4 py-3.5">
+                                <div className="font-medium text-on-surface">
+                                  {u.name}
+                                </div>
+                                <div className="text-xs text-on-surface-variant font-mono">
+                                  {u.employee?.registrationNumber || u.username}
+                                </div>
                               </td>
-                              <td className="text-on-surface-variant px-6 py-4">
-                                {u.username}
+                              <td className="px-4 py-3.5">
+                                {u.role === 'ADMIN' ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-primary text-on-primary px-2.5 py-0.5 text-xs font-semibold">
+                                    <Shield className="h-3 w-3" />
+                                    {ROLE_LABELS.ADMIN} (Total)
+                                  </span>
+                                ) : (
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[11px] font-medium">
+                                      {ROLE_LABELS.EMPLOYEE}
+                                    </span>
+                                    {perms.length === 0 ? (
+                                      <span className="text-[11px] text-on-surface-variant">
+                                        Acesso básico
+                                      </span>
+                                    ) : (
+                                      <>
+                                        {perms.slice(0, 2).map((p) => (
+                                          <span
+                                            key={p}
+                                            className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-[11px] font-medium"
+                                          >
+                                            {getPermissionLabel(p)}
+                                          </span>
+                                        ))}
+                                        {perms.length > 2 && (
+                                          <span
+                                            title={perms
+                                              .slice(2)
+                                              .map(getPermissionLabel)
+                                              .join(', ')}
+                                            className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2 py-0.5 text-[11px] font-semibold"
+                                          >
+                                            +{perms.length - 2}
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                )}
                               </td>
-                              <td className="px-6 py-4">
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${roleColors[u.role] || roleColors.EMPLOYEE}`}
-                                >
-                                  {roleNames[u.role] || u.role}
-                                </span>
+                              <td className="px-4 py-3.5 text-xs">
+                                {u.employee?.department ? (
+                                  <span
+                                    className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${DEPARTMENT_TYPE_BADGE_CLASSES[u.employee.department.type]}`}
+                                  >
+                                    {u.employee.department.name}
+                                  </span>
+                                ) : (
+                                  <span className="text-on-surface-variant">
+                                    —
+                                  </span>
+                                )}
                               </td>
-                              <td className="text-on-surface-variant px-6 py-4">
-                                {uUnit ? uUnit.name : 'Acesso Global'}
+                              <td className="text-on-surface-variant px-4 py-3.5 text-xs">
+                                {uUnit
+                                  ? uUnit.name
+                                  : u.role === 'ADMIN' ||
+                                      perms.includes('scope:all_units')
+                                    ? 'Todas as Unidades'
+                                    : 'Sem Unidade'}
                               </td>
-                              {isAdmin && (
-                                <td className="px-6 py-4 text-right">
-                                  <div className="flex justify-end gap-2">
+                              <td className="px-4 py-3.5 text-right">
+                                {canEditTarget && (
+                                  <div className="flex justify-end gap-1.5">
+                                    {isAdmin && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        title="Redefinir / Alterar Senha"
+                                        className="text-on-surface hover:text-amber-500 hover:bg-amber-500/10 h-8 w-8 cursor-pointer"
+                                        onClick={() =>
+                                          setResettingPasswordUser(u)
+                                        }
+                                      >
+                                        <KeyRound className="h-4 w-4 text-amber-500" />
+                                      </Button>
+                                    )}
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      title="Redefinir / Alterar Senha"
-                                      className="text-on-surface hover:text-amber-500 hover:bg-amber-500/10 h-8 w-8 cursor-pointer"
-                                      onClick={() =>
-                                        setResettingPasswordUser(u)
-                                      }
-                                    >
-                                      <KeyRound className="h-4 w-4 text-amber-500" />
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      title="Editar Usuário"
+                                      title="Editar Usuário e Permissões"
                                       className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
                                       onClick={() => setEditingUser(u)}
                                     >
@@ -480,8 +617,8 @@ export function SettingsContent({
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                </td>
-                              )}
+                                )}
+                              </td>
                             </tr>
                           )
                         })}
@@ -489,7 +626,6 @@ export function SettingsContent({
                     </table>
                   </div>
 
-                  {/* USER TABLE PAGINATION CONTROLS (20 items per page) */}
                   {userPaginationState.totalPages > 1 && (
                     <div className="flex items-center justify-between pt-4 border-t border-outline/20 text-xs">
                       <div className="text-on-surface-variant font-medium">
@@ -543,253 +679,490 @@ export function SettingsContent({
         </TabsContent>
       )}
 
-      <TabsContent value="units">
-        <Card>
-          <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <CardTitle className="text-xl">Unidades (Clínicas)</CardTitle>
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input
-                  placeholder="Buscar unidade..."
-                  className="bg-surface pl-8"
-                  value={searchUnits}
-                  onChange={(e) => setSearchUnits(e.target.value)}
-                />
+      {/* DEPARTAMENTOS (RH) */}
+      {canManageDepartments && (
+        <TabsContent value="departments">
+          <Card className="border-surface-container shadow-sm">
+            <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <CardTitle className="text-xl font-bold text-primary">
+                  Departamentos da Clínica (RH)
+                </CardTitle>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Vinculados às fichas de colaboradores. Departamentos do tipo{' '}
+                  <strong>Recepção</strong> alimentam automaticamente as
+                  Avaliações e <strong>Coleta</strong> alimentam as Recoletas.
+                </p>
               </div>
-              <CreateUnitDialog />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredUnits.length === 0 ? (
-              <p className="text-on-surface-variant text-sm">
-                Nenhuma unidade encontrada.
-              </p>
-            ) : (
-              <div className="relative overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
-                    <tr>
-                      <th className="px-6 py-3 font-semibold">
-                        Nome da Unidade
-                      </th>
-                      <th className="px-6 py-3 font-semibold">
-                        Data de Criação
-                      </th>
-                      <th className="px-6 py-3 text-right font-semibold">
-                        Ações
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-surface-container divide-y">
-                    {filteredUnits.map((unit) => (
-                      <tr
-                        key={unit.id}
-                        className="hover:bg-surface-container-lowest transition-colors"
-                      >
-                        <td className="text-on-surface px-6 py-4 font-medium">
-                          {unit.name}
-                        </td>
-                        <td className="text-on-surface-variant px-6 py-4">
-                          {new Date(unit.createdAt).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
-                              onClick={() => setEditingUnit(unit)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
-                              onClick={() => setDeletingUnit(unit)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="sectors">
-        <Card>
-          <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <CardTitle className="text-xl">Setores Cadastrados</CardTitle>
-            <div className="flex w-full items-center gap-2 sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
-                <Input
-                  placeholder="Buscar setor..."
-                  className="bg-surface pl-8"
-                  value={searchSectors}
-                  onChange={(e) => setSearchSectors(e.target.value)}
-                />
-              </div>
-              <CreateSectorDialog />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredSectors.length === 0 ? (
-              <p className="text-on-surface-variant text-sm">
-                Nenhum setor encontrado.
-              </p>
-            ) : (
-              <div className="relative overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
-                    <tr>
-                      <th className="px-6 py-3 font-semibold">Nome do Setor</th>
-                      <th className="px-6 py-3 font-semibold">
-                        Data de Criação
-                      </th>
-                      <th className="px-6 py-3 text-right font-semibold">
-                        Ações
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-surface-container divide-y">
-                    {filteredSectors.map((sector) => (
-                      <tr
-                        key={sector.id}
-                        className="hover:bg-surface-container-lowest transition-colors"
-                      >
-                        <td className="text-on-surface px-6 py-4 font-medium">
-                          {sector.name}
-                        </td>
-                        <td className="text-on-surface-variant px-6 py-4">
-                          {new Date(sector.createdAt).toLocaleDateString(
-                            'pt-BR'
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
-                              onClick={() => setEditingSector(sector)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
-                              onClick={() => setDeletingSector(sector)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="categories">
-        <Card className="border-surface-container shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <div>
-              <CardTitle className="text-xl font-bold text-primary">
-                Categorias de Itens
-              </CardTitle>
-              <p className="text-xs text-on-surface-variant font-medium mt-1">
-                Classificações para organizar e filtrar o catálogo de produtos e
-                insumos.
-              </p>
-            </div>
-            <CreateCategoryDialog />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
-              <Input
-                placeholder="Buscar categoria..."
-                className="bg-surface pl-8 h-9 text-xs"
-                value={searchCategories}
-                onChange={(e) => setSearchCategories(e.target.value)}
-              />
-              {searchCategories && (
-                <button
-                  type="button"
-                  onClick={() => setSearchCategories('')}
-                  className="absolute right-2.5 top-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer"
+              <div className="flex w-full items-center gap-2 sm:w-auto">
+                <div className="relative w-full sm:w-60">
+                  <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar departamento..."
+                    className="bg-surface pl-8 h-9 text-xs"
+                    value={searchDepartments}
+                    onChange={(e) => setSearchDepartments(e.target.value)}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={openCreateDepartment}
+                  className="h-9 gap-1 cursor-pointer shrink-0"
                 >
-                  <X className="h-4 w-4" />
-                </button>
+                  <Plus className="h-4 w-4" />
+                  Novo Departamento
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredDepartments.length === 0 ? (
+                <p className="text-on-surface-variant text-sm py-6 text-center">
+                  Nenhum departamento cadastrado.
+                </p>
+              ) : (
+                <div className="relative overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
+                      <tr>
+                        <th className="px-6 py-3 font-semibold">
+                          Departamento
+                        </th>
+                        <th className="px-6 py-3 font-semibold">
+                          Vínculo Operacional
+                        </th>
+                        <th className="px-6 py-3 font-semibold">
+                          Colaboradores
+                        </th>
+                        <th className="px-6 py-3 text-right font-semibold">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-surface-container divide-y">
+                      {filteredDepartments.map((dept) => (
+                        <tr
+                          key={dept.id}
+                          className="hover:bg-surface-container-lowest transition-colors"
+                        >
+                          <td className="text-on-surface px-6 py-4 font-medium">
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="h-4 w-4 text-primary" />
+                              <span>{dept.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${DEPARTMENT_TYPE_BADGE_CLASSES[dept.type]}`}
+                            >
+                              {DEPARTMENT_TYPE_LABELS[dept.type].badge}
+                            </span>
+                          </td>
+                          <td className="text-on-surface-variant px-6 py-4 text-xs font-medium">
+                            {dept.employeesCount} vinculado
+                            {dept.employeesCount === 1 ? '' : 's'}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Editar Departamento"
+                                className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                                onClick={() => openEditDepartment(dept)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Excluir Departamento"
+                                className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
+                                onClick={() => setDeletingDepartment(dept)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      )}
+
+      {canManageStructure && (
+        <>
+          <TabsContent value="units">
+            <Card>
+              <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                <CardTitle className="text-xl">Unidades (Clínicas)</CardTitle>
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar unidade..."
+                      className="bg-surface pl-8"
+                      value={searchUnits}
+                      onChange={(e) => setSearchUnits(e.target.value)}
+                    />
+                  </div>
+                  <CreateUnitDialog />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filteredUnits.length === 0 ? (
+                  <p className="text-on-surface-variant text-sm">
+                    Nenhuma unidade encontrada.
+                  </p>
+                ) : (
+                  <div className="relative overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
+                        <tr>
+                          <th className="px-6 py-3 font-semibold">
+                            Nome da Unidade
+                          </th>
+                          <th className="px-6 py-3 font-semibold">
+                            Data de Criação
+                          </th>
+                          <th className="px-6 py-3 text-right font-semibold">
+                            Ações
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-surface-container divide-y">
+                        {filteredUnits.map((unit) => (
+                          <tr
+                            key={unit.id}
+                            className="hover:bg-surface-container-lowest transition-colors"
+                          >
+                            <td className="text-on-surface px-6 py-4 font-medium">
+                              {unit.name}
+                            </td>
+                            <td className="text-on-surface-variant px-6 py-4">
+                              {new Date(unit.createdAt).toLocaleDateString(
+                                'pt-BR'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                                  onClick={() => setEditingUnit(unit)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
+                                  onClick={() => setDeletingUnit(unit)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sectors">
+            <Card>
+              <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                <div>
+                  <CardTitle className="text-xl">Setores de Estoque</CardTitle>
+                  <p className="text-xs text-on-surface-variant mt-1">
+                    Cadastro exclusivo para destino de saídas de insumos, itens
+                    e fechamentos de caixa (independente dos departamentos do
+                    RH).
+                  </p>
+                </div>
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+                    <Input
+                      placeholder="Buscar setor..."
+                      className="bg-surface pl-8"
+                      value={searchSectors}
+                      onChange={(e) => setSearchSectors(e.target.value)}
+                    />
+                  </div>
+                  <CreateSectorDialog />
+                </div>
+              </CardHeader>
+              <CardContent>
+                {filteredSectors.length === 0 ? (
+                  <p className="text-on-surface-variant text-sm">
+                    Nenhum setor encontrado.
+                  </p>
+                ) : (
+                  <div className="relative overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-surface-container-highest text-on-surface text-xs uppercase">
+                        <tr>
+                          <th className="px-6 py-3 font-semibold">
+                            Nome do Setor
+                          </th>
+                          <th className="px-6 py-3 font-semibold">
+                            Data de Criação
+                          </th>
+                          <th className="px-6 py-3 text-right font-semibold">
+                            Ações
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-surface-container divide-y">
+                        {filteredSectors.map((sector) => (
+                          <tr
+                            key={sector.id}
+                            className="hover:bg-surface-container-lowest transition-colors"
+                          >
+                            <td className="text-on-surface px-6 py-4 font-medium">
+                              {sector.name}
+                            </td>
+                            <td className="text-on-surface-variant px-6 py-4">
+                              {new Date(sector.createdAt).toLocaleDateString(
+                                'pt-BR'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                                  onClick={() => setEditingSector(sector)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-error h-8 w-8 cursor-pointer"
+                                  onClick={() => setDeletingSector(sector)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="categories">
+            <Card className="border-surface-container shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <div>
+                  <CardTitle className="text-xl font-bold text-primary">
+                    Categorias de Itens
+                  </CardTitle>
+                  <p className="text-xs text-on-surface-variant font-medium mt-1">
+                    Classificações para organizar e filtrar o catálogo de
+                    produtos e insumos.
+                  </p>
+                </div>
+                <CreateCategoryDialog />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="relative">
+                  <Search className="text-on-surface-variant absolute top-2.5 left-2.5 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar categoria..."
+                    className="bg-surface pl-8 h-9 text-xs"
+                    value={searchCategories}
+                    onChange={(e) => setSearchCategories(e.target.value)}
+                  />
+                  {searchCategories && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchCategories('')}
+                      className="absolute right-2.5 top-2.5 text-on-surface-variant hover:text-on-surface cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {filteredCategories.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-on-surface-variant">
+                    Nenhuma categoria encontrada.
+                  </div>
+                ) : (
+                  <div className="border-surface-container overflow-hidden rounded-md border">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-surface-container-highest/50 text-xs font-semibold uppercase text-on-surface-variant">
+                        <tr>
+                          <th className="px-6 py-3">Nome da Categoria</th>
+                          <th className="px-6 py-3">Criado em</th>
+                          <th className="px-6 py-3 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-surface-container">
+                        {filteredCategories.map((category) => (
+                          <tr
+                            key={category.id}
+                            className="hover:bg-surface-container/50 transition-colors"
+                          >
+                            <td className="px-6 py-4 font-medium text-on-surface">
+                              <div className="flex items-center gap-2">
+                                <Tag className="h-4 w-4 text-primary" />
+                                <span>{category.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-on-surface-variant">
+                              {new Date(category.createdAt).toLocaleDateString(
+                                'pt-BR'
+                              )}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
+                                  onClick={() => setEditingCategory(category)}
+                                  title="Editar Categoria"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </>
+      )}
+
+      {/* Create/Edit Department Dialog */}
+      <Dialog
+        open={isDepartmentDialogOpen}
+        onOpenChange={(open) => !open && setIsDepartmentDialogOpen(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingDepartment ? 'Editar Departamento' : 'Novo Departamento'}
+            </DialogTitle>
+            <DialogDescription>
+              Defina o nome exibido na ficha dos colaboradores e o vínculo
+              operacional (se alimenta Recepção ou Coleta).
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveDepartment} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="dept-name">Nome do Departamento</Label>
+              <Input
+                id="dept-name"
+                required
+                value={deptName}
+                onChange={(e) => setDeptName(e.target.value)}
+                placeholder="Ex.: Recepção, Coleta, Faturamento, RH..."
+              />
             </div>
 
-            {filteredCategories.length === 0 ? (
-              <div className="py-8 text-center text-sm text-on-surface-variant">
-                Nenhuma categoria encontrada.
-              </div>
-            ) : (
-              <div className="border-surface-container overflow-hidden rounded-md border">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-surface-container-highest/50 text-xs font-semibold uppercase text-on-surface-variant">
-                    <tr>
-                      <th className="px-6 py-3">Nome da Categoria</th>
-                      <th className="px-6 py-3">Criado em</th>
-                      <th className="px-6 py-3 text-right">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-container">
-                    {filteredCategories.map((category) => (
-                      <tr
-                        key={category.id}
-                        className="hover:bg-surface-container/50 transition-colors"
-                      >
-                        <td className="px-6 py-4 font-medium text-on-surface">
-                          <div className="flex items-center gap-2">
-                            <Tag className="h-4 w-4 text-primary" />
-                            <span>{category.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-on-surface-variant">
-                          {new Date(category.createdAt).toLocaleDateString(
-                            'pt-BR'
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-on-surface hover:text-primary h-8 w-8 cursor-pointer"
-                              onClick={() => setEditingCategory(category)}
-                              title="Editar Categoria"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </TabsContent>
+            <div className="space-y-2">
+              <Label htmlFor="dept-type">Vínculo Operacional</Label>
+              <select
+                id="dept-type"
+                value={deptType}
+                onChange={(e) => setDeptType(e.target.value as DepartmentType)}
+                className="h-10 w-full rounded-md border border-outline bg-surface px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+              >
+                <option value="GENERAL">
+                  Geral (RH, Financeiro, Administrativo, Estoque...)
+                </option>
+                <option value="RECEPTION">
+                  Recepção / Atendimento (Aparece em Avaliações)
+                </option>
+                <option value="COLLECTION">
+                  Coleta Laboratorial (Aparece em Recoletas)
+                </option>
+              </select>
+              <p className="text-xs text-on-surface-variant">
+                {DEPARTMENT_TYPE_LABELS[deptType].description}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDepartmentDialogOpen(false)}
+                disabled={isSavingDepartment}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSavingDepartment}
+                className="cursor-pointer"
+              >
+                {isSavingDepartment ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Department Confirmation Dialog */}
+      <Dialog
+        open={!!deletingDepartment}
+        onOpenChange={(open) => !open && setDeletingDepartment(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Departamento</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o departamento{' '}
+              <span className="font-semibold text-on-surface">
+                {deletingDepartment?.name}
+              </span>
+              ? Os colaboradores vinculados permanecerão cadastrados (apenas sem
+              departamento definido).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeletingDepartment(null)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmDeleteDepartment}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              {isDeleting ? 'Excluindo...' : 'Confirmar Exclusão'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit User Dialog */}
       {editingUser && (
@@ -798,7 +1171,9 @@ export function SettingsContent({
           units={units}
           activeUnitId={activeUnitId}
           currentUserRole={currentUserRole}
+          currentUserPermissions={currentUserPermissions}
           onClose={() => setEditingUser(null)}
+          onUpdated={() => loadUsersPage(userPaginationState.page)}
         />
       )}
 

@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -40,7 +40,8 @@ export async function getCollections(app: FastifyInstance) {
           id: currentUser.id,
           role: currentUser.role,
           unitId: currentUser.unitId,
-        } as any)
+          permissions: currentUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'Collection')) {
           throw new UnauthorizedError(
@@ -50,7 +51,7 @@ export async function getCollections(app: FastifyInstance) {
 
         const where: any = {}
 
-        if (currentUser.role === 'COLLECTOR') {
+        if (!hasPermission(currentUser, 'collections:manage')) {
           if (currentUser.unitId) {
             where.OR = [
               { unitId: currentUser.unitId },
@@ -59,6 +60,11 @@ export async function getCollections(app: FastifyInstance) {
           } else {
             where.collectorId = currentUser.id
           }
+        } else if (
+          !hasPermission(currentUser, 'scope:all_units') &&
+          currentUser.unitId
+        ) {
+          where.unitId = currentUser.unitId
         } else if (unitId) {
           where.unitId = unitId
         }

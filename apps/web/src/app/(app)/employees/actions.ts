@@ -38,6 +38,7 @@ export async function fetchEmployeesAction(params?: {
   status?: 'ACTIVE' | 'INACTIVE'
   unitId?: string
   sectorId?: string
+  departmentId?: string
   page?: number
   perPage?: number
 }) {
@@ -85,7 +86,11 @@ export async function createEmployeeAction(data: Record<string, any>) {
     const { token } = await auth()
     const res = await createEmployeeApi(token, data)
     updateTag('employees')
+    updateTag('users')
     revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
+    revalidatePath('/settings')
     return {
       success: true,
       employeeId: res.employeeId,
@@ -110,7 +115,10 @@ export async function updateEmployeeAction(
     const { token } = await auth()
     await updateEmployeeApi(token, id, data)
     updateTag('employees')
+    updateTag('users')
     revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
     return { success: true }
   } catch (error) {
     return {
@@ -160,7 +168,10 @@ export async function changeEmployeeStatusAction(
     const { token } = await auth()
     await changeEmployeeStatusApi(token, id, data)
     updateTag('employees')
+    updateTag('users')
     revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
     return { success: true }
   } catch (error) {
     return {

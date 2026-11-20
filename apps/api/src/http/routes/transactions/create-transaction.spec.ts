@@ -68,6 +68,7 @@ describe('Create Transaction Unit Test', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
+      permissions: ['transactions:manage'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 
@@ -135,6 +136,7 @@ describe('Create Transaction Unit Test', () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
       role: 'EMPLOYEE',
+      permissions: ['transactions:manage'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 

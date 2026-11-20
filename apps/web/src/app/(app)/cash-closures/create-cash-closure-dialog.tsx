@@ -138,7 +138,7 @@ export function CreateCashClosureDialog({ open, onClose, users }: Props) {
               >
                 <option value="">Selecione o colaborador...</option>
                 {users
-                  .filter((u) => u.role !== 'ADMIN' && u.role !== 'MANAGER')
+                  .filter((u) => u.role !== 'ADMIN')
                   .map((u) => (
                     <option key={u.id} value={u.id}>
                       {u.name}

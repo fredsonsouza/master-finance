@@ -28,7 +28,7 @@ interface Props {
   collectionsData: GetCollectionsReportsResponse
   activeUnitName: string | null
   selectedMonth?: string
-  currentUserRole: string
+  hasFinancialAccess: boolean
 }
 
 const COLORS = [
@@ -46,10 +46,10 @@ export function ReportsDashboard({
   collectionsData,
   activeUnitName,
   selectedMonth,
-  currentUserRole,
+  hasFinancialAccess,
 }: Props) {
   const [activeTab, setActiveTab] = useState<'financial' | 'collections'>(
-    currentUserRole === 'FISCAL' ? 'collections' : 'financial'
+    hasFinancialAccess ? 'financial' : 'collections'
   )
   const printRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -120,7 +120,7 @@ export function ReportsDashboard({
         </div>
       </div>
 
-      {currentUserRole !== 'FISCAL' && (
+      {hasFinancialAccess && (
         <div className="flex gap-2 border-b border-surface-container mb-6">
           <button
             type="button"

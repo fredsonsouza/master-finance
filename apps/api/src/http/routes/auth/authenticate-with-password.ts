@@ -31,10 +31,11 @@ export async function authenticateWithPassword(app: FastifyInstance) {
     },
     async (request, reply) => {
       const { username, password } = request.body
+      const identifier = username.trim()
 
       let userFromUsername = await prisma.user.findUnique({
         where: {
-          username,
+          username: identifier,
         },
       })
 
@@ -63,14 +64,40 @@ export async function authenticateWithPassword(app: FastifyInstance) {
         }
       } else if (prisma.employee?.findUnique) {
         try {
-          const employeeRecord = await prisma.employee.findUnique({
+          let employeeRecord = await prisma.employee.findUnique({
             where: {
-              registrationNumber: username.trim().toUpperCase(),
+              registrationNumber: identifier.toUpperCase(),
             },
             include: {
               user: true,
             },
           })
+
+          if (!employeeRecord) {
+            const digitsOnly = identifier.replace(/\D/g, '')
+            if (digitsOnly.length === 11) {
+              employeeRecord = await prisma.employee.findUnique({
+                where: {
+                  cpf: digitsOnly,
+                },
+                include: {
+                  user: true,
+                },
+              })
+
+              if (!employeeRecord) {
+                const formattedCpf = `${digitsOnly.slice(0, 3)}.${digitsOnly.slice(3, 6)}.${digitsOnly.slice(6, 9)}-${digitsOnly.slice(9)}`
+                employeeRecord = await prisma.employee.findUnique({
+                  where: {
+                    cpf: formattedCpf,
+                  },
+                  include: {
+                    user: true,
+                  },
+                })
+              }
+            }
+          }
 
           if (employeeRecord?.user) {
             userFromUsername = employeeRecord.user

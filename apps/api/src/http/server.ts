@@ -19,6 +19,10 @@ import { updateProfile } from './routes/auth/update-profile'
 import { createCategory } from './routes/categories/create-category'
 import { getCategories } from './routes/categories/get-categories'
 import { updateCategory } from './routes/categories/update-category'
+import { createDepartment } from './routes/departments/create-department'
+import { deleteDepartment } from './routes/departments/delete-department'
+import { getDepartments } from './routes/departments/get-departments'
+import { updateDepartment } from './routes/departments/update-department'
 import { createItem } from './routes/items/create-item'
 import { deleteItem } from './routes/items/delete-item'
 import { getItem } from './routes/items/get-item'
@@ -154,6 +158,11 @@ app.register(getSectors)
 app.register(getSector)
 app.register(updateSector)
 app.register(deleteSector)
+
+app.register(createDepartment)
+app.register(getDepartments)
+app.register(updateDepartment)
+app.register(deleteDepartment)
 
 app.register(createCategory)
 app.register(getCategories)

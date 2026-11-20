@@ -7,6 +7,7 @@ import {
   getTransactions,
 } from '@/http/get-transactions'
 import { type Unit, getUnits } from '@/http/get-units'
+import { getDefaultHomeRoute, hasPermission } from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { CreateTransactionDialog } from './create-transaction-dialog'
 import { TransactionsContent } from './transactions-content'
@@ -14,9 +15,11 @@ import { TransactionsContent } from './transactions-content'
 export default async function TransactionsPage() {
   const { user, token } = await auth()
 
-  if (!['ADMIN', 'MANAGER', 'INVENTORY', 'EMPLOYEE'].includes(user.role)) {
-    redirect('/')
+  if (!hasPermission(user, 'transactions:manage')) {
+    redirect(getDefaultHomeRoute(user))
   }
+
+  const hasAllUnits = hasPermission(user, 'scope:all_units')
 
   let transactions: Transaction[] = []
   let pagination: TransactionPagination = {
@@ -37,7 +40,20 @@ export default async function TransactionsPage() {
       })),
       getAllItems(token).catch(() => []),
       getSectors(token).catch(() => ({ sectors: [] })),
-      getUnits(token).catch(() => ({ units: [] })),
+      hasAllUnits
+        ? getUnits(token).catch(() => ({ units: [] }))
+        : Promise.resolve({
+            units: user.unit
+              ? [
+                  {
+                    id: user.unit.id,
+                    name: user.unit.name,
+                    createdAt: '',
+                    updatedAt: '',
+                  },
+                ]
+              : [],
+          }),
     ])
 
     transactions = txRes.transactions || []

@@ -14,7 +14,9 @@ export async function fetchCollectorsAction() {
   try {
     const { token } = await auth()
     if (!token) return { success: false, users: [] }
-    const res = await getUsers(token, null, 'COLLECTOR', null, 1, 200)
+    const res = await getUsers(token, null, null, null, 1, 200, {
+      departmentType: 'COLLECTION',
+    })
     return { success: true, users: res.users || [] }
   } catch {
     return { success: false, users: [] }

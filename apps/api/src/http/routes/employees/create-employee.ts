@@ -3,7 +3,13 @@ import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
 import { validateAndNormalizeEmployeePhoto } from '@/utils/employee-photo'
 import { formatRegistrationNumber } from '@/utils/employee-registration'
-import { defineAbilityFor } from '@saas/auth'
+import {
+  type Permission,
+  canGrantAccess,
+  defineAbilityFor,
+  permissionSchema,
+  roleSchema,
+} from '@saas/auth'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -95,24 +101,14 @@ export async function createEmployee(app: FastifyInstance) {
 
             unitId: z.string().uuid().nullable().optional(),
             sectorId: z.string().uuid().nullable().optional(),
+            departmentId: z.string().uuid().nullable().optional(),
             userId: z.string().uuid().nullable().optional(),
 
             createAccount: z
               .object({
                 password: z.string().min(4),
-                role: z
-                  .enum([
-                    'EMPLOYEE',
-                    'FINANCIAL',
-                    'SELLER',
-                    'COLLECTOR',
-                    'FISCAL',
-                    'INVENTORY',
-                    'ANALYST',
-                    'HR',
-                    'MANAGER',
-                  ])
-                  .default('EMPLOYEE'),
+                role: roleSchema.default('EMPLOYEE'),
+                permissions: z.array(permissionSchema).default([]),
               })
               .optional(),
           }),
@@ -138,7 +134,8 @@ export async function createEmployee(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('create', 'Employee')) {
           throw new UnauthorizedError(
@@ -202,6 +199,24 @@ export async function createEmployee(app: FastifyInstance) {
             )
           }
         } else if (body.createAccount) {
+          const uniquePermissions =
+            body.createAccount.role === 'ADMIN'
+              ? []
+              : Array.from(new Set(body.createAccount.permissions ?? []))
+
+          const grantCheck = canGrantAccess(
+            {
+              role: requestingUser.role,
+              permissions: requestingUser.permissions as Permission[],
+            },
+            body.createAccount.role,
+            uniquePermissions
+          )
+
+          if (!grantCheck.allowed) {
+            throw new UnauthorizedError(grantCheck.reason)
+          }
+
           const password_hash = await hash(body.createAccount.password, 6)
           const createdUser = await prisma.user.create({
             data: {
@@ -209,6 +224,7 @@ export async function createEmployee(app: FastifyInstance) {
               username: registrationNumber,
               password_hash,
               role: body.createAccount.role,
+              permissions: uniquePermissions,
               unitId: body.unitId || null,
             },
           })
@@ -281,6 +297,7 @@ export async function createEmployee(app: FastifyInstance) {
             generalObservations: body.generalObservations || null,
             unitId: body.unitId || null,
             sectorId: body.sectorId || null,
+            departmentId: body.departmentId || null,
             userId: linkedUserId,
             createdById: currentUserId,
           },

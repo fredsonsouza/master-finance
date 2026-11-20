@@ -3,6 +3,7 @@ import { auth } from '@/auth/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getDashboardMetrics } from '@/http/get-dashboard-metrics'
 import { getUnits } from '@/http/get-units'
+import { getDefaultHomeRoute, hasPermission } from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { DashboardUnitFilter } from './dashboard-unit-filter'
 
@@ -15,24 +16,15 @@ interface Props {
 export default async function DashboardPage({ searchParams }: Props) {
   const { user, token } = await auth()
 
-  if (['FINANCIAL', 'SELLER'].includes(user.role)) {
-    redirect('/cash-closures')
+  if (!hasPermission(user, 'dashboard:view')) {
+    redirect(getDefaultHomeRoute(user))
   }
 
-  if (['COLLECTOR', 'FISCAL'].includes(user.role)) {
-    redirect('/collections')
-  }
-
-  if (user.role === 'INVENTORY') {
-    redirect('/transactions')
-  }
-
-  if (user.role === 'ANALYST') {
-    redirect('/hr-reports')
-  }
-
+  const hasAllUnits = hasPermission(user, 'scope:all_units')
   const resolvedParams = searchParams ? await searchParams : {}
-  const activeUnitId = resolvedParams.unitId || null
+  const activeUnitId = hasAllUnits
+    ? resolvedParams.unitId || null
+    : user.unitId || null
 
   let groups: any[] = []
   let balance = 0
@@ -40,7 +32,9 @@ export default async function DashboardPage({ searchParams }: Props) {
   let exits = 0
 
   const [{ units }, metricsRes] = await Promise.all([
-    getUnits(token).catch(() => ({ units: [] })),
+    hasAllUnits
+      ? getUnits(token).catch(() => ({ units: [] }))
+      : Promise.resolve({ units: [] }),
     getDashboardMetrics(token, activeUnitId).catch((err) => {
       console.error(err)
       return {
@@ -74,7 +68,9 @@ export default async function DashboardPage({ searchParams }: Props) {
             Bem-vindo de volta ao Master Admin.
           </p>
         </div>
-        <DashboardUnitFilter units={units} selectedUnitId={activeUnitId} />
+        {hasAllUnits && (
+          <DashboardUnitFilter units={units} selectedUnitId={activeUnitId} />
+        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

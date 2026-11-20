@@ -2,6 +2,11 @@ import { auth } from '@/auth/auth'
 import { getEvaluations } from '@/http/get-evaluations'
 import { type Unit, getUnits } from '@/http/get-units'
 import { type User, getUsers } from '@/http/get-users'
+import {
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+} from '@/lib/permissions'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { EvaluationsContent } from './evaluations-content'
@@ -17,27 +22,33 @@ export const metadata: Metadata = {
 export default async function EvaluationsPage() {
   const { user, token } = await auth()
 
-  if (!['ADMIN', 'MANAGER', 'HR'].includes(user.role)) {
-    redirect('/')
+  if (!hasAnyPermission(user, ['evaluations:manage', 'evaluations:receive'])) {
+    redirect(getDefaultHomeRoute(user))
   }
+
+  const canManageEvaluations = hasPermission(user, 'evaluations:manage')
 
   let sellers: User[] = []
   let units: Unit[] = []
 
   const [{ evaluations, pagination, metrics, podium }] = await Promise.all([
     getEvaluations(token, { page: 1, perPage: 10 }),
-    Promise.all([
-      getUsers(token, null, 'SELLER', null, 1, 200)
-        .then((res) => {
-          sellers = res.users || []
-        })
-        .catch(() => {}),
-      getUnits(token)
-        .then((res) => {
-          units = res.units || []
-        })
-        .catch(() => {}),
-    ]),
+    canManageEvaluations
+      ? Promise.all([
+          getUsers(token, null, null, null, 1, 200, {
+            departmentType: 'RECEPTION',
+          })
+            .then((res) => {
+              sellers = res.users || []
+            })
+            .catch(() => {}),
+          getUnits(token)
+            .then((res) => {
+              units = res.units || []
+            })
+            .catch(() => {}),
+        ])
+      : Promise.resolve(),
   ])
 
   return (
@@ -65,6 +76,7 @@ export default async function EvaluationsPage() {
           id: user.id,
           name: user.name || user.username || '',
           role: user.role,
+          canManageEvaluations,
         }}
         sellers={sellers}
         units={units}

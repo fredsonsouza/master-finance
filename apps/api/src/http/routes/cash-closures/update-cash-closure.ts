@@ -1,7 +1,7 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, hasPermission } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -56,7 +56,8 @@ export async function updateCashClosure(app: FastifyInstance) {
           id: user.id,
           role: user.role,
           unitId: user.unitId,
-        } as any)
+          permissions: user.permissions as Permission[],
+        })
 
         if (
           ability.cannot('update', {
@@ -71,9 +72,7 @@ export async function updateCashClosure(app: FastifyInstance) {
 
         if (
           closure.status !== 'OPEN' &&
-          user.role !== 'ADMIN' &&
-          user.role !== 'MANAGER' &&
-          user.role !== 'FINANCIAL'
+          !hasPermission(user, 'cash_closures:manage')
         ) {
           throw new UnauthorizedError(
             'Não é possível editar lançamentos já fechados.'

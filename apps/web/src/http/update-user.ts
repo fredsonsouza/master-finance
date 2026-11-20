@@ -1,18 +1,11 @@
+import type { Permission, Role } from '@/lib/permissions'
 import { api } from './api-client'
 
-interface UpdateUserRequest {
+export interface UpdateUserRequest {
   name?: string
   password?: string
-  role?:
-    | 'ADMIN'
-    | 'MANAGER'
-    | 'EMPLOYEE'
-    | 'FINANCIAL'
-    | 'SELLER'
-    | 'COLLECTOR'
-    | 'FISCAL'
-    | 'INVENTORY'
-    | 'ANALYST'
+  role?: Role
+  permissions?: Permission[]
   unitId?: string | null
 }
 

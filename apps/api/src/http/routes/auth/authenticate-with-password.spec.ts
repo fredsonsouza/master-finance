@@ -202,4 +202,63 @@ describe('Authenticate with Password Unit Test', () => {
       message: 'Colaborador inativo. Entre em contato com o setor de RH.',
     })
   })
+
+  test('should authenticate using formatted CPF (000.000.000-00)', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.employee.findUnique)
+      .mockResolvedValueOnce(null) // registrationNumber lookup
+      .mockResolvedValueOnce({
+        id: 'emp-2',
+        cpf: '12345678901',
+        status: 'ACTIVE',
+        user: {
+          id: 'user-2',
+          username: 'MASTER-MC0002',
+          password_hash: 'hashed_pass',
+        },
+      } as any)
+    vi.mocked(compare).mockImplementation(async () => true)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/sessions/password',
+      payload: {
+        username: '123.456.789-01',
+        password: 'password123',
+      },
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json()).toEqual({ token: 'mocked-jwt-token' })
+  })
+
+  test('should block login using CPF when linked employee is INACTIVE', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null)
+    vi.mocked(prisma.employee.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'emp-3',
+        cpf: '98765432100',
+        status: 'INACTIVE',
+        user: {
+          id: 'user-3',
+          username: 'MASTER-XX0003',
+          password_hash: 'hashed_pass',
+        },
+      } as any)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/sessions/password',
+      payload: {
+        username: '98765432100',
+        password: 'password123',
+      },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json()).toEqual({
+      message: 'Colaborador inativo. Entre em contato com o setor de RH.',
+    })
+  })
 })

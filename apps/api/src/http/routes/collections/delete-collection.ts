@@ -1,7 +1,7 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -38,7 +38,8 @@ export async function deleteCollection(app: FastifyInstance) {
           id: user.id,
           role: user.role,
           unitId: user.unitId,
-        } as any)
+          permissions: user.permissions as Permission[],
+        })
 
         if (ability.cannot('delete', 'Collection')) {
           throw new UnauthorizedError(

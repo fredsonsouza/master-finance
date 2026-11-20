@@ -66,6 +66,7 @@ interface Props {
     id: string
     name: string
     role: string
+    canManageEvaluations: boolean
   }
   sellers?: User[]
   units?: Unit[]
@@ -105,12 +106,9 @@ export function EvaluationsContent({
   sellers = [],
   units = [],
 }: Props) {
-  const isSeller = currentUser.role === 'SELLER'
-  const isManagement =
-    currentUser.role === 'ADMIN' ||
-    currentUser.role === 'MANAGER' ||
-    currentUser.role === 'HR'
-  const isAdmin = currentUser.role === 'ADMIN' || currentUser.role === 'HR'
+  const isManagement = currentUser.canManageEvaluations
+  const isSeller = !isManagement
+  const isAdmin = currentUser.canManageEvaluations
 
   // Data states
   const [evaluations, setEvaluations] =

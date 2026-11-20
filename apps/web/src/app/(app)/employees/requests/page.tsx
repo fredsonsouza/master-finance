@@ -6,6 +6,7 @@ import {
   getEmployeeRequests,
   getEmployees,
 } from '@/http/employees'
+import { hasPermission } from '@/lib/permissions'
 import { EmployeeRequestsContent } from './employee-requests-content'
 
 export const dynamic = 'force-dynamic'
@@ -13,8 +14,7 @@ export const dynamic = 'force-dynamic'
 export default async function EmployeeRequestsPage() {
   const { user, token } = await auth()
 
-  const isHrManager =
-    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'HR'
+  const isHrManager = hasPermission(user, 'employees:manage')
 
   let requests: EmployeeRequestItem[] = []
   let summary: EmployeeRequestsSummary = {
@@ -86,6 +86,7 @@ export default async function EmployeeRequestsPage() {
           id: user.id,
           name: user.name || 'Usuário',
           role: user.role,
+          isHrManager,
           registrationNumber: user.employee?.registrationNumber || null,
           employeeId: user.employee?.id || null,
         }}

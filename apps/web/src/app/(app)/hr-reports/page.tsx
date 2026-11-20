@@ -6,15 +6,12 @@ import {
   getHrReports,
 } from '@/http/get-hr-reports'
 import { type Unit, getUnits } from '@/http/get-units'
-import { redirect } from 'next/navigation'
+import { hasPermission } from '@/lib/permissions'
 import { HrReportsContent } from './hr-reports-content'
 
 export default async function HrReportsPage() {
   const { token, user } = await auth()
-
-  if (user.role === 'SELLER' || user.role === 'FINANCIAL') {
-    redirect('/')
-  }
+  const canManageHrReports = hasPermission(user, 'hr_reports:manage')
 
   let reports: HrReport[] = []
   let summary: HrReportSummary = {
@@ -74,6 +71,7 @@ export default async function HrReportsPage() {
         id: user.id,
         name: user.name || 'Usuário',
         role: user.role,
+        canManageHrReports,
         unitId: user.unitId,
       }}
     />

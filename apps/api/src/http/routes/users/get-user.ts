@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor, roleSchema } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -27,18 +27,8 @@ export async function getUser(app: FastifyInstance) {
                 id: z.uuid(),
                 name: z.string(),
                 username: z.string(),
-                role: z.enum([
-                  'ADMIN',
-                  'MANAGER',
-                  'EMPLOYEE',
-                  'FINANCIAL',
-                  'SELLER',
-                  'COLLECTOR',
-                  'FISCAL',
-                  'INVENTORY',
-                  'ANALYST',
-                  'HR',
-                ]),
+                role: roleSchema,
+                permissions: z.array(z.string()),
                 unitId: z.uuid().nullable(),
                 avatarUrl: z.url().nullable(),
               }),
@@ -62,7 +52,8 @@ export async function getUser(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'User')) {
           throw new UnauthorizedError('You are not allowed to view users.')
@@ -75,6 +66,7 @@ export async function getUser(app: FastifyInstance) {
             name: true,
             username: true,
             role: true,
+            permissions: true,
             unitId: true,
             avatarUrl: true,
           },
@@ -84,7 +76,12 @@ export async function getUser(app: FastifyInstance) {
           throw new ResourceNotFoundError('User not found.')
         }
 
-        return reply.status(200).send({ user })
+        return reply.status(200).send({
+          user: {
+            ...user,
+            permissions: user.permissions ?? [],
+          },
+        })
       }
     )
 }

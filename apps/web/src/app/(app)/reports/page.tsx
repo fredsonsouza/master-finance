@@ -5,6 +5,11 @@ import type { GetCollectionsReportsResponse } from '@/http/get-collections-repor
 import { getExecutiveReports } from '@/http/get-executive-reports'
 import type { GetExecutiveReportsResponse } from '@/http/get-executive-reports'
 import { getUnits } from '@/http/get-units'
+import {
+  getDefaultHomeRoute,
+  hasAnyPermission,
+  hasPermission,
+} from '@/lib/permissions'
 import { redirect } from 'next/navigation'
 import { ReportsDashboard } from './reports-dashboard'
 
@@ -17,14 +22,8 @@ interface PageProps {
 export default async function ReportsPage({ searchParams }: PageProps) {
   const { user, token } = await auth()
 
-  // Bloqueia se não for MANAGER, ADMIN ou FISCAL
-  if (
-    user.role !== 'MANAGER' &&
-    user.role !== 'ADMIN' &&
-    user.role !== 'HR' &&
-    user.role !== 'FISCAL'
-  ) {
-    redirect('/')
+  if (!hasAnyPermission(user, ['reports:view', 'collections:manage'])) {
+    redirect(getDefaultHomeRoute(user))
   }
 
   const { month } = await searchParams
@@ -57,9 +56,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     topExams: [],
   }
 
-  // Se o usuário for ADMIN ou MANAGER, ele tem acesso ao relatório financeiro
-  const hasFinancialAccess =
-    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'HR'
+  const hasFinancialAccess = hasPermission(user, 'reports:view')
 
   try {
     if (hasFinancialAccess) {
@@ -79,7 +76,6 @@ export default async function ReportsPage({ searchParams }: PageProps) {
       financialData = finRes
       collectionsData = colRes
     } else {
-      // Se for FISCAL, ele só busca o relatório de coletas
       const colRes = await getCollectionsReports(
         token,
         activeUnitId,
@@ -97,7 +93,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
       collectionsData={collectionsData}
       activeUnitName={activeUnitName}
       selectedMonth={selectedMonth}
-      currentUserRole={user.role}
+      hasFinancialAccess={hasFinancialAccess}
     />
   )
 }

@@ -51,13 +51,13 @@ export function SignInForm() {
           <CardContent>
             <form action={formAction} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Usuário ou Matrícula</Label>
+                <Label htmlFor="username">Matrícula, CPF ou Usuário</Label>
                 <Input
                   id="username"
                   name="username"
                   type="text"
                   required
-                  placeholder="Ex.: seu.usuario ou MASTER-JSS0001"
+                  placeholder="Ex.: MASTER-JSS0001, 000.000.000-00 ou usuário"
                 />
               </div>
 

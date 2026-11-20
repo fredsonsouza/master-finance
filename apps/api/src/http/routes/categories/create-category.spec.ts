@@ -54,7 +54,7 @@ describe('Create Category Unit Test', () => {
   test('should allow INVENTORY role to create a category', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
-      role: 'INVENTORY',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'transactions:manage', 'items:manage', 'settings:structure'],
       unitId: '223e4567-e89b-12d3-a456-426614174001',
     } as any)
 

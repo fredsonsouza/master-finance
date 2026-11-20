@@ -3,48 +3,45 @@ import Link from 'next/link'
 
 import { signOutAction } from '@/app/auth/sign-out-action'
 import { auth } from '@/auth/auth'
+import { hasAnyPermission, hasPermission } from '@/lib/permissions'
 import { SidebarNav } from './sidebar-nav'
 
 export async function Sidebar() {
   const { user } = await auth()
 
-  const canViewStock =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'INVENTORY' ||
-    user.role === 'EMPLOYEE'
-
-  const canViewFinancial =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'FINANCIAL' ||
-    user.role === 'SELLER'
-
-  const canViewEvaluations =
-    user.role === 'ADMIN' || user.role === 'MANAGER' || user.role === 'HR'
-
-  const canViewCollections =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'FISCAL' ||
-    user.role === 'COLLECTOR'
-
-  const canViewReports =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'FISCAL'
-
-  const canViewLogs = user.role === 'ADMIN'
-
-  const canViewSettings =
-    user.role === 'ADMIN' ||
-    user.role === 'MANAGER' ||
-    user.role === 'HR' ||
-    user.role === 'INVENTORY'
+  const canViewDashboard = hasPermission(user, 'dashboard:view')
+  const canViewTransactions = hasPermission(user, 'transactions:manage')
+  const canViewItems = hasAnyPermission(user, [
+    'transactions:manage',
+    'items:manage',
+  ])
+  const canViewStock = canViewTransactions || canViewItems
+  const canViewFinancial = hasAnyPermission(user, [
+    'cash_closures:create',
+    'cash_closures:manage',
+  ])
+  const canViewEvaluations = hasAnyPermission(user, [
+    'evaluations:manage',
+    'evaluations:receive',
+  ])
+  const canViewCollections = hasAnyPermission(user, [
+    'collections:manage',
+    'collections:execute',
+  ])
+  const canViewReports = hasAnyPermission(user, [
+    'reports:view',
+    'collections:manage',
+  ])
+  const onlyCollectionsReports =
+    !hasPermission(user, 'reports:view') &&
+    hasPermission(user, 'collections:manage')
+  const canManageEmployees = hasPermission(user, 'employees:manage')
+  const canViewLogs = hasPermission(user, 'logs:view')
+  const canViewSettings = hasAnyPermission(user, [
+    'users:manage',
+    'settings:structure',
+    'employees:manage',
+  ])
 
   return (
     <aside className="h-full w-64 shrink-0 border-r border-surface-container bg-surface flex flex-col">
@@ -55,14 +52,17 @@ export async function Sidebar() {
       </div>
 
       <SidebarNav
-        userRole={user.role}
+        canViewDashboard={canViewDashboard}
         canViewStock={canViewStock}
+        canViewTransactions={canViewTransactions}
+        canViewItems={canViewItems}
         canViewFinancial={canViewFinancial}
         canViewEvaluations={canViewEvaluations}
         canViewCollections={canViewCollections}
         canViewReports={canViewReports}
+        onlyCollectionsReports={onlyCollectionsReports}
+        canManageEmployees={canManageEmployees}
         canViewLogs={canViewLogs}
-        canViewSettings={canViewSettings}
       />
 
       {/* Configurações e Logout no Rodapé */}

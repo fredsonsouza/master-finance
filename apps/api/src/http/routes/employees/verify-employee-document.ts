@@ -103,7 +103,7 @@ export async function verifyEmployeeDocument(app: FastifyInstance) {
           },
           issuedBy: {
             name: doc.issuedBy?.name || 'Gestão de Recursos Humanos',
-            role: doc.issuedBy?.role || 'HR',
+            role: doc.issuedBy?.role || 'EMPLOYEE',
           },
         },
       })

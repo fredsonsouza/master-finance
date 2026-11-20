@@ -50,6 +50,7 @@ interface HrReportsContentProps {
     id: string
     name: string | null
     role: string
+    canManageHrReports: boolean
     unitId?: string | null
   }
 }
@@ -61,8 +62,7 @@ export function HrReportsContent({
   units,
   currentUser,
 }: HrReportsContentProps) {
-  const isManager =
-    currentUser.role === 'ADMIN' || currentUser.role === 'MANAGER'
+  const isManager = currentUser.canManageHrReports
 
   const [reports, setReports] = useState<HrReport[]>(initialReports)
   const [summary, setSummary] = useState<HrReportSummary>(initialSummary)

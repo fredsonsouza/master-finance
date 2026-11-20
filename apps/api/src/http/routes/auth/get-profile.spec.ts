@@ -48,6 +48,7 @@ describe('Get Profile Unit Test', () => {
       avatarUrl: 'http://example.com/avatar.png',
       forcePasswordChange: false,
       role: 'ADMIN',
+      permissions: [],
       unitId: null,
     } as any)
 
@@ -65,7 +66,9 @@ describe('Get Profile Unit Test', () => {
         avatarUrl: 'http://example.com/avatar.png',
         forcePasswordChange: false,
         role: 'ADMIN',
+        permissions: [],
         unitId: null,
+        employee: null,
       },
     })
   })

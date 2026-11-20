@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -46,8 +46,15 @@ export async function getEmployee(app: FastifyInstance) {
           include: {
             unit: { select: { id: true, name: true } },
             sector: { select: { id: true, name: true } },
+            department: { select: { id: true, name: true, type: true } },
             user: {
-              select: { id: true, name: true, username: true, role: true },
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                role: true,
+                permissions: true,
+              },
             },
             createdBy: { select: { id: true, name: true } },
             requests: {
@@ -68,7 +75,8 @@ export async function getEmployee(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         const isOwnProfile = employee.userId === requestingUser.id
 

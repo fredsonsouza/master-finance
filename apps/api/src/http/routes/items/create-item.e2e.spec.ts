@@ -23,7 +23,7 @@ test('[E2E] Create Item', async () => {
       name: 'Employee User',
       username: 'employee-create-item',
       password_hash: await hash('123456', 1),
-      role: 'INVENTORY',
+      role: 'EMPLOYEE', permissions: ['scope:all_units', 'dashboard:view', 'transactions:manage', 'items:manage', 'settings:structure'],
       unitId: unit.id,
     },
   })

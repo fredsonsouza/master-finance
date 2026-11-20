@@ -4,6 +4,7 @@ import { auth } from '@/auth/auth'
 import { deleteEvaluation } from '@/http/delete-evaluation'
 import { getEvaluations } from '@/http/get-evaluations'
 import { updateEvaluation } from '@/http/update-evaluation'
+import { hasPermission } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 
 export async function fetchEvaluationsAction(params?: {
@@ -30,10 +31,10 @@ export async function fetchEvaluationsAction(params?: {
 
 export async function deleteEvaluationAction(id: string) {
   const { token, user } = await auth()
-  if (!token || user.role !== 'ADMIN') {
+  if (!token || !hasPermission(user, 'evaluations:manage')) {
     return {
       success: false,
-      message: 'Apenas Administradores podem excluir avaliações.',
+      message: 'Você não tem permissão para excluir avaliações.',
     }
   }
 
@@ -55,10 +56,10 @@ export async function updateEvaluationAction(
   }
 ) {
   const { token, user } = await auth()
-  if (!token || user.role !== 'ADMIN') {
+  if (!token || !hasPermission(user, 'evaluations:manage')) {
     return {
       success: false,
-      message: 'Apenas Administradores podem editar avaliações.',
+      message: 'Você não tem permissão para editar avaliações.',
     }
   }
 

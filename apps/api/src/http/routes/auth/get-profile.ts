@@ -1,5 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
+import { roleSchema } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import z from 'zod'
@@ -14,7 +15,7 @@ export async function getProfile(app: FastifyInstance) {
       {
         schema: {
           tags: ['auth'],
-          summary: 'Get Authenticated with e-mail & password',
+          summary: 'Get authenticated user profile',
           response: {
             200: z.object({
               user: z.object({
@@ -23,18 +24,8 @@ export async function getProfile(app: FastifyInstance) {
                 username: z.string(),
                 avatarUrl: z.string().url().nullable(),
                 forcePasswordChange: z.boolean(),
-                role: z.enum([
-                  'ADMIN',
-                  'MANAGER',
-                  'EMPLOYEE',
-                  'FINANCIAL',
-                  'SELLER',
-                  'COLLECTOR',
-                  'FISCAL',
-                  'INVENTORY',
-                  'ANALYST',
-                  'HR',
-                ]),
+                role: roleSchema,
+                permissions: z.array(z.string()),
                 unitId: z.string().uuid().nullable(),
                 unit: z
                   .object({
@@ -49,6 +40,14 @@ export async function getProfile(app: FastifyInstance) {
                     registrationNumber: z.string(),
                     status: z.enum(['ACTIVE', 'INACTIVE']),
                     roleTitle: z.string(),
+                    department: z
+                      .object({
+                        id: z.string().uuid(),
+                        name: z.string(),
+                        type: z.enum(['GENERAL', 'RECEPTION', 'COLLECTION']),
+                      })
+                      .nullable()
+                      .optional(),
                   })
                   .nullable()
                   .optional(),
@@ -68,6 +67,7 @@ export async function getProfile(app: FastifyInstance) {
             avatarUrl: true,
             forcePasswordChange: true,
             role: true,
+            permissions: true,
             unitId: true,
             unit: {
               select: {
@@ -87,6 +87,11 @@ export async function getProfile(app: FastifyInstance) {
           registrationNumber: string
           status: 'ACTIVE' | 'INACTIVE'
           roleTitle: string
+          department?: {
+            id: string
+            name: string
+            type: 'GENERAL' | 'RECEPTION' | 'COLLECTION'
+          } | null
         } | null = null
 
         if (prisma.employee?.findUnique) {
@@ -98,6 +103,13 @@ export async function getProfile(app: FastifyInstance) {
                 registrationNumber: true,
                 status: true,
                 roleTitle: true,
+                department: {
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                  },
+                },
               },
             })
           } catch {
@@ -113,6 +125,7 @@ export async function getProfile(app: FastifyInstance) {
             avatarUrl: user.avatarUrl,
             forcePasswordChange: user.forcePasswordChange,
             role: user.role,
+            permissions: user.permissions ?? [],
             unitId: user.unitId,
             unit: user.unit,
             employee,

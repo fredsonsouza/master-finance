@@ -1,7 +1,13 @@
 import { auth } from '@/http/middlewares/auth'
 import { logAction } from '@/lib/audit'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import {
+  type Permission,
+  canGrantAccess,
+  defineAbilityFor,
+  permissionSchema,
+  roleSchema,
+} from '@saas/auth'
 import { hash } from 'bcryptjs'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -18,7 +24,7 @@ export async function updateUser(app: FastifyInstance) {
       {
         schema: {
           tags: ['users'],
-          summary: 'Update user details',
+          summary: 'Update user details and PBAC permissions',
           security: [{ bearerAuth: [] }],
           params: z.object({
             id: z.string().uuid(),
@@ -26,20 +32,8 @@ export async function updateUser(app: FastifyInstance) {
           body: z.object({
             name: z.string().optional(),
             password: z.string().min(4).optional(),
-            role: z
-              .enum([
-                'ADMIN',
-                'MANAGER',
-                'EMPLOYEE',
-                'FINANCIAL',
-                'SELLER',
-                'COLLECTOR',
-                'FISCAL',
-                'INVENTORY',
-                'ANALYST',
-                'HR',
-              ])
-              .optional(),
+            role: roleSchema.optional(),
+            permissions: z.array(permissionSchema).optional(),
             unitId: z.string().uuid().nullable().optional(),
           }),
           response: {
@@ -63,7 +57,8 @@ export async function updateUser(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('manage', 'User')) {
           throw new UnauthorizedError('You are not allowed to update users.')
@@ -77,14 +72,41 @@ export async function updateUser(app: FastifyInstance) {
           throw new BadRequestError('User not found.')
         }
 
-        const { name, password, role, unitId } = request.body
-
-        if (role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
-          throw new UnauthorizedError('Only admins can assign the admin role.')
-        }
+        const { name, password, role, permissions, unitId } = request.body
 
         if (targetUser.role === 'ADMIN' && requestingUser.role !== 'ADMIN') {
           throw new UnauthorizedError('You cannot update an admin user.')
+        }
+
+        if (
+          targetUserId === requestingUser.id &&
+          requestingUser.role !== 'ADMIN' &&
+          (role !== undefined || permissions !== undefined)
+        ) {
+          throw new UnauthorizedError(
+            'Você não pode alterar o próprio perfil ou permissões.'
+          )
+        }
+
+        const nextRole = role ?? targetUser.role
+        const nextPermissions =
+          nextRole === 'ADMIN'
+            ? []
+            : permissions !== undefined
+              ? Array.from(new Set(permissions))
+              : ((targetUser.permissions ?? []) as Permission[])
+
+        const grantCheck = canGrantAccess(
+          {
+            role: requestingUser.role,
+            permissions: requestingUser.permissions as Permission[],
+          },
+          nextRole,
+          nextPermissions
+        )
+
+        if (!grantCheck.allowed) {
+          throw new UnauthorizedError(grantCheck.reason)
         }
 
         if (password && requestingUser.role !== 'ADMIN') {
@@ -95,7 +117,8 @@ export async function updateUser(app: FastifyInstance) {
 
         const dataToUpdate: any = {
           name: name !== undefined ? name : targetUser.name,
-          role: role !== undefined ? role : targetUser.role,
+          role: nextRole,
+          permissions: nextPermissions,
           unitId: unitId !== undefined ? unitId : targetUser.unitId,
         }
 
@@ -115,8 +138,8 @@ export async function updateUser(app: FastifyInstance) {
           resource: 'USER',
           resourceId: targetUserId,
           details: password
-            ? `Editou dados e redefiniu senha do usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`
-            : `Editou o usuário ${updated.name} (${updated.username}). Cargo: ${updated.role}`,
+            ? `Editou dados, permissões e redefiniu senha do usuário ${updated.name} (${updated.username}). Perfil: ${updated.role}`
+            : `Editou o usuário ${updated.name} (${updated.username}). Perfil: ${updated.role} (${nextPermissions.length} permissões)`,
         })
 
         return reply.status(204).send(null)

@@ -1,6 +1,6 @@
 import { auth } from '@/http/middlewares/auth'
 import { prisma } from '@/lib/prisma'
-import { defineAbilityFor } from '@saas/auth'
+import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -22,6 +22,7 @@ export async function getEmployees(app: FastifyInstance) {
             status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
             unitId: z.string().uuid().optional(),
             sectorId: z.string().uuid().optional(),
+            departmentId: z.string().uuid().optional(),
             page: z.coerce.number().int().min(1).default(1),
             perPage: z.coerce.number().int().min(1).max(200).default(20),
           }),
@@ -57,7 +58,8 @@ export async function getEmployees(app: FastifyInstance) {
           id: requestingUser.id,
           role: requestingUser.role,
           unitId: requestingUser.unitId,
-        } as any)
+          permissions: requestingUser.permissions as Permission[],
+        })
 
         if (ability.cannot('get', 'Employee')) {
           throw new UnauthorizedError(
@@ -65,8 +67,15 @@ export async function getEmployees(app: FastifyInstance) {
           )
         }
 
-        const { search, status, unitId, sectorId, page, perPage } =
-          request.query
+        const {
+          search,
+          status,
+          unitId,
+          sectorId,
+          departmentId,
+          page,
+          perPage,
+        } = request.query
 
         const baseWhere: any = {}
 
@@ -76,6 +85,10 @@ export async function getEmployees(app: FastifyInstance) {
 
         if (sectorId) {
           baseWhere.sectorId = sectorId
+        }
+
+        if (departmentId) {
+          baseWhere.departmentId = departmentId
         }
 
         if (search && search.trim().length > 0) {
@@ -108,8 +121,15 @@ export async function getEmployees(app: FastifyInstance) {
               include: {
                 unit: { select: { id: true, name: true } },
                 sector: { select: { id: true, name: true } },
+                department: { select: { id: true, name: true, type: true } },
                 user: {
-                  select: { id: true, name: true, username: true, role: true },
+                  select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    role: true,
+                    permissions: true,
+                  },
                 },
               },
               orderBy: [{ status: 'asc' }, { fullName: 'asc' }],
