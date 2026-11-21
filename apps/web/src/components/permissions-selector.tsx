@@ -7,7 +7,7 @@ import {
   type Permission,
   type Role,
 } from '@/lib/permissions'
-import { Check, Lock, ShieldCheck, Sparkles } from 'lucide-react'
+import { Check, Lock, ShieldCheck } from 'lucide-react'
 
 interface PermissionsSelectorProps {
   value: Permission[]
@@ -55,8 +55,7 @@ export function PermissionsSelector({
       {/* Quick Presets */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
-            <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
             Modelos Rápidos (Preenchimento Automático)
           </span>
           <span className="text-[11px] font-medium text-slate-500">
@@ -95,7 +94,7 @@ export function PermissionsSelector({
 
       {/* Grouped Checkboxes */}
       <div
-        className={`grid grid-cols-1 gap-3 ${compact ? 'md:grid-cols-1' : 'md:grid-cols-2'}`}
+        className={`grid grid-cols-1 gap-3 ${compact ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'}`}
       >
         {PERMISSION_GROUPS.map((group) => (
           <div

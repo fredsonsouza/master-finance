@@ -63,7 +63,7 @@ export function CreateUserDialog({
           <Plus className="h-4 w-4" /> Novo Usuário
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Usuário e Permissões</DialogTitle>
           <DialogDescription>
@@ -72,7 +72,7 @@ export function CreateUserDialog({
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome Completo</Label>
               <Input id="name" name="name" required placeholder="João Silva" />
@@ -86,9 +86,6 @@ export function CreateUserDialog({
                 placeholder="joaosilva ou MASTER-JS0001"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="password">Senha Inicial</Label>
               <Input
@@ -99,7 +96,9 @@ export function CreateUserDialog({
                 minLength={4}
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="role">Perfil Base</Label>
               <select

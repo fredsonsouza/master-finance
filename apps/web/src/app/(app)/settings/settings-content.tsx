@@ -28,8 +28,10 @@ import {
 import {
   Briefcase,
   Building2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   KeyRound,
   Loader2,
   Pencil,
@@ -123,6 +125,16 @@ export function SettingsContent({
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('')
   const [selectedUnitFilter, setSelectedUnitFilter] = useState('')
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [expandedPermissions, setExpandedPermissions] = useState<
+    Record<string, boolean>
+  >({})
+
+  function togglePermissions(userId: string) {
+    setExpandedPermissions((prev) => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }))
+  }
 
   const [searchDepartments, setSearchDepartments] = useState('')
   const [searchUnits, setSearchUnits] = useState('')
@@ -505,6 +517,13 @@ export function SettingsContent({
                             (unit) => unit.id === u.unitId
                           )
                           const perms = u.permissions ?? []
+                          const hasMoreThanOnePerm = perms.length > 1
+                          const isPermsExpanded = !!expandedPermissions[u.id]
+                          const visiblePerms =
+                            hasMoreThanOnePerm && !isPermsExpanded
+                              ? perms.slice(0, 1)
+                              : perms
+                          const hiddenPermsCount = perms.length - 1
                           const canEditTarget = isAdmin || u.role !== 'ADMIN'
 
                           return (
@@ -527,7 +546,7 @@ export function SettingsContent({
                                     {ROLE_LABELS.ADMIN} (Total)
                                   </span>
                                 ) : (
-                                  <div className="flex flex-wrap items-center gap-1">
+                                  <div className="flex flex-wrap items-center gap-1.5 max-w-[360px]">
                                     <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[11px] font-medium">
                                       {ROLE_LABELS.EMPLOYEE}
                                     </span>
@@ -537,24 +556,43 @@ export function SettingsContent({
                                       </span>
                                     ) : (
                                       <>
-                                        {perms.slice(0, 2).map((p) => (
+                                        {visiblePerms.map((p) => (
                                           <span
                                             key={p}
-                                            className="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-[11px] font-medium"
+                                            className="inline-flex items-center rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 text-[11px] font-medium"
                                           >
                                             {getPermissionLabel(p)}
                                           </span>
                                         ))}
-                                        {perms.length > 2 && (
-                                          <span
-                                            title={perms
-                                              .slice(2)
-                                              .map(getPermissionLabel)
-                                              .join(', ')}
-                                            className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2 py-0.5 text-[11px] font-semibold"
+                                        {hasMoreThanOnePerm && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              togglePermissions(u.id)
+                                            }
+                                            aria-expanded={isPermsExpanded}
+                                            title={
+                                              isPermsExpanded
+                                                ? 'Recolher permissões'
+                                                : `Clique para expandir: ${perms
+                                                    .slice(1)
+                                                    .map(getPermissionLabel)
+                                                    .join(', ')}`
+                                            }
+                                            className="inline-flex items-center gap-1 rounded-md bg-primary/10 hover:bg-primary/20 px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-inset ring-primary/25 transition-colors cursor-pointer"
                                           >
-                                            +{perms.length - 2}
-                                          </span>
+                                            {isPermsExpanded ? (
+                                              <>
+                                                Recolher
+                                                <ChevronUp className="h-3 w-3" />
+                                              </>
+                                            ) : (
+                                              <>
+                                                +{hiddenPermsCount} mais
+                                                <ChevronDown className="h-3 w-3" />
+                                              </>
+                                            )}
+                                          </button>
                                         )}
                                       </>
                                     )}
