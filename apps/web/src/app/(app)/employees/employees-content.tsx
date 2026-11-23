@@ -50,6 +50,8 @@ import {
   Building2,
   Camera,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Eye,
   FileDown,
@@ -270,7 +272,7 @@ export function EmployeesContent({
 }: Props) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
   const [summary, setSummary] = useState(initialSummary)
-  const [, setPagination] = useState(initialPagination)
+  const [pagination, setPagination] = useState(initialPagination)
 
   // Filters
   const [search, setSearch] = useState('')
@@ -414,6 +416,7 @@ export function EmployeesContent({
     status?: 'ALL' | 'ACTIVE' | 'INACTIVE'
     unitId?: string
     departmentId?: string
+    page?: number
   }) {
     setIsLoadingList(true)
     try {
@@ -421,14 +424,15 @@ export function EmployeesContent({
       const targetStatus = overrides?.status ?? statusFilter
       const targetUnit = overrides?.unitId ?? unitFilter
       const targetDepartment = overrides?.departmentId ?? departmentFilter
+      const targetPage = overrides?.page ?? 1
 
       const res = await fetchEmployeesAction({
         search: targetSearch.trim() || undefined,
         status: targetStatus === 'ALL' ? undefined : targetStatus,
         unitId: targetUnit === 'ALL' ? undefined : targetUnit,
         departmentId: targetDepartment === 'ALL' ? undefined : targetDepartment,
-        page: 1,
-        perPage: 50,
+        page: targetPage,
+        perPage: 20,
       })
 
       if (res.success && res.employees) {
@@ -812,7 +816,7 @@ export function EmployeesContent({
             `Ficha de ${fullName} (${editingEmployee.registrationNumber}) atualizada com sucesso!`
           )
           setIsFormOpen(false)
-          await loadEmployees()
+          await loadEmployees({ page: pagination.page })
         } else {
           toast.error(res.message || 'Não foi possível atualizar a ficha.')
         }
@@ -823,7 +827,7 @@ export function EmployeesContent({
             `Colaborador registrado com sucesso! Matrícula gerada: ${res.registrationNumber}`
           )
           setIsFormOpen(false)
-          await loadEmployees()
+          await loadEmployees({ page: 1 })
         } else {
           toast.error(res.message || 'Não foi possível salvar o colaborador.')
         }
@@ -862,7 +866,7 @@ export function EmployeesContent({
             : `Colaborador ${statusTarget.registrationNumber} inativado com sucesso.`
         )
         setStatusTarget(null)
-        await loadEmployees()
+        await loadEmployees({ page: pagination.page })
       } else {
         toast.error(res.message || 'Erro ao alterar status do colaborador.')
       }
@@ -1281,52 +1285,56 @@ export function EmployeesContent({
                       )}
                     </td>
 
-                    <td className="py-3.5 px-4 align-middle text-right">
-                      <div className="inline-flex items-center justify-end gap-1.5">
+                    <td className="py-3.5 px-4 align-middle text-right whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-1">
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDownloadRegistrationPdf(emp)}
                           disabled={downloadingId === emp.id}
                           title="Exportar Ficha Oficial de Registro de Empregado (PDF 2 Páginas)"
-                          className="gap-1.5 text-xs cursor-pointer"
+                          aria-label="Exportar Ficha PDF"
+                          className="h-8 w-8 text-primary hover:bg-primary/10 cursor-pointer"
                         >
                           {downloadingId === emp.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <FileDown className="h-3.5 w-3.5 text-primary" />
+                            <FileDown className="h-4 w-4" />
                           )}
-                          Ficha PDF
                         </Button>
 
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => openEditDialog(emp)}
                           title="Editar Ficha do Colaborador"
-                          className="gap-1 text-xs cursor-pointer"
+                          aria-label="Editar Colaborador"
+                          className="h-8 w-8 text-on-surface hover:text-primary cursor-pointer"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Editar
+                          <Pencil className="h-4 w-4" />
                         </Button>
 
                         <Button
-                          variant="outline"
-                          size="sm"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => openStatusDialog(emp)}
                           title={
                             emp.status === 'ACTIVE'
                               ? 'Inativar / Desligar Colaborador'
                               : 'Reativar Colaborador'
                           }
-                          className={`gap-1 text-xs cursor-pointer ${
+                          aria-label={
                             emp.status === 'ACTIVE'
-                              ? 'text-rose-600 hover:text-rose-700'
-                              : 'text-emerald-600 hover:text-emerald-700'
+                              ? 'Inativar Colaborador'
+                              : 'Reativar Colaborador'
+                          }
+                          className={`h-8 w-8 cursor-pointer ${
+                            emp.status === 'ACTIVE'
+                              ? 'text-rose-600 hover:text-rose-700 hover:bg-rose-500/10'
+                              : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10'
                           }`}
                         >
-                          <Power className="h-3.5 w-3.5" />
-                          {emp.status === 'ACTIVE' ? 'Inativar' : 'Ativar'}
+                          <Power className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -1336,6 +1344,42 @@ export function EmployeesContent({
             </tbody>
           </table>
         </div>
+
+        {/* Paginação */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-surface-container bg-surface-container-lowest text-xs text-on-surface-variant">
+            <span>
+              Página <strong>{pagination.page}</strong> de{' '}
+              <strong>{pagination.totalPages}</strong> ({pagination.totalCount}{' '}
+              colaboradores)
+            </span>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pagination.page <= 1 || isLoadingList}
+                onClick={() => loadEmployees({ page: pagination.page - 1 })}
+                className="h-7 px-2 cursor-pointer"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 mr-1" />
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={
+                  pagination.page >= pagination.totalPages || isLoadingList
+                }
+                onClick={() => loadEmployees({ page: pagination.page + 1 })}
+                className="h-7 px-2 cursor-pointer"
+              >
+                Próxima
+                <ChevronRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* View All Employee Data Modal (with Copy button on every field) */}

@@ -29,9 +29,9 @@ export default async function EmployeesPage() {
   }
   let pagination: PaginationMeta = {
     page: 1,
-    perPage: 50,
+    perPage: 20,
     totalCount: 0,
-    totalPages: 0,
+    totalPages: 1,
   }
   let units: Unit[] = []
   let departments: Department[] = []
@@ -40,10 +40,10 @@ export default async function EmployeesPage() {
   try {
     const [employeesRes, unitsRes, departmentsRes, usersRes] =
       await Promise.all([
-        getEmployees(token, { page: 1, perPage: 50 }).catch(() => ({
+        getEmployees(token, { page: 1, perPage: 20 }).catch(() => ({
           employees: [],
           summary: { totalCount: 0, activeCount: 0, inactiveCount: 0 },
-          pagination: { page: 1, perPage: 50, totalCount: 0, totalPages: 0 },
+          pagination: { page: 1, perPage: 20, totalCount: 0, totalPages: 1 },
         })),
         getUnits(token).catch(() => ({ units: [] })),
         getDepartments(token).catch(() => ({ departments: [] })),
@@ -58,9 +58,9 @@ export default async function EmployeesPage() {
     }
     pagination = employeesRes.pagination || {
       page: 1,
-      perPage: 50,
+      perPage: 20,
       totalCount: 0,
-      totalPages: 0,
+      totalPages: 1,
     }
     units = unitsRes.units || []
     departments = departmentsRes.departments || []
