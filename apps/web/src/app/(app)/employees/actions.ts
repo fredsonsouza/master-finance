@@ -2,13 +2,16 @@
 
 import { auth } from '@/auth/auth'
 import {
+  type BatchImportEmployeeResult,
   changeEmployeeStatusApi,
+  checkEmployeeCpfsBatchApi,
   createEmployeeApi,
   createEmployeeRequestApi,
   deleteEmployeeRequestApi,
   getEmployee,
   getEmployeeRequests,
   getEmployees,
+  importEmployeesBatchApi,
   updateEmployeeApi,
   updateEmployeePhotoApi,
   updateEmployeeRequestStatusApi,
@@ -102,6 +105,55 @@ export async function createEmployeeAction(data: Record<string, any>) {
       message: await extractErrorMessage(
         error,
         'Erro ao cadastrar colaborador.'
+      ),
+    }
+  }
+}
+
+export async function checkEmployeeCpfsBatchAction(cpfs: string[]) {
+  try {
+    const { token } = await auth()
+    const res = await checkEmployeeCpfsBatchApi(token, cpfs)
+    return {
+      success: true as const,
+      existingCpfs: res.existingCpfs,
+    }
+  } catch (error) {
+    return {
+      success: false as const,
+      existingCpfs: [] as string[],
+      message: await extractErrorMessage(
+        error,
+        'Erro ao verificar CPFs já cadastrados.'
+      ),
+    }
+  }
+}
+
+export async function importEmployeesBatchAction(data: {
+  skipExisting?: boolean
+  employees: Record<string, any>[]
+}): Promise<
+  | { success: true; result: BatchImportEmployeeResult }
+  | { success: false; message: string }
+> {
+  try {
+    const { token } = await auth()
+    const result = await importEmployeesBatchApi(token, data)
+    updateTag('employees')
+    revalidatePath('/employees')
+    revalidatePath('/evaluations')
+    revalidatePath('/collections')
+    return {
+      success: true,
+      result,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: await extractErrorMessage(
+        error,
+        'Erro ao importar lote de colaboradores.'
       ),
     }
   }

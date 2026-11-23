@@ -236,6 +236,54 @@ export async function createEmployeeApi(
     .json<{ employeeId: string; registrationNumber: string }>()
 }
 
+export interface BatchImportEmployeeResult {
+  importedCount: number
+  skippedCount: number
+  errorCount: number
+  imported: Array<{
+    employeeId: string
+    registrationNumber: string
+    fullName: string
+    cpf: string
+    status: 'ACTIVE' | 'INACTIVE'
+  }>
+  skipped: Array<{
+    fullName: string
+    cpf: string
+    reason: string
+  }>
+  errors: Array<{
+    fullName: string
+    cpf: string
+    reason: string
+  }>
+}
+
+export async function checkEmployeeCpfsBatchApi(token: string, cpfs: string[]) {
+  return api
+    .post('employees/import-batch/check-cpfs', {
+      headers: { Authorization: `Bearer ${token}` },
+      json: { cpfs },
+    })
+    .json<{ existingCpfs: string[] }>()
+}
+
+export async function importEmployeesBatchApi(
+  token: string,
+  data: {
+    skipExisting?: boolean
+    employees: Record<string, any>[]
+  }
+) {
+  return api
+    .post('employees/import-batch', {
+      headers: { Authorization: `Bearer ${token}` },
+      json: data,
+      timeout: 60_000,
+    })
+    .json<BatchImportEmployeeResult>()
+}
+
 export async function updateEmployeeApi(
   token: string,
   id: string,

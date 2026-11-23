@@ -88,6 +88,7 @@ import { deleteEmployeeRequest } from './routes/employees/delete-employee-reques
 import { getEmployee } from './routes/employees/get-employee'
 import { getEmployeeRequests } from './routes/employees/get-employee-requests'
 import { getEmployees } from './routes/employees/get-employees'
+import { importEmployeesBatch } from './routes/employees/import-employees-batch'
 import { updateEmployee } from './routes/employees/update-employee'
 import { updateEmployeePhoto } from './routes/employees/update-employee-photo'
 import { updateEmployeeRequestStatus } from './routes/employees/update-employee-request-status'
@@ -213,6 +214,7 @@ app.register(updateHrReport)
 app.register(deleteHrReport)
 
 app.register(createEmployee)
+app.register(importEmployeesBatch)
 app.register(getEmployees)
 app.register(getEmployee)
 app.register(updateEmployee)

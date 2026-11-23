@@ -80,6 +80,7 @@ import {
   updateEmployeeAction,
 } from './actions'
 import { downloadEmployeeRegistrationPdf } from './download-employee-registration-pdf'
+import { ImportEmployeesPdfDialog } from './import-employees-pdf-dialog'
 
 interface Props {
   initialEmployees: Employee[]
@@ -305,6 +306,7 @@ export function EmployeesContent({
 
   // Create / Edit Dialog State
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isImportPdfOpen, setIsImportPdfOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<FormTab>('PERSONAL')
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -984,6 +986,17 @@ export function EmployeesContent({
 
       {/* Top Action Buttons (above search & filters) */}
       <div className="flex flex-wrap items-center justify-end gap-2.5">
+        {currentUserRole === 'ADMIN' && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsImportPdfOpen(true)}
+            className="gap-2 cursor-pointer border-amber-500/40 text-amber-800 hover:bg-amber-500/10"
+          >
+            <Upload className="h-4 w-4" />
+            Importar PDF (Migração)
+          </Button>
+        )}
         <Link href="/employees/requests">
           <Button variant="outline" className="gap-2 cursor-pointer">
             <FileSpreadsheet className="h-4 w-4 text-primary" />
@@ -2939,6 +2952,14 @@ export function EmployeesContent({
           </div>
         </DialogContent>
       </Dialog>
+
+      {currentUserRole === 'ADMIN' && (
+        <ImportEmployeesPdfDialog
+          open={isImportPdfOpen}
+          onOpenChange={setIsImportPdfOpen}
+          onImported={loadEmployees}
+        />
+      )}
     </div>
   )
 }
