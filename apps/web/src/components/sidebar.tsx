@@ -1,5 +1,4 @@
-import { LogOut, Settings } from 'lucide-react'
-import Link from 'next/link'
+import { LogOut } from 'lucide-react'
 
 import { signOutAction } from '@/app/auth/sign-out-action'
 import { auth } from '@/auth/auth'
@@ -62,20 +61,12 @@ export async function Sidebar() {
         canViewReports={canViewReports}
         onlyCollectionsReports={onlyCollectionsReports}
         canManageEmployees={canManageEmployees}
+        canViewSettings={canViewSettings}
         canViewLogs={canViewLogs}
       />
 
-      {/* Configurações e Logout no Rodapé */}
-      <div className="p-4 border-t border-surface-container space-y-1 shrink-0">
-        {canViewSettings && (
-          <Link
-            href="/settings"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-xs font-medium text-on-surface-variant hover:bg-surface-container-highest hover:text-primary transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            <span>Configurações</span>
-          </Link>
-        )}
+      {/* Logout no Rodapé */}
+      <div className="p-4 border-t border-surface-container shrink-0">
         <form action={signOutAction}>
           <button
             type="submit"

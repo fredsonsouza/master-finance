@@ -8,10 +8,13 @@ import {
   CircleDollarSign,
   FileCheck2,
   FileText,
+  FlaskConical,
   History,
   IdCard,
   LayoutDashboard,
   Package,
+  Settings,
+  SlidersHorizontal,
   Star,
   Syringe,
   UserCheck,
@@ -33,6 +36,7 @@ interface SidebarNavProps {
   canViewReports: boolean
   onlyCollectionsReports: boolean
   canManageEmployees: boolean
+  canViewSettings: boolean
   canViewLogs: boolean
 }
 
@@ -47,6 +51,7 @@ export function SidebarNav({
   canViewReports,
   onlyCollectionsReports,
   canManageEmployees,
+  canViewSettings,
   canViewLogs,
 }: SidebarNavProps) {
   const pathname = usePathname()
@@ -59,11 +64,16 @@ export function SidebarNav({
     pathname.startsWith('/evaluations') ||
     pathname.startsWith('/hr-reports') ||
     isEmployeesActive
+  const isLabActive = pathname.startsWith('/collections')
+  const isSettingsActive =
+    pathname.startsWith('/settings') || pathname.startsWith('/logs')
 
-  const [isStockOpen, setIsStockOpen] = useState(true)
-  const [isFinancialOpen, setIsFinancialOpen] = useState(true)
-  const [isRhOpen, setIsRhOpen] = useState(true)
-  const [isEmployeesOpen, setIsEmployeesOpen] = useState(true)
+  const [isStockOpen, setIsStockOpen] = useState(false)
+  const [isFinancialOpen, setIsFinancialOpen] = useState(false)
+  const [isRhOpen, setIsRhOpen] = useState(false)
+  const [isEmployeesOpen, setIsEmployeesOpen] = useState(false)
+  const [isLabOpen, setIsLabOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   return (
     <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
@@ -295,22 +305,50 @@ export function SidebarNav({
         )}
       </div>
 
-      {/* Módulos Operacionais Adicionais */}
-      {(canViewCollections || canViewReports || canViewLogs) && (
-        <div className="space-y-1 pt-2 border-t border-surface-container/60">
-          {canViewCollections && (
-            <Link
-              href="/collections"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                pathname.startsWith('/collections')
-                  ? 'bg-primary/15 text-primary font-semibold'
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+      {/* Menu Colapsável: LABORATÓRIO */}
+      {canViewCollections && (
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => setIsLabOpen((prev) => !prev)}
+            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+              isLabActive
+                ? 'text-primary bg-primary/5'
+                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <FlaskConical className="h-4 w-4 text-primary shrink-0" />
+              <span>Laboratório</span>
+            </div>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                isLabOpen ? 'rotate-0' : '-rotate-90 text-on-surface-variant/60'
               }`}
-            >
-              <Syringe className="h-4 w-4 shrink-0" />
-              <span>Recoletas</span>
-            </Link>
+            />
+          </button>
+
+          {isLabOpen && (
+            <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
+              <Link
+                href="/collections"
+                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  pathname.startsWith('/collections')
+                    ? 'bg-primary/15 text-primary font-semibold'
+                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                }`}
+              >
+                <Syringe className="h-3.5 w-3.5 shrink-0" />
+                <span>Recoletas</span>
+              </Link>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Relatórios & Configurações */}
+      {(canViewReports || canViewSettings || canViewLogs) && (
+        <div className="space-y-1 pt-2 border-t border-surface-container/60">
           {canViewReports && (
             <Link
               href="/reports"
@@ -328,18 +366,63 @@ export function SidebarNav({
               </span>
             </Link>
           )}
-          {canViewLogs && (
-            <Link
-              href="/logs"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                pathname.startsWith('/logs')
-                  ? 'bg-primary/15 text-primary font-semibold'
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-              }`}
-            >
-              <History className="h-4 w-4 shrink-0" />
-              <span>Logs de Auditoria</span>
-            </Link>
+
+          {/* Menu Colapsável: CONFIGURAÇÕES */}
+          {(canViewSettings || canViewLogs) && (
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen((prev) => !prev)}
+                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                  isSettingsActive
+                    ? 'text-primary bg-primary/5'
+                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Settings className="h-4 w-4 text-primary shrink-0" />
+                  <span>Configurações</span>
+                </div>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                    isSettingsOpen
+                      ? 'rotate-0'
+                      : '-rotate-90 text-on-surface-variant/60'
+                  }`}
+                />
+              </button>
+
+              {isSettingsOpen && (
+                <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
+                  {canViewSettings && (
+                    <Link
+                      href="/settings"
+                      className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                        pathname.startsWith('/settings')
+                          ? 'bg-primary/15 text-primary font-semibold'
+                          : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                      }`}
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                      <span>Geral e Acessos</span>
+                    </Link>
+                  )}
+                  {canViewLogs && (
+                    <Link
+                      href="/logs"
+                      className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                        pathname.startsWith('/logs')
+                          ? 'bg-primary/15 text-primary font-semibold'
+                          : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                      }`}
+                    >
+                      <History className="h-3.5 w-3.5 shrink-0" />
+                      <span>Logs de Auditoria</span>
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
