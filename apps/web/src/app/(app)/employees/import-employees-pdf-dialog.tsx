@@ -516,10 +516,37 @@ export function ImportEmployeesPdfDialog({
     }
   }
 
+  function handleFillMissingRoles() {
+    const nextRecords = records.map((rec) => {
+      if (rec.roleTitle && rec.roleTitle.trim().length >= 2) return rec
+      return validateParsedEmployee({
+        ...rec,
+        roleTitle: 'A definir (RH)',
+      })
+    })
+    setRecords(nextRecords)
+
+    const nextSelected = new Set(selectedIds)
+    const seenCpfs = new Set<string>()
+    for (const rec of nextRecords) {
+      const cpf = cleanCpfDigits(rec.cpf)
+      const isExisting = cpf.length === 11 && existingCpfs.has(cpf)
+      const isDup = cpf.length === 11 && seenCpfs.has(cpf)
+      if (rec.errors.length === 0 && !isExisting && !isDup) {
+        nextSelected.add(rec.id)
+        seenCpfs.add(cpf)
+      }
+    }
+    setSelectedIds(nextSelected)
+    toast.success(
+      'Funções vazias preenchidas como "A definir (RH)" para revisão posterior.'
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] flex flex-col overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-outline-variant/20">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] !flex flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 px-6 pt-5 pb-3.5 border-b border-outline-variant/20">
           <div className="flex flex-wrap items-center gap-2">
             <DialogTitle className="text-lg font-display">
               Importar Fichas de Registro via PDF
@@ -536,7 +563,7 @@ export function ImportEmployeesPdfDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Upload Zone (initial or re-upload) */}
           {records.length === 0 && !isParsing && !summary && (
             <div className="space-y-4">
@@ -804,15 +831,31 @@ export function ImportEmployeesPdfDialog({
                     {metaStats.employeePages} fichas principais ·{' '}
                     {metaStats.schedulePages} grades de horário vinculadas
                   </span>
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={skipExisting}
-                      onChange={(e) => setSkipExisting(e.target.checked)}
-                      className="rounded border-outline-variant"
-                    />
-                    Ignorar automaticamente CPFs já cadastrados
-                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {records.some(
+                      (r) => !r.roleTitle || r.roleTitle.trim().length < 2
+                    ) && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleFillMissingRoles}
+                        className="h-7 text-[11px] border-amber-500/40 text-amber-800 hover:bg-amber-500/10 cursor-pointer"
+                      >
+                        Preencher funções vazias como &ldquo;A definir
+                        (RH)&rdquo;
+                      </Button>
+                    )}
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={skipExisting}
+                        onChange={(e) => setSkipExisting(e.target.checked)}
+                        className="rounded border-outline-variant"
+                      />
+                      Ignorar automaticamente CPFs já cadastrados
+                    </label>
+                  </div>
                 </div>
               )}
 
@@ -958,6 +1001,18 @@ export function ImportEmployeesPdfDialog({
                       </>
                     )}
                   </div>
+
+                  {editingRecord.debugRoleArea &&
+                    editingRecord.debugRoleArea.length > 0 && (
+                      <details className="text-[11px] text-on-surface-variant">
+                        <summary className="cursor-pointer select-none font-medium hover:text-on-surface">
+                          Ver texto bruto da área de cargo/função (calibração)
+                        </summary>
+                        <pre className="mt-1.5 max-h-32 overflow-auto rounded-md bg-surface p-2 font-mono text-[10px] border border-outline-variant/20">
+                          {editingRecord.debugRoleArea.join('\n')}
+                        </pre>
+                      </details>
+                    )}
 
                   <div className="flex justify-end">
                     <Button
@@ -1163,7 +1218,7 @@ export function ImportEmployeesPdfDialog({
 
         {/* Footer Actions */}
         {records.length > 0 && !isParsing && !isImporting && !summary && (
-          <div className="px-6 py-3.5 border-t border-outline-variant/20 bg-surface-container-lowest flex flex-wrap items-center justify-between gap-3">
+          <div className="shrink-0 px-6 py-3.5 border-t border-outline-variant/20 bg-surface-container-lowest flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-on-surface-variant">
               <strong>{selectedIds.size}</strong> colaborador(es) selecionado(s)
               para importação em lotes de {CHUNK_SIZE}.

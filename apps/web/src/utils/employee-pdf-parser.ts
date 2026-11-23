@@ -81,6 +81,7 @@ export interface ParsedEmployeeRecord {
 
   warnings: string[]
   errors: string[]
+  debugRoleArea?: string[]
 }
 
 export interface PdfParseResult {
@@ -521,15 +522,51 @@ function parsePage1Employee(
     readBox(items, { xMin: 427, xMax: 565, yMin: 269.0, yMax: 278.0 }, dy) ||
     null
 
-  // Role & CBO
-  const roleTitle = readBox(
-    items,
-    { xMin: 317, xMax: 503, yMin: 284.0, yMax: 296.5 },
-    dy
+  // Role / Cargo & CBO (Domínio Sistemas prints Cargo in left box x:115..317 and optional Função in x:317..503)
+  const rawCargoBox = joinLineItems(
+    getBoxItems(
+      items,
+      { xMin: 115, xMax: 317, yMin: 277.0, yMax: 299.5 },
+      dy
+    ).filter((it) => !/^(Cargo|Setor|Departamento)\s*:?$/i.test(it.str.trim()))
   )
+    .replace(/^(Cargo|Setor|Departamento)\s*:?\s*/i, '')
+    .trim()
+
+  const rawFuncaoBox = joinLineItems(
+    getBoxItems(
+      items,
+      { xMin: 317, xMax: 503, yMin: 277.0, yMax: 299.5 },
+      dy
+    ).filter((it) => !/^Fun[çc][ãa]o\s*:?$/i.test(it.str.trim()))
+  )
+    .replace(/^Fun[çc][ãa]o\s*:?\s*/i, '')
+    .trim()
+
+  const roleTitle = rawFuncaoBox || rawCargoBox
+
   const cboCode =
-    readBox(items, { xMin: 503, xMax: 565, yMin: 284.0, yMax: 296.5 }, dy) ||
-    null
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 503, xMax: 565, yMin: 277.0, yMax: 299.5 },
+        dy
+      ).filter((it) => !/^C\.?B\.?O\.?\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^C\.?B\.?O\.?\s*:?\s*/i, '')
+      .trim() || null
+
+  const debugRoleArea = items
+    .filter(
+      (it) =>
+        (it.y >= 265 + dy && it.y <= 315 + dy) ||
+        (it.y >= 375 + dy && it.y <= 455 + dy)
+    )
+    .sort((a, b) => a.y - b.y || a.x - b.x)
+    .map(
+      (it) =>
+        `x=${it.x.toFixed(1)} y=${(it.y - dy).toFixed(1)} | ${it.str.trim()}`
+    )
 
   // Admission, Salary, Schedule Summary
   const admissionDate =
@@ -666,6 +703,7 @@ function parsePage1Employee(
     terminationType,
     warnings: [],
     errors: [],
+    debugRoleArea,
   }
 
   return validateParsedEmployee(record)
