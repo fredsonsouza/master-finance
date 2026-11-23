@@ -188,6 +188,8 @@ export async function getEmployees(
     unitId?: string
     sectorId?: string
     departmentId?: string
+    sortBy?: 'fullName' | 'admissionDate'
+    sortOrder?: 'asc' | 'desc'
     page?: number
     perPage?: number
   }
@@ -198,6 +200,8 @@ export async function getEmployees(
   if (params?.unitId) searchParams.unitId = params.unitId
   if (params?.sectorId) searchParams.sectorId = params.sectorId
   if (params?.departmentId) searchParams.departmentId = params.departmentId
+  if (params?.sortBy) searchParams.sortBy = params.sortBy
+  if (params?.sortOrder) searchParams.sortOrder = params.sortOrder
   if (params?.page) searchParams.page = String(params.page)
   if (params?.perPage) searchParams.perPage = String(params.perPage)
 

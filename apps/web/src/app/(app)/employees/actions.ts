@@ -42,6 +42,8 @@ export async function fetchEmployeesAction(params?: {
   unitId?: string
   sectorId?: string
   departmentId?: string
+  sortBy?: 'fullName' | 'admissionDate'
+  sortOrder?: 'asc' | 'desc'
   page?: number
   perPage?: number
 }) {

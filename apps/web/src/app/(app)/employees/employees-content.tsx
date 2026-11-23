@@ -281,23 +281,19 @@ export function EmployeesContent({
   >('ALL')
   const [unitFilter, setUnitFilter] = useState<string>('ALL')
   const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
-  const [admissionSortOrder, setAdmissionSortOrder] = useState<
-    'asc' | 'desc' | null
-  >(null)
+  const [sortBy, setSortBy] = useState<'fullName' | 'admissionDate' | null>(
+    null
+  )
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
   const [isLoadingList, setIsLoadingList] = useState(false)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
-  const sortedEmployees = useMemo(() => {
-    if (!admissionSortOrder) return employees
-    return [...employees].sort((a, b) => {
-      const timeA = new Date(a.admissionDate).getTime() || 0
-      const timeB = new Date(b.admissionDate).getTime() || 0
-      return admissionSortOrder === 'asc' ? timeA - timeB : timeB - timeA
-    })
-  }, [employees, admissionSortOrder])
-
-  function handleToggleAdmissionSort() {
-    setAdmissionSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+  function handleToggleSort(field: 'fullName' | 'admissionDate') {
+    const nextOrder: 'asc' | 'desc' =
+      sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'
+    setSortBy(field)
+    setSortOrder(nextOrder)
+    loadEmployees({ sortBy: field, sortOrder: nextOrder, page: 1 })
   }
 
   // View Details Modal State
@@ -416,6 +412,8 @@ export function EmployeesContent({
     status?: 'ALL' | 'ACTIVE' | 'INACTIVE'
     unitId?: string
     departmentId?: string
+    sortBy?: 'fullName' | 'admissionDate' | null
+    sortOrder?: 'asc' | 'desc' | null
     page?: number
   }) {
     setIsLoadingList(true)
@@ -424,6 +422,10 @@ export function EmployeesContent({
       const targetStatus = overrides?.status ?? statusFilter
       const targetUnit = overrides?.unitId ?? unitFilter
       const targetDepartment = overrides?.departmentId ?? departmentFilter
+      const targetSortBy =
+        overrides?.sortBy !== undefined ? overrides.sortBy : sortBy
+      const targetSortOrder =
+        overrides?.sortOrder !== undefined ? overrides.sortOrder : sortOrder
       const targetPage = overrides?.page ?? 1
 
       const res = await fetchEmployeesAction({
@@ -431,6 +433,8 @@ export function EmployeesContent({
         status: targetStatus === 'ALL' ? undefined : targetStatus,
         unitId: targetUnit === 'ALL' ? undefined : targetUnit,
         departmentId: targetDepartment === 'ALL' ? undefined : targetDepartment,
+        sortBy: targetSortBy ?? undefined,
+        sortOrder: targetSortOrder ?? undefined,
         page: targetPage,
         perPage: 20,
       })
@@ -1114,14 +1118,43 @@ export function EmployeesContent({
             <thead className="bg-surface-container-low text-on-surface-variant text-xs uppercase border-b border-outline-variant/20">
               <tr>
                 <th className="py-3.5 px-4 font-semibold">Matrícula / Nº</th>
-                <th className="py-3.5 px-4 font-semibold">Colaborador</th>
+                <th className="py-3.5 px-4 font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSort('fullName')}
+                    title={
+                      sortBy === 'fullName' && sortOrder === 'asc'
+                        ? 'Ordenado por Nome (A → Z) — Clique para Z → A'
+                        : 'Ordenar por Nome (A → Z / Z → A)'
+                    }
+                    className="inline-flex items-center gap-1.5 uppercase hover:text-primary transition-colors cursor-pointer select-none group"
+                  >
+                    <span>Colaborador</span>
+                    <span className="inline-flex items-center -space-x-1">
+                      <ArrowUp
+                        className={`h-3.5 w-3.5 transition-all ${
+                          sortBy === 'fullName' && sortOrder === 'asc'
+                            ? 'text-primary opacity-100 scale-110'
+                            : 'opacity-45 group-hover:opacity-80'
+                        }`}
+                      />
+                      <ArrowDown
+                        className={`h-3.5 w-3.5 transition-all ${
+                          sortBy === 'fullName' && sortOrder === 'desc'
+                            ? 'text-primary opacity-100 scale-110'
+                            : 'opacity-45 group-hover:opacity-80'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </th>
                 <th className="py-3.5 px-4 font-semibold">Cargo & Lotação</th>
                 <th className="py-3.5 px-4 font-semibold">
                   <button
                     type="button"
-                    onClick={handleToggleAdmissionSort}
+                    onClick={() => handleToggleSort('admissionDate')}
                     title={
-                      admissionSortOrder === 'asc'
+                      sortBy === 'admissionDate' && sortOrder === 'asc'
                         ? 'Ordenado por Admissão (Crescente) — Clique para Decrescente'
                         : 'Ordenar por Data de Admissão (Crescente / Decrescente)'
                     }
@@ -1131,14 +1164,14 @@ export function EmployeesContent({
                     <span className="inline-flex items-center -space-x-1">
                       <ArrowUp
                         className={`h-3.5 w-3.5 transition-all ${
-                          admissionSortOrder === 'asc'
+                          sortBy === 'admissionDate' && sortOrder === 'asc'
                             ? 'text-primary opacity-100 scale-110'
                             : 'opacity-45 group-hover:opacity-80'
                         }`}
                       />
                       <ArrowDown
                         className={`h-3.5 w-3.5 transition-all ${
-                          admissionSortOrder === 'desc'
+                          sortBy === 'admissionDate' && sortOrder === 'desc'
                             ? 'text-primary opacity-100 scale-110'
                             : 'opacity-45 group-hover:opacity-80'
                         }`}
@@ -1151,7 +1184,7 @@ export function EmployeesContent({
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/15">
-              {sortedEmployees.length === 0 ? (
+              {employees.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -1161,7 +1194,7 @@ export function EmployeesContent({
                   </td>
                 </tr>
               ) : (
-                sortedEmployees.map((emp) => (
+                employees.map((emp) => (
                   <tr
                     key={emp.id}
                     className="hover:bg-surface-container-lowest/60 transition-colors"

@@ -23,6 +23,8 @@ export async function getEmployees(app: FastifyInstance) {
             unitId: z.string().uuid().optional(),
             sectorId: z.string().uuid().optional(),
             departmentId: z.string().uuid().optional(),
+            sortBy: z.enum(['fullName', 'admissionDate']).optional(),
+            sortOrder: z.enum(['asc', 'desc']).optional(),
             page: z.coerce.number().int().min(1).default(1),
             perPage: z.coerce.number().int().min(1).max(200).default(20),
           }),
@@ -73,6 +75,8 @@ export async function getEmployees(app: FastifyInstance) {
           unitId,
           sectorId,
           departmentId,
+          sortBy,
+          sortOrder,
           page,
           perPage,
         } = request.query
@@ -106,6 +110,13 @@ export async function getEmployees(app: FastifyInstance) {
 
         const filteredWhere = status ? { ...baseWhere, status } : baseWhere
         const skip = (page - 1) * perPage
+        const direction = sortOrder ?? 'asc'
+        const orderBy =
+          sortBy === 'fullName'
+            ? [{ fullName: direction }]
+            : sortBy === 'admissionDate'
+              ? [{ admissionDate: direction }, { fullName: 'asc' as const }]
+              : [{ status: 'asc' as const }, { fullName: 'asc' as const }]
 
         const [totalCount, activeCount, inactiveCount, employees] =
           await Promise.all([
@@ -132,7 +143,7 @@ export async function getEmployees(app: FastifyInstance) {
                   },
                 },
               },
-              orderBy: [{ status: 'asc' }, { fullName: 'asc' }],
+              orderBy,
               skip,
               take: perPage,
             }),
