@@ -87,9 +87,25 @@ const STATUS_CONFIG: Record<
     badgeClass: 'bg-emerald-700/15 text-emerald-800 border-emerald-700/30',
   },
   REJECTED: {
-    label: 'Indeferido',
+    label: 'Rejeitado',
     badgeClass: 'bg-rose-500/15 text-rose-800 border-rose-600/30',
   },
+}
+
+const REJECTION_REASON_PRESETS = [
+  'Dados ou justificativa incompletos na solicitação.',
+  'Data solicitada indisponível conforme escala do setor.',
+  'Solicitação fora da política interna / prazo vigente.',
+  'Documento já emitido anteriormente para este período.',
+]
+
+function isCollaboratorRequest(req: EmployeeRequestItem): boolean {
+  const requestedBySelf =
+    Boolean(req.employee.userId) && req.employee.userId === req.requestedById
+  const requesterIsHr =
+    req.requestedBy.role === 'ADMIN' ||
+    (req.requestedBy.permissions ?? []).includes('employees:manage')
+  return requestedBySelf || !requesterIsHr
 }
 
 const TYPE_CONFIG: Record<
@@ -260,6 +276,12 @@ export function EmployeeRequestsContent({
   const [manageContent, setManageContent] = useState<string>('')
   const [manageRejectionReason, setManageRejectionReason] = useState<string>('')
   const [isSavingManage, setIsSavingManage] = useState(false)
+
+  // HR Dedicated Reject Request Modal State
+  const [rejectingRequest, setRejectingRequest] =
+    useState<EmployeeRequestItem | null>(null)
+  const [rejectionReasonInput, setRejectionReasonInput] = useState<string>('')
+  const [isSavingReject, setIsSavingReject] = useState(false)
 
   async function loadRequests(overrides?: {
     search?: string
@@ -448,8 +470,13 @@ export function EmployeeRequestsContent({
       )
       return
     }
-    if (manageStatus === 'REJECTED' && !manageRejectionReason.trim()) {
-      toast.error('Informe o motivo do indeferimento para o colaborador.')
+    if (
+      manageStatus === 'REJECTED' &&
+      manageRejectionReason.trim().length < 5
+    ) {
+      toast.error(
+        'Informe o motivo da rejeição para o colaborador (mínimo de 5 caracteres).'
+      )
       return
     }
 
@@ -468,7 +495,7 @@ export function EmployeeRequestsContent({
           manageStatus === 'COMPLETED'
             ? `Documento finalizado e assinado eletronicamente (${res.request.verificationCode})!`
             : manageStatus === 'REJECTED'
-              ? 'Solicitação indeferida.'
+              ? 'Solicitação rejeitada com justificativa.'
               : 'Status atualizado!'
         )
         setManagingRequest(null)
@@ -478,6 +505,43 @@ export function EmployeeRequestsContent({
       }
     } finally {
       setIsSavingManage(false)
+    }
+  }
+
+  function openRejectModal(req: EmployeeRequestItem) {
+    setRejectingRequest(req)
+    setRejectionReasonInput(req.rejectionReason || '')
+  }
+
+  async function handleConfirmReject() {
+    if (!rejectingRequest) return
+    const trimmed = rejectionReasonInput.trim()
+    if (trimmed.length < 5) {
+      toast.error(
+        'Informe o motivo pelo qual a solicitação está sendo rejeitada (mínimo de 5 caracteres).'
+      )
+      return
+    }
+
+    setIsSavingReject(true)
+    try {
+      const res = await updateEmployeeRequestStatusAction(rejectingRequest.id, {
+        status: 'REJECTED',
+        rejectionReason: trimmed,
+      })
+
+      if (res.success) {
+        toast.success(
+          `Solicitação de ${rejectingRequest.employee.fullName} rejeitada.`
+        )
+        setRejectingRequest(null)
+        setRejectionReasonInput('')
+        await loadRequests()
+      } else {
+        toast.error(res.message || 'Erro ao rejeitar a solicitação.')
+      }
+    } finally {
+      setIsSavingReject(false)
     }
   }
 
@@ -514,7 +578,7 @@ export function EmployeeRequestsContent({
   return (
     <div className="space-y-6">
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="border-outline-variant/20 bg-surface shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-on-surface-variant">
@@ -590,6 +654,25 @@ export function EmployeeRequestsContent({
             </p>
           </CardContent>
         </Card>
+
+        <Card className="border-rose-500/20 bg-surface shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-on-surface-variant">
+              Rejeitados
+            </CardTitle>
+            <div className="h-9 w-9 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600">
+              <XCircle className="h-5 w-5" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-display font-bold text-rose-600">
+              {summary.rejectedCount}
+            </div>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Solicitações negadas com justificativa do RH
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Top Action Buttons */}
@@ -640,7 +723,7 @@ export function EmployeeRequestsContent({
             <option value="OPEN">Em Aberto</option>
             <option value="IN_PROGRESS">Em Elaboração</option>
             <option value="COMPLETED">Finalizados & Assinados</option>
-            <option value="REJECTED">Indeferidos</option>
+            <option value="REJECTED">Rejeitados</option>
           </select>
 
           <select
@@ -748,6 +831,11 @@ export function EmployeeRequestsContent({
                 requests.map((req) => {
                   const statusCfg = STATUS_CONFIG[req.status]
                   const typeCfg = TYPE_CONFIG[req.type]
+                  const fromCollaborator = isCollaboratorRequest(req)
+                  const canRejectRequest =
+                    isHrManager &&
+                    fromCollaborator &&
+                    (req.status === 'OPEN' || req.status === 'IN_PROGRESS')
 
                   return (
                     <tr
@@ -785,8 +873,11 @@ export function EmployeeRequestsContent({
                           </span>
                         </div>
                         {req.status === 'REJECTED' && req.rejectionReason && (
-                          <div className="text-xs text-rose-600 font-medium mt-1">
-                            Motivo do Indeferimento: {req.rejectionReason}
+                          <div className="mt-1.5 rounded-md border border-rose-500/25 bg-rose-500/5 px-2.5 py-1.5 text-xs text-rose-700 max-w-md">
+                            <span className="font-semibold">
+                              Motivo da rejeição:
+                            </span>{' '}
+                            {req.rejectionReason}
                           </div>
                         )}
                       </td>
@@ -825,6 +916,10 @@ export function EmployeeRequestsContent({
                               </Link>
                             </div>
                           </div>
+                        ) : req.status === 'REJECTED' ? (
+                          <span className="text-xs text-rose-700 font-medium">
+                            Rejeitado por {req.issuedBy?.name || 'RH'}
+                          </span>
                         ) : (
                           <span className="text-xs text-on-surface-variant italic">
                             Aguardando assinatura eletrônica
@@ -865,6 +960,20 @@ export function EmployeeRequestsContent({
                             >
                               <PlayCircle className="h-3.5 w-3.5" />
                               Assumir
+                            </Button>
+                          )}
+
+                          {canRejectRequest && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openRejectModal(req)}
+                              disabled={processingId === req.id}
+                              title="Rejeitar solicitação do colaborador informando o motivo"
+                              className="gap-1 text-xs border-rose-500/35 text-rose-700 hover:bg-rose-500/10 hover:text-rose-800 cursor-pointer"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                              Rejeitar
                             </Button>
                           )}
 
@@ -1169,7 +1278,11 @@ export function EmployeeRequestsContent({
                     Finalizado & Assinado Eletronicamente (Liberar Download PDF)
                   </option>
                   <option value="IN_PROGRESS">Em Elaboração pelo RH</option>
-                  <option value="REJECTED">Indeferir Solicitação</option>
+                  {managingRequest &&
+                    isCollaboratorRequest(managingRequest) &&
+                    managingRequest.status !== 'COMPLETED' && (
+                      <option value="REJECTED">Rejeitar Solicitação</option>
+                    )}
                 </select>
               </div>
 
@@ -1210,7 +1323,7 @@ export function EmployeeRequestsContent({
 
             {manageStatus === 'REJECTED' ? (
               <div className="space-y-1">
-                <Label>Motivo do Indeferimento *</Label>
+                <Label>Motivo da Rejeição *</Label>
                 <Textarea
                   value={manageRejectionReason}
                   onChange={(e) => setManageRejectionReason(e.target.value)}
@@ -1247,7 +1360,113 @@ export function EmployeeRequestsContent({
               {isSavingManage && <Loader2 className="h-4 w-4 animate-spin" />}
               {manageStatus === 'COMPLETED'
                 ? 'Assinar Eletronicamente & Liberar PDF'
-                : 'Salvar Status'}
+                : manageStatus === 'REJECTED'
+                  ? 'Confirmar Rejeição'
+                  : 'Salvar Status'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: Dedicated HR Reject Collaborator Request */}
+      <Dialog
+        open={Boolean(rejectingRequest)}
+        onOpenChange={(open) => {
+          if (!open && !isSavingReject) {
+            setRejectingRequest(null)
+            setRejectionReasonInput('')
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-display flex items-center gap-2 text-rose-700">
+              <XCircle className="h-5 w-5 shrink-0" />
+              Rejeitar Solicitação de Documento
+            </DialogTitle>
+            <DialogDescription>
+              A solicitação será marcada como <strong>Rejeitada</strong> e o
+              motivo informado ficará visível para o colaborador.
+            </DialogDescription>
+          </DialogHeader>
+
+          {rejectingRequest && (
+            <div className="space-y-4 py-1">
+              <div className="rounded-lg border border-outline-variant/25 bg-surface-container-low/60 p-3 text-xs space-y-1">
+                <div className="font-semibold text-on-surface">
+                  {rejectingRequest.title}
+                </div>
+                <div className="text-on-surface-variant">
+                  Colaborador:{' '}
+                  <strong className="text-on-surface">
+                    {rejectingRequest.employee.fullName}
+                  </strong>{' '}
+                  ({rejectingRequest.employee.registrationNumber})
+                </div>
+                {rejectingRequest.description && (
+                  <div className="text-on-surface-variant pt-1 border-t border-outline-variant/15 mt-1.5">
+                    <span className="font-medium text-on-surface">
+                      Pedido do colaborador:
+                    </span>{' '}
+                    {rejectingRequest.description}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rejection-reason-textarea">
+                  Motivo da rejeição *
+                </Label>
+                <Textarea
+                  id="rejection-reason-textarea"
+                  value={rejectionReasonInput}
+                  onChange={(e) => setRejectionReasonInput(e.target.value)}
+                  rows={4}
+                  placeholder="Descreva claramente o motivo pelo qual a solicitação está sendo negada..."
+                />
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {REJECTION_REASON_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setRejectionReasonInput(preset)}
+                      className="text-[11px] px-2 py-1 rounded-md border border-outline-variant/30 bg-surface-container-lowest hover:border-rose-400 hover:bg-rose-500/5 text-on-surface-variant hover:text-rose-700 transition-colors cursor-pointer text-left"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-outline-variant/20">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setRejectingRequest(null)
+                setRejectionReasonInput('')
+              }}
+              disabled={isSavingReject}
+              className="cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmReject}
+              disabled={
+                isSavingReject || rejectionReasonInput.trim().length < 5
+              }
+              className="gap-1.5 bg-rose-600 hover:bg-rose-700 text-white cursor-pointer"
+            >
+              {isSavingReject ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              Confirmar Rejeição
             </Button>
           </div>
         </DialogContent>

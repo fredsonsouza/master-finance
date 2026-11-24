@@ -153,7 +153,9 @@ export async function getEmployeeRequests(app: FastifyInstance) {
                   sector: { select: { id: true, name: true } },
                 },
               },
-              requestedBy: { select: { id: true, name: true, role: true } },
+              requestedBy: {
+                select: { id: true, name: true, role: true, permissions: true },
+              },
               issuedBy: { select: { id: true, name: true, role: true } },
             },
             orderBy: { createdAt: 'desc' },

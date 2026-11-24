@@ -166,7 +166,12 @@ export interface EmployeeRequestItem {
   requestedById: string
   issuedById: string | null
   employee: Employee
-  requestedBy: { id: string; name: string; role: string }
+  requestedBy: {
+    id: string
+    name: string
+    role: string
+    permissions?: string[]
+  }
   issuedBy?: { id: string; name: string; role: string } | null
   createdAt: string
   updatedAt: string

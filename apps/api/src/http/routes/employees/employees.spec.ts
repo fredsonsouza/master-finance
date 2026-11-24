@@ -441,4 +441,153 @@ describe('Employees & HR Document Requests Unit Tests', () => {
 
     expect(invalidRes.statusCode).toBe(400)
   })
+
+  test('should allow HR to reject a collaborator request with a required reason and block invalid rejections', async () => {
+    const collaboratorUserId = '523e4567-e89b-12d3-a456-426614174005'
+
+    // 1. Missing rejection reason -> 400
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employeeRequest.findUnique).mockResolvedValueOnce({
+      id: requestId,
+      employeeId,
+      requestedById: collaboratorUserId,
+      type: 'DECLARATION',
+      subtype: 'DECLARATION_DAY_OFF',
+      title: 'Solicitação de Day-Off',
+      description: 'Folga de aniversário',
+      status: 'OPEN',
+      employee: {
+        id: employeeId,
+        userId: collaboratorUserId,
+        fullName: 'Maria Souza',
+      },
+      requestedBy: {
+        id: collaboratorUserId,
+        name: 'Maria Souza',
+        role: 'EMPLOYEE',
+        permissions: [],
+        unitId: null,
+      },
+    } as any)
+
+    const missingReasonRes = await app.inject({
+      method: 'PATCH',
+      url: `/employee-requests/${requestId}/status`,
+      payload: {
+        status: 'REJECTED',
+        rejectionReason: '   ',
+      },
+    })
+    expect(missingReasonRes.statusCode).toBe(400)
+
+    // 2. Rejecting HR-initiated request for another employee -> 400
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'ADMIN',
+      permissions: [],
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employeeRequest.findUnique).mockResolvedValueOnce({
+      id: requestId,
+      employeeId,
+      requestedById: hrUserId,
+      type: 'WARNING',
+      subtype: 'WARNING_ESCRITA',
+      title: 'Advertência Disciplinar',
+      description: 'Descumprimento de normas',
+      status: 'OPEN',
+      employee: {
+        id: employeeId,
+        userId: collaboratorUserId,
+        fullName: 'Maria Souza',
+      },
+      requestedBy: {
+        id: hrUserId,
+        name: 'Admin RH',
+        role: 'ADMIN',
+        permissions: [],
+        unitId: null,
+      },
+    } as any)
+
+    const hrOriginRes = await app.inject({
+      method: 'PATCH',
+      url: `/employee-requests/${requestId}/status`,
+      payload: {
+        status: 'REJECTED',
+        rejectionReason: 'Motivo de teste válido',
+      },
+    })
+    expect(hrOriginRes.statusCode).toBe(400)
+
+    // 3. Valid rejection of collaborator request -> 200
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: hrUserId,
+      role: 'EMPLOYEE',
+      permissions: ['employees:manage'],
+      unitId: null,
+    } as any)
+
+    vi.mocked(prisma.employeeRequest.findUnique).mockResolvedValueOnce({
+      id: requestId,
+      employeeId,
+      requestedById: collaboratorUserId,
+      type: 'DECLARATION',
+      subtype: 'DECLARATION_DAY_OFF',
+      title: 'Solicitação de Day-Off',
+      description: 'Folga de aniversário',
+      status: 'OPEN',
+      employee: {
+        id: employeeId,
+        userId: collaboratorUserId,
+        fullName: 'Maria Souza',
+      },
+      requestedBy: {
+        id: collaboratorUserId,
+        name: 'Maria Souza',
+        role: 'EMPLOYEE',
+        permissions: [],
+        unitId: null,
+      },
+    } as any)
+
+    vi.mocked(prisma.employeeRequest.update).mockResolvedValueOnce({
+      id: requestId,
+      status: 'REJECTED',
+      title: 'Solicitação de Day-Off',
+      rejectionReason: 'Data indisponível conforme escala do setor.',
+      issuedById: hrUserId,
+    } as any)
+
+    const okRes = await app.inject({
+      method: 'PATCH',
+      url: `/employee-requests/${requestId}/status`,
+      payload: {
+        status: 'REJECTED',
+        rejectionReason: 'Data indisponível conforme escala do setor.',
+      },
+    })
+
+    expect(okRes.statusCode).toBe(200)
+    expect(okRes.json().request.status).toBe('REJECTED')
+    expect(okRes.json().request.rejectionReason).toBe(
+      'Data indisponível conforme escala do setor.'
+    )
+    expect(prisma.employeeRequest.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'REJECTED',
+          rejectionReason: 'Data indisponível conforme escala do setor.',
+          issuedById: hrUserId,
+        }),
+      })
+    )
+  })
 })

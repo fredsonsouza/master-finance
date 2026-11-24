@@ -6,6 +6,7 @@ import { type Permission, defineAbilityFor } from '@saas/auth'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { BadRequestError } from '../_errors/bad-request-error'
 import { ResourceNotFoundError } from '../_errors/resource-not-found-error'
 import { UnauthorizedError } from '../_errors/unauthorized-error'
 
@@ -69,11 +70,58 @@ export async function updateEmployeeRequestStatus(app: FastifyInstance) {
           where: { id },
           include: {
             employee: true,
+            requestedBy: {
+              select: {
+                id: true,
+                name: true,
+                role: true,
+                permissions: true,
+                unitId: true,
+              },
+            },
           },
         })
 
         if (!existingRequest) {
           throw new ResourceNotFoundError('Solicitação não encontrada.')
+        }
+
+        if (body.status === 'REJECTED') {
+          if (existingRequest.status === 'COMPLETED') {
+            throw new BadRequestError(
+              'Não é possível rejeitar um documento que já foi finalizado e assinado.'
+            )
+          }
+
+          const requesterAbility = existingRequest.requestedBy
+            ? defineAbilityFor({
+                id: existingRequest.requestedBy.id,
+                role: existingRequest.requestedBy.role,
+                unitId: existingRequest.requestedBy.unitId,
+                permissions: (existingRequest.requestedBy.permissions ??
+                  []) as Permission[],
+              })
+            : null
+
+          const requestedBySelf =
+            Boolean(existingRequest.employee.userId) &&
+            existingRequest.employee.userId === existingRequest.requestedById
+          const requestedByNonHr = requesterAbility
+            ? requesterAbility.cannot('manage', 'EmployeeRequest')
+            : false
+
+          if (!requestedBySelf && !requestedByNonHr) {
+            throw new BadRequestError(
+              'Apenas solicitações iniciadas por colaboradores podem ser rejeitadas.'
+            )
+          }
+
+          const trimmedReason = body.rejectionReason?.trim() || ''
+          if (trimmedReason.length < 5) {
+            throw new BadRequestError(
+              'Informe o motivo da rejeição da solicitação (mínimo de 5 caracteres).'
+            )
+          }
         }
 
         const updatedTitle =
@@ -97,8 +145,13 @@ export async function updateEmployeeRequestStatus(app: FastifyInstance) {
           dataToUpdate.templateData = body.templateData
         }
 
-        if (body.rejectionReason !== undefined) {
-          dataToUpdate.rejectionReason = body.rejectionReason
+        if (body.status === 'REJECTED') {
+          dataToUpdate.rejectionReason = body.rejectionReason?.trim() || null
+          dataToUpdate.issuedById = currentUserId
+        } else if (body.rejectionReason !== undefined) {
+          dataToUpdate.rejectionReason = null
+        } else if (existingRequest.status === 'REJECTED') {
+          dataToUpdate.rejectionReason = null
         }
 
         if (body.status === 'COMPLETED' && !existingRequest.verificationCode) {
@@ -129,7 +182,9 @@ export async function updateEmployeeRequestStatus(app: FastifyInstance) {
                 sector: { select: { id: true, name: true } },
               },
             },
-            requestedBy: { select: { id: true, name: true, role: true } },
+            requestedBy: {
+              select: { id: true, name: true, role: true, permissions: true },
+            },
             issuedBy: { select: { id: true, name: true, role: true } },
           },
         })
@@ -142,7 +197,9 @@ export async function updateEmployeeRequestStatus(app: FastifyInstance) {
           details:
             body.status === 'COMPLETED'
               ? `Finalizou e assinou eletronicamente o documento "${updated.title}" (Protocolo: ${updated.verificationCode}) para ${existingRequest.employee.fullName}`
-              : `Alterou o status da solicitação "${updated.title}" de ${existingRequest.employee.fullName} para ${body.status}`,
+              : body.status === 'REJECTED'
+                ? `Rejeitou a solicitação "${updated.title}" de ${existingRequest.employee.fullName}. Motivo: ${dataToUpdate.rejectionReason}`
+                : `Alterou o status da solicitação "${updated.title}" de ${existingRequest.employee.fullName} para ${body.status}`,
         })
 
         return reply.status(200).send({
