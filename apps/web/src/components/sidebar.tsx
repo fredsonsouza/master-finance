@@ -14,7 +14,11 @@ export async function Sidebar() {
     'transactions:manage',
     'items:manage',
   ])
-  const canViewStock = canViewTransactions || canViewItems
+  const canViewReports = hasAnyPermission(user, [
+    'reports:view',
+    'collections:manage',
+  ])
+  const canViewStock = canViewTransactions || canViewItems || canViewReports
   const canViewFinancial = hasAnyPermission(user, [
     'cash_closures:create',
     'cash_closures:manage',
@@ -26,10 +30,6 @@ export async function Sidebar() {
   const canViewCollections = hasAnyPermission(user, [
     'collections:manage',
     'collections:execute',
-  ])
-  const canViewReports = hasAnyPermission(user, [
-    'reports:view',
-    'collections:manage',
   ])
   const onlyCollectionsReports =
     !hasPermission(user, 'reports:view') &&

@@ -57,7 +57,9 @@ export function SidebarNav({
   const pathname = usePathname()
 
   const isStockActive =
-    pathname.startsWith('/transactions') || pathname.startsWith('/items')
+    pathname.startsWith('/transactions') ||
+    pathname.startsWith('/items') ||
+    pathname.startsWith('/reports')
   const isFinancialActive = pathname.startsWith('/cash-closures')
   const isEmployeesActive = pathname.startsWith('/employees')
   const isRhActive =
@@ -143,6 +145,23 @@ export function SidebarNav({
                 >
                   <Package className="h-3.5 w-3.5 shrink-0" />
                   <span>Catálogo de Itens</span>
+                </Link>
+              )}
+              {canViewReports && (
+                <Link
+                  href="/reports"
+                  className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                    pathname.startsWith('/reports')
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  }`}
+                >
+                  <BarChart3 className="h-3.5 w-3.5 shrink-0" />
+                  <span>
+                    {onlyCollectionsReports
+                      ? 'Relatório Recoletas'
+                      : 'Relatórios Analíticos'}
+                  </span>
                 </Link>
               )}
             </div>
@@ -346,84 +365,63 @@ export function SidebarNav({
         </div>
       )}
 
-      {/* Relatórios & Configurações */}
-      {(canViewReports || canViewSettings || canViewLogs) && (
+      {/* Menu Colapsável: CONFIGURAÇÕES */}
+      {(canViewSettings || canViewLogs) && (
         <div className="space-y-1 pt-2 border-t border-surface-container/60">
-          {canViewReports && (
-            <Link
-              href="/reports"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-                pathname.startsWith('/reports')
-                  ? 'bg-primary/15 text-primary font-semibold'
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen((prev) => !prev)}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
+                isSettingsActive
+                  ? 'text-primary bg-primary/5'
                   : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
               }`}
             >
-              <BarChart3 className="h-4 w-4 shrink-0" />
-              <span>
-                {onlyCollectionsReports
-                  ? 'Relatório Recoletas'
-                  : 'Relatórios Analíticos'}
-              </span>
-            </Link>
-          )}
-
-          {/* Menu Colapsável: CONFIGURAÇÕES */}
-          {(canViewSettings || canViewLogs) && (
-            <div className="space-y-1">
-              <button
-                type="button"
-                onClick={() => setIsSettingsOpen((prev) => !prev)}
-                className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-                  isSettingsActive
-                    ? 'text-primary bg-primary/5'
-                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+              <div className="flex items-center gap-2.5">
+                <Settings className="h-4 w-4 text-primary shrink-0" />
+                <span>Configurações</span>
+              </div>
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                  isSettingsOpen
+                    ? 'rotate-0'
+                    : '-rotate-90 text-on-surface-variant/60'
                 }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Settings className="h-4 w-4 text-primary shrink-0" />
-                  <span>Configurações</span>
-                </div>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
-                    isSettingsOpen
-                      ? 'rotate-0'
-                      : '-rotate-90 text-on-surface-variant/60'
-                  }`}
-                />
-              </button>
+              />
+            </button>
 
-              {isSettingsOpen && (
-                <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
-                  {canViewSettings && (
-                    <Link
-                      href="/settings"
-                      className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                        pathname.startsWith('/settings')
-                          ? 'bg-primary/15 text-primary font-semibold'
-                          : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                      }`}
-                    >
-                      <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-                      <span>Geral e Acessos</span>
-                    </Link>
-                  )}
-                  {canViewLogs && (
-                    <Link
-                      href="/logs"
-                      className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                        pathname.startsWith('/logs')
-                          ? 'bg-primary/15 text-primary font-semibold'
-                          : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
-                      }`}
-                    >
-                      <History className="h-3.5 w-3.5 shrink-0" />
-                      <span>Logs de Auditoria</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+            {isSettingsOpen && (
+              <div className="pl-4 pr-1 space-y-1 animate-in fade-in-50 duration-150">
+                {canViewSettings && (
+                  <Link
+                    href="/settings"
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      pathname.startsWith('/settings')
+                        ? 'bg-primary/15 text-primary font-semibold'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                    }`}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                    <span>Geral e Acessos</span>
+                  </Link>
+                )}
+                {canViewLogs && (
+                  <Link
+                    href="/logs"
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      pathname.startsWith('/logs')
+                        ? 'bg-primary/15 text-primary font-semibold'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                    }`}
+                  >
+                    <History className="h-3.5 w-3.5 shrink-0" />
+                    <span>Logs de Auditoria</span>
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </nav>
