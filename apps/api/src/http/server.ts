@@ -94,6 +94,12 @@ import { updateEmployeePhoto } from './routes/employees/update-employee-photo'
 import { updateEmployeeRequestStatus } from './routes/employees/update-employee-request-status'
 import { verifyEmployeeDocument } from './routes/employees/verify-employee-document'
 
+import { createEmployeeSubmission } from './routes/employee-submissions/create-employee-submission'
+import { deleteEmployeeSubmission } from './routes/employee-submissions/delete-employee-submission'
+import { getEmployeeSubmissionFile } from './routes/employee-submissions/get-employee-submission-file'
+import { getEmployeeSubmissions } from './routes/employee-submissions/get-employee-submissions'
+import { updateEmployeeSubmissionStatus } from './routes/employee-submissions/update-employee-submission-status'
+
 import { env } from '@saas/env'
 import { errorHandler } from './error-handle'
 
@@ -225,6 +231,12 @@ app.register(getEmployeeRequests)
 app.register(updateEmployeeRequestStatus)
 app.register(deleteEmployeeRequest)
 app.register(verifyEmployeeDocument)
+
+app.register(createEmployeeSubmission)
+app.register(getEmployeeSubmissions)
+app.register(getEmployeeSubmissionFile)
+app.register(updateEmployeeSubmissionStatus)
+app.register(deleteEmployeeSubmission)
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen({ port: env.SERVER_PORT, host: '0.0.0.0' }).then(() => {

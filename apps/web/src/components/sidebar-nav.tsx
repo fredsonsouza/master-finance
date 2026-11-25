@@ -8,6 +8,7 @@ import {
   CircleDollarSign,
   FileCheck2,
   FileText,
+  FileUp,
   FlaskConical,
   History,
   IdCard,
@@ -315,6 +316,22 @@ export function SidebarNav({
                       {canManageEmployees
                         ? 'Solicitações e Documentos'
                         : 'Minhas Solicitações'}
+                    </span>
+                  </Link>
+
+                  <Link
+                    href="/employees/submissions"
+                    className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                      pathname.startsWith('/employees/submissions')
+                        ? 'bg-primary/15 text-primary font-semibold'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                    }`}
+                  >
+                    <FileUp className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {canManageEmployees
+                        ? 'Atestados e Envios'
+                        : 'Enviar Atestados'}
                     </span>
                   </Link>
                 </div>

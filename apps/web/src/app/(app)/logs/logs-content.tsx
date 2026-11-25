@@ -150,6 +150,16 @@ export function LogsContent({
         return 'Recoletas'
       case 'AUTH':
         return 'Autenticação'
+      case 'DEPARTMENT':
+        return 'Departamento'
+      case 'HR_REPORT':
+        return 'Relatório RH'
+      case 'EMPLOYEE':
+        return 'Colaborador'
+      case 'EMPLOYEE_REQUEST':
+        return 'Solicitação de Documento'
+      case 'EMPLOYEE_SUBMISSION':
+        return 'Envio de Atestado/Documento'
       default:
         return resource
     }

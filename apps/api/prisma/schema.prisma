@@ -46,10 +46,12 @@ model User {
   evaluations            Evaluation[]
   hrReports              HrReport[]
 
-  employee                Employee?         @relation("UserEmployeeProfile")
-  createdEmployees        Employee[]        @relation("EmployeeCreator")
-  requestedDocuments      EmployeeRequest[] @relation("DocumentRequester")
-  issuedEmployeeDocuments EmployeeRequest[] @relation("DocumentIssuer")
+  employee                  Employee?                    @relation("UserEmployeeProfile")
+  createdEmployees          Employee[]                   @relation("EmployeeCreator")
+  requestedDocuments        EmployeeRequest[]            @relation("DocumentRequester")
+  issuedEmployeeDocuments   EmployeeRequest[]            @relation("DocumentIssuer")
+  submittedEmployeeDocuments EmployeeDocumentSubmission[] @relation("DocumentSubmitter")
+  reviewedEmployeeDocuments  EmployeeDocumentSubmission[] @relation("DocumentReviewer")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -67,8 +69,9 @@ model Unit {
   collections      Collection[]
   evaluations      Evaluation[]
   hrReports        HrReport[]
-  employees        Employee[]
-  employeeRequests EmployeeRequest[]
+  employees                 Employee[]
+  employeeRequests          EmployeeRequest[]
+  employeeDocumentSubmissions EmployeeDocumentSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -423,7 +426,8 @@ model Employee {
   createdById String
   createdBy   User   @relation("EmployeeCreator", fields: [createdById], references: [id], onDelete: Restrict)
 
-  requests EmployeeRequest[]
+  requests            EmployeeRequest[]
+  documentSubmissions EmployeeDocumentSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -476,4 +480,75 @@ model EmployeeRequest {
   @@index([unitId, status])
   @@index([verificationCode])
   @@map("employee_requests")
+}
+
+enum EmployeeSubmissionCategory {
+  MEDICAL_CERTIFICATE
+  ATTENDANCE_DECLARATION
+  PERSONAL_DOCUMENT
+  OTHER
+}
+
+enum EmployeeSubmissionStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model EmployeeDocumentSubmission {
+  id          String                     @id @default(uuid())
+  category    EmployeeSubmissionCategory
+  title       String
+  description String?                    @db.Text
+  status      EmployeeSubmissionStatus   @default(PENDING)
+
+  // Campos opcionais para atestados médicos e declarações de comparecimento
+  startDate DateTime?
+  daysCount Int?
+  cid       String?
+
+  // Metadados do arquivo PDF (binário isolado em EmployeeDocumentSubmissionFile)
+  fileName   String
+  mimeType   String @default("application/pdf")
+  sizeBytes  Int
+  sha256Hash String
+
+  // Revisão / Validação pelo RH
+  reviewNotes     String?   @db.Text
+  rejectionReason String?   @db.Text
+  reviewedAt      DateTime?
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  unitId String?
+  unit   Unit?   @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  submittedById String
+  submittedBy   User   @relation("DocumentSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+
+  reviewedById String?
+  reviewedBy   User?   @relation("DocumentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  file EmployeeDocumentSubmissionFile?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId, status, createdAt(sort: Desc)])
+  @@index([submittedById, createdAt(sort: Desc)])
+  @@index([status, category, createdAt(sort: Desc)])
+  @@index([unitId, status])
+  @@map("employee_document_submissions")
+}
+
+model EmployeeDocumentSubmissionFile {
+  id           String                     @id @default(uuid())
+  submissionId String                     @unique
+  submission   EmployeeDocumentSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  content      Bytes
+  createdAt    DateTime                   @default(now())
+
+  @@map("employee_document_submission_files")
 }

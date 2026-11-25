@@ -27,6 +27,9 @@ export const permissions: Record<Role, PermissionsByRole> = {
     can('create', 'EmployeeRequest')
     can('get', 'EmployeeRequest', { requestedById: { $eq: user.id } })
 
+    can('create', 'EmployeeSubmission')
+    can('get', 'EmployeeSubmission', { submittedById: { $eq: user.id } })
+
     can('create', 'HrReport')
     can('get', 'HrReport', { userId: { $eq: user.id } })
     can('update', 'HrReport', {
@@ -117,6 +120,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
     if (hasPermission(user, 'employees:manage')) {
       can('manage', 'Employee')
       can('manage', 'EmployeeRequest')
+      can('manage', 'EmployeeSubmission')
       can('manage', 'Department')
       can('get', 'User')
       can('get', 'Unit')
