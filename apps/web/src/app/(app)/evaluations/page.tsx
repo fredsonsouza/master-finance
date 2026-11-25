@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default async function EvaluationsPage() {
   const { user, token } = await auth()
 
-  if (!hasAnyPermission(user, ['evaluations:manage', 'evaluations:receive'])) {
+  if (!hasAnyPermission(user, ['evaluations:manage', 'evaluations:view_own'])) {
     redirect(getDefaultHomeRoute(user))
   }
 

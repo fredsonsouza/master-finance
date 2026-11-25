@@ -25,7 +25,7 @@ export async function Sidebar() {
   ])
   const canViewEvaluations = hasAnyPermission(user, [
     'evaluations:manage',
-    'evaluations:receive',
+    'evaluations:view_own',
   ])
   const canViewCollections = hasAnyPermission(user, [
     'collections:manage',

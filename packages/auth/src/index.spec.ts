@@ -179,10 +179,26 @@ describe('PBAC Auth Permissions Test', () => {
         unitId: unitB,
       } as any)
     ).toBe(false)
-    expect(ability.can('get', 'Evaluation')).toBe(true)
+    // evaluations:receive alone does NOT grant viewing evaluations
+    expect(ability.can('get', 'Evaluation')).toBe(false)
     expect(ability.can('delete', 'Evaluation')).toBe(false)
     expect(ability.can('get', 'Transaction')).toBe(false)
     expect(getDefaultHomeRoute(receptionist)).toBe('/cash-closures')
+
+    // evaluations:view_own explicitly grants viewing own evaluations (read-only)
+    const viewer = {
+      id: userId,
+      role: 'EMPLOYEE' as const,
+      unitId: unitA,
+      permissions: [
+        'evaluations:receive' as const,
+        'evaluations:view_own' as const,
+      ],
+    }
+    const viewerAbility = defineAbilityFor(viewer)
+    expect(viewerAbility.can('get', 'Evaluation')).toBe(true)
+    expect(viewerAbility.can('delete', 'Evaluation')).toBe(false)
+    expect(getDefaultHomeRoute(viewer)).toBe('/evaluations')
   })
 
   test('HR employee can manage Employees, Departments, Requests, Users, and Evaluations without managing Inventory Sectors', () => {

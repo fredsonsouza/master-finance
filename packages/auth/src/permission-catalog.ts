@@ -12,6 +12,7 @@ export const PERMISSIONS = [
   'collections:execute',
   'collections:manage',
   'evaluations:receive',
+  'evaluations:view_own',
   'evaluations:manage',
   'employees:manage',
   'hr_reports:manage',
@@ -131,13 +132,19 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         key: 'evaluations:receive',
         label: 'Receber Avaliações de Atendimento',
         description:
-          'Habilita o colaborador a receber avaliações de clientes (QR Code / link público) e ver suas notas.',
+          'Torna o colaborador apto a receber avaliações de clientes via QR Code / link público (não libera acesso à consulta).',
+      },
+      {
+        key: 'evaluations:view_own',
+        label: 'Visualizar Próprios Atendimentos',
+        description:
+          'Permite ao colaborador consultar apenas suas próprias avaliações e notas (sem acesso ao crachá ou link público).',
       },
       {
         key: 'evaluations:manage',
         label: 'Gerenciar Avaliações',
         description:
-          'Visualizar, moderar, editar e excluir avaliações de todos os atendentes.',
+          'Visualizar, moderar, editar, excluir avaliações de todos e gerenciar crachás/links.',
       },
     ],
   },
@@ -377,7 +384,7 @@ export function getDefaultHomeRoute(
   if (hasPermission(user, 'employees:manage')) return '/employees'
   if (
     hasPermission(user, 'evaluations:manage') ||
-    hasPermission(user, 'evaluations:receive')
+    hasPermission(user, 'evaluations:view_own')
   ) {
     return '/evaluations'
   }

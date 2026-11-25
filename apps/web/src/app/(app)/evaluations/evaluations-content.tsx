@@ -748,20 +748,20 @@ export function EvaluationsContent({
         </div>
       )}
 
-      {/* Main Grid: QR Code + Metrics */}
+      {/* Main Grid: QR Code (Management only) + Metrics */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {(isSeller || (isManagement && selectedSellerId)) && (
+        {isManagement && selectedSellerId && (
           <div className="lg:col-span-1">
             <QrCodeCard
-              sellerId={selectedSellerId || currentUser.id}
-              sellerName={currentSellerName || currentUser.name}
+              sellerId={selectedSellerId}
+              sellerName={currentSellerName}
             />
           </div>
         )}
 
         <div
           className={
-            isSeller || (isManagement && selectedSellerId)
+            isManagement && selectedSellerId
               ? 'lg:col-span-2 space-y-6'
               : 'lg:col-span-3 space-y-6'
           }

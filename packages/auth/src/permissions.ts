@@ -106,7 +106,7 @@ export const permissions: Record<Role, PermissionsByRole> = {
     }
 
     // Operations (Evaluations)
-    if (hasPermission(user, 'evaluations:receive')) {
+    if (hasPermission(user, 'evaluations:view_own')) {
       can('get', 'Evaluation')
     }
 

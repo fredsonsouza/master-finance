@@ -121,6 +121,46 @@ describe('Get Evaluations Unit Test', () => {
     expect(response.statusCode).toBe(401)
   })
 
+  test('should block user with only evaluations:receive from viewing evaluations', async () => {
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      role: 'EMPLOYEE',
+      permissions: ['evaluations:receive'],
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    } as any)
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/evaluations',
+    })
+
+    expect(response.statusCode).toBe(401)
+  })
+
+  test('should allow user with evaluations:view_own to view only their own evaluations', async () => {
+    const userId = '123e4567-e89b-12d3-a456-426614174000'
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: userId,
+      role: 'EMPLOYEE',
+      permissions: ['evaluations:receive', 'evaluations:view_own'],
+      unitId: '223e4567-e89b-12d3-a456-426614174001',
+    } as any)
+
+    vi.mocked(prisma.evaluation.count).mockResolvedValueOnce(0)
+    vi.mocked(prisma.evaluation.findMany).mockResolvedValueOnce([])
+    vi.mocked(prisma.evaluation.groupBy).mockResolvedValueOnce([])
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/evaluations?sellerId=999e4567-e89b-12d3-a456-426614174999',
+    })
+
+    expect(response.statusCode).toBe(200)
+    const findManyCall = vi.mocked(prisma.evaluation.findMany).mock
+      .calls[0][0] as any
+    expect(findManyCall.where.sellerId).toBe(userId)
+  })
+
   test('should skip podium calculation when includePodium is false', async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
       id: '123e4567-e89b-12d3-a456-426614174000',
