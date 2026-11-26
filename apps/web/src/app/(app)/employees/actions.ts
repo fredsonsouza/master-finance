@@ -134,6 +134,7 @@ export async function checkEmployeeCpfsBatchAction(cpfs: string[]) {
 
 export async function importEmployeesBatchAction(data: {
   skipExisting?: boolean
+  updateExisting?: boolean
   employees: Record<string, any>[]
 }): Promise<
   | { success: true; result: BatchImportEmployeeResult }

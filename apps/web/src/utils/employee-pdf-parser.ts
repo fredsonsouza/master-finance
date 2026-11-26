@@ -29,6 +29,8 @@ export interface ParsedEmployeeRecord {
   nationality: string | null
   maritalStatus: string | null
   raceColor: string | null
+  gender: string | null
+  educationLevel: string | null
   fatherName: string | null
   motherName: string | null
   address: string | null
@@ -397,7 +399,7 @@ function parsePage1Employee(
     { xMin: 30, xMax: 294, yMin: 126.8, yMax: 139.0 },
     dy
   )
-  let address = readBox(
+  const rawAddressLine = readBox(
     items,
     { xMin: 30, xMax: 294, yMin: 146.0, yMax: 157.0 },
     dy
@@ -407,10 +409,16 @@ function parsePage1Employee(
     { xMin: 30, xMax: 294, yMin: 157.0, yMax: 167.5 },
     dy
   )
-  const cepMatch = cepLine.match(/(\d{5}-?\d{3})/)
+  const combinedAddressCep = `${rawAddressLine} ${cepLine}`
+  const cepMatch = combinedAddressCep.match(/(\d{5}-?\d{3})/)
   const zipCode = cepMatch
     ? cepMatch[1].replace(/^(\d{5})(\d{3})$/, '$1-$2')
     : null
+  let address = rawAddressLine
+    .replace(/,?\s*[-–—]?\s*CEP\s*:?.*$/i, '')
+    .replace(/\d{5}-?\d{3}/g, '')
+    .replace(/[\s,-]+$/, '')
+    .trim()
   const extraAddressAfterCep = cepLine
     .replace(/CEP\s*:?/gi, '')
     .replace(/\d{5}-?\d{3}/g, '')
@@ -443,12 +451,25 @@ function parsePage1Employee(
     null
 
   const fatherName =
-    readBox(items, { xMin: 155, xMax: 565, yMin: 189.0, yMax: 202.5 }, dy)
-      .replace(/^Pai\s*:\s*/i, '')
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 155, xMax: 565, yMin: 193.0, yMax: 204.5 },
+        dy
+      ).filter((it) => !/^Pai\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^Pai\s*:?\s+/i, '')
       .trim() || null
+
   const motherName =
-    readBox(items, { xMin: 155, xMax: 565, yMin: 202.5, yMax: 216.5 }, dy)
-      .replace(/^M[ãa]e\s*:\s*/i, '')
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 155, xMax: 565, yMin: 208.0, yMax: 219.5 },
+        dy
+      ).filter((it) => !/^M[ãa]e\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^M[ãa]e\s*:?\s+/i, '')
       .trim() || null
 
   // Legal Documents Row 1 (RG, Voter, Class Council)
@@ -503,16 +524,43 @@ function parsePage1Employee(
     readBox(items, { xMin: 514, xMax: 565, yMin: 238.5, yMax: 247.5 }, dy) ||
     null
 
-  // Documents Row 3 (Military, Race/Color)
+  // Documents Row 3 (Military, Race/Color, Gender, Education Level)
   const militaryDoc =
     readBox(items, { xMin: 115, xMax: 188, yMin: 253.5, yMax: 263.0 }, dy) ||
     null
   const militaryCategory =
-    readBox(items, { xMin: 188, xMax: 248, yMin: 253.5, yMax: 263.0 }, dy) ||
+    readBox(items, { xMin: 188, xMax: 245, yMin: 253.5, yMax: 263.0 }, dy) ||
     null
   const raceColor =
-    readBox(items, { xMin: 248, xMax: 565, yMin: 253.5, yMax: 263.0 }, dy) ||
-    null
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 245, xMax: 336, yMin: 253.5, yMax: 263.0 },
+        dy
+      ).filter((it) => !/^Cor\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^Cor\s*:?\s+/i, '')
+      .trim() || null
+  const gender =
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 336, xMax: 398, yMin: 253.5, yMax: 263.0 },
+        dy
+      ).filter((it) => !/^Sexo\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^Sexo\s*:?\s+/i, '')
+      .trim() || null
+  const educationLevel =
+    joinLineItems(
+      getBoxItems(
+        items,
+        { xMin: 398, xMax: 565, yMin: 253.5, yMax: 263.0 },
+        dy
+      ).filter((it) => !/^Grau de instru[çc][ãa]o\s*:?$/i.test(it.str.trim()))
+    )
+      .replace(/^Grau de instru[çc][ãa]o\s*:?\s+/i, '')
+      .trim() || null
 
   // Phones
   const landlinePhone =
@@ -549,7 +597,7 @@ function parsePage1Employee(
     joinLineItems(
       getBoxItems(
         items,
-        { xMin: 503, xMax: 565, yMin: 277.0, yMax: 299.5 },
+        { xMin: 498, xMax: 565, yMin: 277.0, yMax: 299.5 },
         dy
       ).filter((it) => !/^C\.?B\.?O\.?\s*:?$/i.test(it.str.trim()))
     )
@@ -656,6 +704,8 @@ function parsePage1Employee(
     nationality,
     maritalStatus,
     raceColor,
+    gender,
+    educationLevel,
     fatherName,
     motherName,
     address: address || null,

@@ -350,6 +350,8 @@ export function EmployeesContent({
   const [birthDate, setBirthDate] = useState('')
   const [maritalStatus, setMaritalStatus] = useState('Solteiro(a)')
   const [raceColor, setRaceColor] = useState('')
+  const [gender, setGender] = useState('')
+  const [educationLevel, setEducationLevel] = useState('')
   const [nationality, setNationality] = useState('Brasileira')
   const [birthPlace, setBirthPlace] = useState('')
   const [fatherName, setFatherName] = useState('')
@@ -597,6 +599,8 @@ export function EmployeesContent({
     setBirthDate('')
     setMaritalStatus('Solteiro(a)')
     setRaceColor('')
+    setGender('')
+    setEducationLevel('')
     setNationality('Brasileira')
     setBirthPlace('Boa Vista/RR')
     setFatherName('')
@@ -669,6 +673,8 @@ export function EmployeesContent({
     setBirthDate(toInputDate(emp.birthDate))
     setMaritalStatus(emp.maritalStatus || '')
     setRaceColor(emp.raceColor || '')
+    setGender(emp.gender || '')
+    setEducationLevel(emp.educationLevel || '')
     setNationality(emp.nationality || 'Brasileira')
     setBirthPlace(emp.birthPlace || 'Boa Vista/RR')
     setFatherName(emp.fatherName || '')
@@ -770,6 +776,8 @@ export function EmployeesContent({
         birthDate: birthDate || null,
         maritalStatus: maritalStatus.trim() || null,
         raceColor: raceColor.trim() || null,
+        gender: gender.trim() || null,
+        educationLevel: educationLevel.trim() || null,
         nationality: nationality.trim() || 'Brasileira',
         birthPlace: birthPlace.trim() || null,
         fatherName: fatherName.trim() || null,
@@ -1520,7 +1528,7 @@ export function EmployeesContent({
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
                         <CopyableField
                           label="Estado Civil"
                           value={viewingEmployee.maritalStatus}
@@ -1528,6 +1536,14 @@ export function EmployeesContent({
                         <CopyableField
                           label="Cor / Raça"
                           value={viewingEmployee.raceColor}
+                        />
+                        <CopyableField
+                          label="Sexo"
+                          value={viewingEmployee.gender}
+                        />
+                        <CopyableField
+                          label="Grau de Instrução"
+                          value={viewingEmployee.educationLevel}
                         />
                         <CopyableField
                           label="Naturalidade (Cidade/UF)"
@@ -2051,7 +2067,7 @@ export function EmployeesContent({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-4 gap-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-4">
                     <div className="flex flex-col gap-2">
                       <Label>Estado Civil</Label>
                       <select
@@ -2060,7 +2076,11 @@ export function EmployeesContent({
                         className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                       >
                         <option value="Solteiro(a)">Solteiro(a)</option>
+                        <option value="Solteiro">Solteiro</option>
+                        <option value="Solteira">Solteira</option>
                         <option value="Casado(a)">Casado(a)</option>
+                        <option value="Casado">Casado</option>
+                        <option value="Casada">Casada</option>
                         <option value="União Estável">União Estável</option>
                         <option value="Divorciado(a)">Divorciado(a)</option>
                         <option value="Viúvo(a)">Viúvo(a)</option>
@@ -2071,7 +2091,28 @@ export function EmployeesContent({
                       <Input
                         value={raceColor}
                         onChange={(e) => setRaceColor(e.target.value)}
-                        placeholder="Ex: Branca, Parda..."
+                        placeholder="Ex: Branca, Parda, Preta..."
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Sexo</Label>
+                      <select
+                        value={gender}
+                        onChange={(e) => setGender(e.target.value)}
+                        className="w-full h-10 rounded-md border border-outline bg-surface px-3 text-sm text-on-surface focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+                      >
+                        <option value="">Não informado</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Outro">Outro</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Label>Grau de Instrução</Label>
+                      <Input
+                        value={educationLevel}
+                        onChange={(e) => setEducationLevel(e.target.value)}
+                        placeholder="Ex: Ensino Médio Completo, Superior Completo..."
                       />
                     </div>
                     <div className="flex flex-col gap-2">

@@ -45,6 +45,7 @@ type PreviewFilter = 'ALL' | 'READY' | 'ISSUES' | 'EXISTING' | 'INACTIVE'
 
 interface ImportSummary {
   importedCount: number
+  updatedCount: number
   skippedCount: number
   errorCount: number
   errors: Array<{ fullName: string; cpf: string; reason: string }>
@@ -90,6 +91,7 @@ export function ImportEmployeesPdfDialog({
   const [existingCpfs, setExistingCpfs] = useState<Set<string>>(new Set())
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [skipExisting, setSkipExisting] = useState(true)
+  const [updateExisting, setUpdateExisting] = useState(false)
   const [filter, setFilter] = useState<PreviewFilter>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -224,14 +226,18 @@ export function ImportEmployeesPdfDialog({
       setExistingCpfs(existingSet)
       setRecords(allEmployees)
 
-      // Auto-select valid records that are not already registered (and avoid duplicate CPFs inside same PDF)
+      // Auto-select valid records (including existing ones when updateExisting is enabled)
       const initialSelected = new Set<string>()
       const seenInSelection = new Set<string>()
       for (const emp of allEmployees) {
         const cpf = cleanCpfDigits(emp.cpf)
         const isExisting = cpf.length === 11 && existingSet.has(cpf)
         const isDuplicateInPdf = cpf.length === 11 && seenInSelection.has(cpf)
-        if (emp.errors.length === 0 && !isExisting && !isDuplicateInPdf) {
+        if (
+          emp.errors.length === 0 &&
+          (updateExisting || !isExisting) &&
+          !isDuplicateInPdf
+        ) {
           initialSelected.add(emp.id)
           seenInSelection.add(cpf)
         }
@@ -315,7 +321,10 @@ export function ImportEmployeesPdfDialog({
   function toggleSelectAllFiltered() {
     const selectable = filteredRecords.filter((rec) => {
       const isExisting = rec.cpf.length === 11 && existingCpfs.has(rec.cpf)
-      return rec.errors.length === 0 && !(skipExisting && isExisting)
+      return (
+        rec.errors.length === 0 &&
+        (updateExisting || !(skipExisting && isExisting))
+      )
     })
     const allSelected =
       selectable.length > 0 && selectable.every((r) => selectedIds.has(r.id))
@@ -386,6 +395,7 @@ export function ImportEmployeesPdfDialog({
     })
 
     let totalImported = 0
+    let totalUpdated = 0
     let totalSkipped = 0
     let totalErrors = 0
     const allErrors: Array<{ fullName: string; cpf: string; reason: string }> =
@@ -414,6 +424,8 @@ export function ImportEmployeesPdfDialog({
           nationality: rec.nationality,
           maritalStatus: rec.maritalStatus,
           raceColor: rec.raceColor,
+          gender: rec.gender,
+          educationLevel: rec.educationLevel,
           fatherName: rec.fatherName,
           motherName: rec.motherName,
           address: rec.address,
@@ -463,11 +475,13 @@ export function ImportEmployeesPdfDialog({
 
         const res = await importEmployeesBatchAction({
           skipExisting,
+          updateExisting,
           employees: payloadItems,
         })
 
         if (res.success) {
           totalImported += res.result.importedCount
+          totalUpdated += res.result.updatedCount
           totalSkipped += res.result.skippedCount
           totalErrors += res.result.errorCount
           allErrors.push(...res.result.errors)
@@ -492,14 +506,15 @@ export function ImportEmployeesPdfDialog({
 
       setSummary({
         importedCount: totalImported,
+        updatedCount: totalUpdated,
         skippedCount: totalSkipped,
         errorCount: totalErrors,
         errors: allErrors,
       })
 
-      if (totalImported > 0) {
+      if (totalImported > 0 || totalUpdated > 0) {
         toast.success(
-          `${totalImported} colaborador(es) importado(s) com sucesso!`
+          `Concluído: ${totalImported} novo(s) cadastrado(s) e ${totalUpdated} atualizado(s)!`
         )
         await onImported()
       } else if (totalErrors > 0) {
@@ -659,21 +674,31 @@ export function ImportEmployeesPdfDialog({
           {/* Final Summary */}
           {summary && !isImporting && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
                   <div className="flex items-center gap-2 text-emerald-700 text-xs font-medium">
                     <CheckCircle2 className="h-4 w-4" />
-                    Importados com sucesso
+                    Novos cadastrados
                   </div>
                   <p className="text-2xl font-display font-bold text-emerald-700 mt-1">
                     {summary.importedCount}
                   </p>
                 </div>
 
+                <div className="rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+                  <div className="flex items-center gap-2 text-sky-700 text-xs font-medium">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Atualizados
+                  </div>
+                  <p className="text-2xl font-display font-bold text-sky-700 mt-1">
+                    {summary.updatedCount}
+                  </p>
+                </div>
+
                 <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
                   <div className="flex items-center gap-2 text-amber-700 text-xs font-medium">
                     <AlertTriangle className="h-4 w-4" />
-                    Ignorados (já cadastrados)
+                    Ignorados
                   </div>
                   <p className="text-2xl font-display font-bold text-amber-700 mt-1">
                     {summary.skippedCount}
@@ -846,15 +871,60 @@ export function ImportEmployeesPdfDialog({
                         (RH)&rdquo;
                       </Button>
                     )}
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <label
+                      className="flex items-center gap-1.5 cursor-pointer select-none font-medium text-primary"
+                      title="Atualiza os dados extraídos do PDF preservando matrícula, unidade, departamento, foto e usuário"
+                    >
                       <input
                         type="checkbox"
-                        checked={skipExisting}
-                        onChange={(e) => setSkipExisting(e.target.checked)}
+                        checked={updateExisting}
+                        onChange={(e) => {
+                          const enabled = e.target.checked
+                          setUpdateExisting(enabled)
+                          if (enabled) {
+                            const nextSelected = new Set<string>()
+                            const seenCpfs = new Set<string>()
+                            for (const rec of records) {
+                              const cpf = cleanCpfDigits(rec.cpf)
+                              if (
+                                rec.errors.length === 0 &&
+                                !seenCpfs.has(cpf)
+                              ) {
+                                nextSelected.add(rec.id)
+                                if (cpf.length === 11) seenCpfs.add(cpf)
+                              }
+                            }
+                            setSelectedIds(nextSelected)
+                          } else {
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev)
+                              for (const rec of records) {
+                                if (
+                                  rec.cpf.length === 11 &&
+                                  existingCpfs.has(rec.cpf)
+                                ) {
+                                  next.delete(rec.id)
+                                }
+                              }
+                              return next
+                            })
+                          }
+                        }}
                         className="rounded border-outline-variant"
                       />
-                      Ignorar automaticamente CPFs já cadastrados
+                      Atualizar colaboradores já cadastrados (mesmo CPF)
                     </label>
+                    {!updateExisting && (
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={skipExisting}
+                          onChange={(e) => setSkipExisting(e.target.checked)}
+                          className="rounded border-outline-variant"
+                        />
+                        Ignorar automaticamente CPFs já cadastrados
+                      </label>
+                    )}
                   </div>
                 </div>
               )}

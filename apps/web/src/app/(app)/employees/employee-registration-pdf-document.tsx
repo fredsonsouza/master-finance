@@ -528,20 +528,40 @@ export function EmployeeRegistrationPdfDocument({
               </View>
             </View>
 
-            {/* Linha 5: Doc Militar, Cor, Telefones, Função e CBO */}
+            {/* Linha 5: Doc Militar, Cor, Sexo, Grau de instrução, Telefones */}
             <View style={[styles.box, { flexDirection: 'row' }]}>
-              <View style={[styles.cellBorderRight, { width: '15%' }]}>
+              <View style={[styles.cellBorderRight, { width: '16%' }]}>
                 <Text style={styles.label}>Doc. militar</Text>
                 <Text style={styles.value}>{employee.militaryDoc || '-'}</Text>
               </View>
               <View
                 style={[
                   styles.cellBorderRight,
-                  { width: '10%', paddingLeft: 3 },
+                  { width: '11%', paddingLeft: 3 },
                 ]}
               >
                 <Text style={styles.label}>Cor</Text>
                 <Text style={styles.value}>{employee.raceColor || '-'}</Text>
+              </View>
+              <View
+                style={[
+                  styles.cellBorderRight,
+                  { width: '12%', paddingLeft: 3 },
+                ]}
+              >
+                <Text style={styles.label}>Sexo</Text>
+                <Text style={styles.value}>{employee.gender || '-'}</Text>
+              </View>
+              <View
+                style={[
+                  styles.cellBorderRight,
+                  { width: '25%', paddingLeft: 4 },
+                ]}
+              >
+                <Text style={styles.label}>Grau de instrução</Text>
+                <Text style={styles.value}>
+                  {employee.educationLevel || '-'}
+                </Text>
               </View>
               <View
                 style={[
@@ -554,25 +574,19 @@ export function EmployeeRegistrationPdfDocument({
                   {employee.landlinePhone || '-'}
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.cellBorderRight,
-                  { width: '19%', paddingLeft: 4 },
-                ]}
-              >
+              <View style={{ width: '18%', paddingLeft: 4 }}>
                 <Text style={styles.label}>Telefone Celular</Text>
                 <Text style={styles.value}>{employee.mobilePhone || '-'}</Text>
               </View>
-              <View
-                style={[
-                  styles.cellBorderRight,
-                  { width: '26%', paddingLeft: 4 },
-                ]}
-              >
-                <Text style={styles.label}>Função</Text>
+            </View>
+
+            {/* Linha 6: Função e CBO */}
+            <View style={[styles.box, { flexDirection: 'row' }]}>
+              <View style={[styles.cellBorderRight, { width: '82%' }]}>
+                <Text style={styles.label}>Cargo / Função</Text>
                 <Text style={styles.value}>{employee.roleTitle}</Text>
               </View>
-              <View style={{ width: '12%', paddingLeft: 4 }}>
+              <View style={{ width: '18%', paddingLeft: 4 }}>
                 <Text style={styles.label}>C.B.O.</Text>
                 <Text style={styles.value}>{employee.cboCode || '-'}</Text>
               </View>

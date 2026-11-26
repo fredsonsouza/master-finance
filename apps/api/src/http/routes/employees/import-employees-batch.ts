@@ -30,6 +30,8 @@ const importEmployeeItemSchema = z.object({
   nationality: z.string().nullable().optional(),
   maritalStatus: z.string().nullable().optional(),
   raceColor: z.string().nullable().optional(),
+  gender: z.string().nullable().optional(),
+  educationLevel: z.string().nullable().optional(),
   fatherName: z.string().nullable().optional(),
   motherName: z.string().nullable().optional(),
   address: z.string().nullable().optional(),
@@ -157,14 +159,25 @@ export async function importEmployeesBatch(app: FastifyInstance) {
           security: [{ bearerAuth: [] }],
           body: z.object({
             skipExisting: z.boolean().default(true),
+            updateExisting: z.boolean().default(false),
             employees: z.array(importEmployeeItemSchema).min(1).max(50),
           }),
           response: {
             200: z.object({
               importedCount: z.number(),
+              updatedCount: z.number(),
               skippedCount: z.number(),
               errorCount: z.number(),
               imported: z.array(
+                z.object({
+                  employeeId: z.string().uuid(),
+                  registrationNumber: z.string(),
+                  fullName: z.string(),
+                  cpf: z.string(),
+                  status: z.enum(['ACTIVE', 'INACTIVE']),
+                })
+              ),
+              updated: z.array(
                 z.object({
                   employeeId: z.string().uuid(),
                   registrationNumber: z.string(),
@@ -203,7 +216,7 @@ export async function importEmployeesBatch(app: FastifyInstance) {
           )
         }
 
-        const { employees, skipExisting } = request.body
+        const { employees, skipExisting, updateExisting } = request.body
 
         const normalizedCpfs = employees
           .map((e) => e.cpf.replace(/\D/g, ''))
@@ -213,11 +226,11 @@ export async function importEmployeesBatch(app: FastifyInstance) {
           normalizedCpfs.length > 0
             ? await prisma.employee.findMany({
                 where: { cpf: { in: Array.from(new Set(normalizedCpfs)) } },
-                select: { cpf: true },
+                select: { id: true, cpf: true, registrationNumber: true },
               })
             : []
 
-        const knownCpfs = new Set(existingRecords.map((r) => r.cpf))
+        const existingByCpf = new Map(existingRecords.map((r) => [r.cpf, r]))
         const existingRegs = await prisma.employee.findMany({
           select: { registrationNumber: true },
         })
@@ -228,6 +241,13 @@ export async function importEmployeesBatch(app: FastifyInstance) {
         let seq = usedRegistrationNumbers.size + 1
 
         const imported: Array<{
+          employeeId: string
+          registrationNumber: string
+          fullName: string
+          cpf: string
+          status: 'ACTIVE' | 'INACTIVE'
+        }> = []
+        const updated: Array<{
           employeeId: string
           registrationNumber: string
           fullName: string
@@ -258,23 +278,6 @@ export async function importEmployeesBatch(app: FastifyInstance) {
             continue
           }
 
-          if (knownCpfs.has(cleanCpf)) {
-            if (skipExisting) {
-              skipped.push({
-                fullName,
-                cpf: cleanCpf,
-                reason: 'CPF já cadastrado no sistema.',
-              })
-            } else {
-              errors.push({
-                fullName,
-                cpf: cleanCpf,
-                reason: 'CPF já cadastrado no sistema.',
-              })
-            }
-            continue
-          }
-
           const admissionDate = parseOptionalDate(item.admissionDate)
           if (!admissionDate) {
             errors.push({
@@ -290,6 +293,118 @@ export async function importEmployeesBatch(app: FastifyInstance) {
             item.status === 'INACTIVE' || terminationDate !== null
               ? 'INACTIVE'
               : 'ACTIVE'
+
+          const existingEmp = existingByCpf.get(cleanCpf)
+
+          if (existingEmp) {
+            if (updateExisting) {
+              try {
+                // Updates extracted PDF fields while preserving registrationNumber, unitId, departmentId, sectorId, userId, photoUrl and email
+                const saved = await prisma.employee.update({
+                  where: { id: existingEmp.id },
+                  data: {
+                    esocialCode: item.esocialCode?.trim() || null,
+                    status: resolvedStatus,
+                    employerName:
+                      item.employerName?.trim() || 'GERENCIACLIN LTDA',
+                    employerCnpj:
+                      item.employerCnpj?.trim() || '59.162.564/0001-73',
+                    employerAddress:
+                      item.employerAddress?.trim() ||
+                      'Rua IVONE PINHEIRO, 1590, SALA 08, TANCREDO NEVES, BOA VISTA, RR',
+                    fullName,
+                    birthDate: parseOptionalDate(item.birthDate),
+                    birthPlace: item.birthPlace?.trim() || null,
+                    nationality: item.nationality?.trim() || 'Brasileira',
+                    maritalStatus: item.maritalStatus?.trim() || null,
+                    raceColor: item.raceColor?.trim() || null,
+                    gender: item.gender?.trim() || null,
+                    educationLevel: item.educationLevel?.trim() || null,
+                    fatherName: item.fatherName?.trim() || null,
+                    motherName: item.motherName?.trim() || null,
+                    address: item.address?.trim() || null,
+                    zipCode: item.zipCode?.trim() || null,
+                    landlinePhone: item.landlinePhone?.trim() || null,
+                    mobilePhone: item.mobilePhone?.trim() || null,
+                    beneficiaries: item.beneficiaries ?? [],
+                    rgNumber: item.rgNumber?.trim() || null,
+                    rgIssueDate: parseOptionalDate(item.rgIssueDate),
+                    rgIssuer: item.rgIssuer?.trim() || null,
+                    ctpsNumber: item.ctpsNumber?.trim() || null,
+                    ctpsSeries: item.ctpsSeries?.trim() || null,
+                    ctpsIssueDate: parseOptionalDate(item.ctpsIssueDate),
+                    ctpsState: item.ctpsState?.trim() || 'RR',
+                    voterRegistration: item.voterRegistration?.trim() || null,
+                    voterZone: item.voterZone?.trim() || null,
+                    voterSection: item.voterSection?.trim() || null,
+                    cnhNumber: item.cnhNumber?.trim() || null,
+                    cnhCategory: item.cnhCategory?.trim() || null,
+                    militaryDoc: item.militaryDoc?.trim() || null,
+                    militaryCategory: item.militaryCategory?.trim() || null,
+                    classCouncilNumber: item.classCouncilNumber?.trim() || null,
+                    admissionDate,
+                    roleTitle: item.roleTitle.trim(),
+                    cboCode: item.cboCode?.trim() || null,
+                    salary: item.salary ?? 0,
+                    paymentType: item.paymentType?.trim() || 'Mensal',
+                    workHoursSummary: item.workHoursSummary?.trim() || null,
+                    breakHoursSummary: item.breakHoursSummary?.trim() || null,
+                    fgtsOptionDate: parseOptionalDate(item.fgtsOptionDate),
+                    fgtsRectificationDate: parseOptionalDate(
+                      item.fgtsRectificationDate
+                    ),
+                    fgtsBankAccount: item.fgtsBankAccount?.trim() || null,
+                    pisRegistrationDate: parseOptionalDate(
+                      item.pisRegistrationDate
+                    ),
+                    pisNumber: item.pisNumber?.trim() || null,
+                    pisBankName: item.pisBankName?.trim() || null,
+                    pisBankNumber: item.pisBankNumber?.trim() || null,
+                    pisBankBranch: item.pisBankBranch?.trim() || null,
+                    pisBankAddress: item.pisBankAddress?.trim() || null,
+                    workSchedule: item.workSchedule ?? null,
+                    generalObservations:
+                      item.generalObservations?.trim() || null,
+                    terminationDate,
+                    terminationType:
+                      resolvedStatus === 'INACTIVE'
+                        ? item.terminationType?.trim() || null
+                        : null,
+                  },
+                })
+
+                updated.push({
+                  employeeId: saved.id,
+                  registrationNumber: saved.registrationNumber,
+                  fullName: saved.fullName,
+                  cpf: saved.cpf,
+                  status: saved.status,
+                })
+              } catch (err) {
+                errors.push({
+                  fullName,
+                  cpf: cleanCpf,
+                  reason:
+                    err instanceof Error
+                      ? err.message
+                      : 'Erro ao atualizar colaborador no banco de dados.',
+                })
+              }
+            } else if (skipExisting) {
+              skipped.push({
+                fullName,
+                cpf: cleanCpf,
+                reason: 'CPF já cadastrado no sistema.',
+              })
+            } else {
+              errors.push({
+                fullName,
+                cpf: cleanCpf,
+                reason: 'CPF já cadastrado no sistema.',
+              })
+            }
+            continue
+          }
 
           let registrationNumber = formatRegistrationNumber(fullName, seq)
           while (usedRegistrationNumbers.has(registrationNumber)) {
@@ -315,6 +430,8 @@ export async function importEmployeesBatch(app: FastifyInstance) {
                 nationality: item.nationality?.trim() || 'Brasileira',
                 maritalStatus: item.maritalStatus?.trim() || null,
                 raceColor: item.raceColor?.trim() || null,
+                gender: item.gender?.trim() || null,
+                educationLevel: item.educationLevel?.trim() || null,
                 fatherName: item.fatherName?.trim() || null,
                 motherName: item.motherName?.trim() || null,
                 address: item.address?.trim() || null,
@@ -378,7 +495,11 @@ export async function importEmployeesBatch(app: FastifyInstance) {
               },
             })
 
-            knownCpfs.add(cleanCpf)
+            existingByCpf.set(cleanCpf, {
+              id: created.id,
+              cpf: created.cpf,
+              registrationNumber: created.registrationNumber,
+            })
             usedRegistrationNumbers.add(registrationNumber)
             seq += 1
 
@@ -401,20 +522,22 @@ export async function importEmployeesBatch(app: FastifyInstance) {
           }
         }
 
-        if (imported.length > 0) {
+        if (imported.length > 0 || updated.length > 0) {
           await logAction({
             userId: currentUserId,
-            action: 'CREATE',
+            action: imported.length > 0 ? 'CREATE' : 'UPDATE',
             resource: 'EMPLOYEE',
-            details: `Importação em lote via PDF: ${imported.length} colaborador(es) cadastrado(s), ${skipped.length} ignorado(s), ${errors.length} erro(s).`,
+            details: `Importação em lote via PDF: ${imported.length} cadastrado(s), ${updated.length} atualizado(s), ${skipped.length} ignorado(s), ${errors.length} erro(s).`,
           })
         }
 
         return reply.status(200).send({
           importedCount: imported.length,
+          updatedCount: updated.length,
           skippedCount: skipped.length,
           errorCount: errors.length,
           imported,
+          updated,
           skipped,
           errors,
         })

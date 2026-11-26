@@ -350,9 +350,11 @@ model Employee {
   birthDate     DateTime?
   birthPlace    String?
   nationality   String?   @default("Brasileira")
-  maritalStatus String?
-  raceColor     String?
-  fatherName    String?
+  maritalStatus  String?
+  raceColor      String?
+  gender         String?
+  educationLevel String?
+  fatherName     String?
   motherName    String?
   address       String?
   zipCode       String?

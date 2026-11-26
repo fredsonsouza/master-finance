@@ -57,6 +57,8 @@ export interface Employee {
   nationality: string | null
   maritalStatus: string | null
   raceColor: string | null
+  gender: string | null
+  educationLevel: string | null
   fatherName: string | null
   motherName: string | null
   address: string | null
@@ -247,9 +249,17 @@ export async function createEmployeeApi(
 
 export interface BatchImportEmployeeResult {
   importedCount: number
+  updatedCount: number
   skippedCount: number
   errorCount: number
   imported: Array<{
+    employeeId: string
+    registrationNumber: string
+    fullName: string
+    cpf: string
+    status: 'ACTIVE' | 'INACTIVE'
+  }>
+  updated: Array<{
     employeeId: string
     registrationNumber: string
     fullName: string
@@ -281,6 +291,7 @@ export async function importEmployeesBatchApi(
   token: string,
   data: {
     skipExisting?: boolean
+    updateExisting?: boolean
     employees: Record<string, any>[]
   }
 ) {
