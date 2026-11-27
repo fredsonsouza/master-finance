@@ -35,6 +35,7 @@ export async function Sidebar() {
     !hasPermission(user, 'reports:view') &&
     hasPermission(user, 'collections:manage')
   const canManageEmployees = hasPermission(user, 'employees:manage')
+  const canManageBirthdays = hasPermission(user, 'birthdays:manage')
   const canViewLogs = hasPermission(user, 'logs:view')
   const canViewSettings = hasAnyPermission(user, [
     'users:manage',
@@ -61,6 +62,7 @@ export async function Sidebar() {
         canViewReports={canViewReports}
         onlyCollectionsReports={onlyCollectionsReports}
         canManageEmployees={canManageEmployees}
+        canManageBirthdays={canManageBirthdays}
         canViewSettings={canViewSettings}
         canViewLogs={canViewLogs}
       />

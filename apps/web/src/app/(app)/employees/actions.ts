@@ -9,6 +9,7 @@ import {
   createEmployeeRequestApi,
   deleteEmployeeRequestApi,
   getEmployee,
+  getEmployeeBirthdays,
   getEmployeeRequests,
   getEmployees,
   importEmployeesBatchApi,
@@ -347,6 +348,32 @@ export async function deleteEmployeeRequestAction(id: string) {
       message: await extractErrorMessage(
         error,
         'Erro ao excluir solicitação de documento.'
+      ),
+    }
+  }
+}
+
+export async function fetchEmployeeBirthdaysAction(params?: {
+  month?: number
+  unitId?: string
+  departmentId?: string
+  upcomingDays?: number
+  search?: string
+  includePhotos?: boolean
+}) {
+  try {
+    const { token } = await auth()
+    const res = await getEmployeeBirthdays(token, params)
+    return {
+      success: true as const,
+      data: res,
+    }
+  } catch (error) {
+    return {
+      success: false as const,
+      message: await extractErrorMessage(
+        error,
+        'Erro ao carregar lista de aniversariantes.'
       ),
     }
   }

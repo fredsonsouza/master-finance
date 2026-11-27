@@ -463,3 +463,67 @@ export async function verifyEmployeeDocumentPublic(code: string) {
     })
     .json<VerifiedDocumentResponse>()
 }
+
+export interface EmployeeBirthdayItem {
+  id: string
+  registrationNumber: string
+  fullName: string
+  roleTitle: string
+  photoUrl: string | null
+  birthDay: number
+  birthMonth: number
+  daysUntilBirthday: number
+  isToday: boolean
+  isTomorrow: boolean
+  mobilePhone: string | null
+  unit: { id: string; name: string } | null
+  department: { id: string; name: string } | null
+}
+
+export interface EmployeeBirthdaysSummary {
+  monthTotal: number
+  todayCount: number
+  upcomingCount: number
+  missingBirthDateCount: number
+}
+
+export interface EmployeeBirthdaysResponse {
+  referenceDate: string
+  month: number
+  upcomingDays: number
+  monthBirthdays: EmployeeBirthdayItem[]
+  upcomingAlerts: EmployeeBirthdayItem[]
+  summary: EmployeeBirthdaysSummary
+}
+
+export async function getEmployeeBirthdays(
+  token: string,
+  params?: {
+    month?: number
+    unitId?: string
+    departmentId?: string
+    upcomingDays?: number
+    search?: string
+    includePhotos?: boolean
+  }
+) {
+  const searchParams: Record<string, string> = {}
+  if (params?.month) searchParams.month = String(params.month)
+  if (params?.unitId) searchParams.unitId = params.unitId
+  if (params?.departmentId) searchParams.departmentId = params.departmentId
+  if (params?.upcomingDays)
+    searchParams.upcomingDays = String(params.upcomingDays)
+  if (params?.search) searchParams.search = params.search
+  if (params?.includePhotos !== undefined) {
+    searchParams.includePhotos = params.includePhotos ? 'true' : 'false'
+  }
+
+  return api
+    .get('employees/birthdays', {
+      headers: { Authorization: `Bearer ${token}` },
+      searchParams:
+        Object.keys(searchParams).length > 0 ? searchParams : undefined,
+      next: { tags: ['employees'], revalidate: 0 },
+    })
+    .json<EmployeeBirthdaysResponse>()
+}

@@ -4,6 +4,7 @@ import {
   ArrowRightLeft,
   BarChart3,
   Boxes,
+  Cake,
   ChevronDown,
   CircleDollarSign,
   FileCheck2,
@@ -37,6 +38,7 @@ interface SidebarNavProps {
   canViewReports: boolean
   onlyCollectionsReports: boolean
   canManageEmployees: boolean
+  canManageBirthdays: boolean
   canViewSettings: boolean
   canViewLogs: boolean
 }
@@ -52,6 +54,7 @@ export function SidebarNav({
   canViewReports,
   onlyCollectionsReports,
   canManageEmployees,
+  canManageBirthdays,
   canViewSettings,
   canViewLogs,
 }: SidebarNavProps) {
@@ -66,6 +69,7 @@ export function SidebarNav({
   const isRhActive =
     pathname.startsWith('/evaluations') ||
     pathname.startsWith('/hr-reports') ||
+    pathname.startsWith('/birthdays') ||
     isEmployeesActive
   const isLabActive = pathname.startsWith('/collections')
   const isSettingsActive =
@@ -262,6 +266,20 @@ export function SidebarNav({
               <FileText className="h-3.5 w-3.5 shrink-0" />
               <span>Relatórios de Atividades</span>
             </Link>
+
+            {canManageBirthdays && (
+              <Link
+                href="/birthdays"
+                className={`flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  pathname.startsWith('/birthdays')
+                    ? 'bg-primary/15 text-primary font-semibold'
+                    : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                }`}
+              >
+                <Cake className="h-3.5 w-3.5 shrink-0" />
+                <span>Aniversariantes</span>
+              </Link>
+            )}
 
             {/* Submenu aninhado: Colaboradores */}
             <div className="space-y-1 pt-0.5">

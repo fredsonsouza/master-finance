@@ -16,6 +16,7 @@ export const PERMISSIONS = [
   'evaluations:manage',
   'employees:manage',
   'hr_reports:manage',
+  'birthdays:manage',
   'users:manage',
   'settings:structure',
   'logs:view',
@@ -166,6 +167,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         description:
           'Consultar, revisar e gerenciar relatórios de atividades enviados por todos os colaboradores.',
       },
+      {
+        key: 'birthdays:manage',
+        label: 'Gerenciar Aniversariantes',
+        description:
+          'Visualizar aniversariantes do mês, acompanhar avisos próximos à data e gerar cards comemorativos.',
+      },
     ],
   },
   {
@@ -262,6 +269,7 @@ export const PERMISSION_PRESETS: PermissionPreset[] = [
       'dashboard:view',
       'employees:manage',
       'hr_reports:manage',
+      'birthdays:manage',
       'evaluations:manage',
       'users:manage',
     ],
@@ -282,6 +290,7 @@ export const PERMISSION_PRESETS: PermissionPreset[] = [
       'evaluations:manage',
       'employees:manage',
       'hr_reports:manage',
+      'birthdays:manage',
       'settings:structure',
     ],
   },
@@ -389,6 +398,7 @@ export function getDefaultHomeRoute(
     return '/evaluations'
   }
   if (hasPermission(user, 'hr_reports:manage')) return '/hr-reports'
+  if (hasPermission(user, 'birthdays:manage')) return '/birthdays'
   if (hasPermission(user, 'reports:view')) return '/reports'
   if (hasPermission(user, 'items:manage')) return '/items'
   if (

@@ -132,6 +132,11 @@ export const permissions: Record<Role, PermissionsByRole> = {
       can('get', 'Unit')
     }
 
+    if (hasPermission(user, 'birthdays:manage')) {
+      can('manage', 'Birthday')
+      can('get', 'Unit')
+    }
+
     // Administration
     if (hasPermission(user, 'users:manage')) {
       can('manage', 'User')

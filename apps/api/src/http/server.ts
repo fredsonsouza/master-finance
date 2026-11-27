@@ -86,6 +86,7 @@ import { createEmployee } from './routes/employees/create-employee'
 import { createEmployeeRequest } from './routes/employees/create-employee-request'
 import { deleteEmployeeRequest } from './routes/employees/delete-employee-request'
 import { getEmployee } from './routes/employees/get-employee'
+import { getEmployeeBirthdays } from './routes/employees/get-employee-birthdays'
 import { getEmployeeRequests } from './routes/employees/get-employee-requests'
 import { getEmployees } from './routes/employees/get-employees'
 import { importEmployeesBatch } from './routes/employees/import-employees-batch'
@@ -222,6 +223,7 @@ app.register(deleteHrReport)
 app.register(createEmployee)
 app.register(importEmployeesBatch)
 app.register(getEmployees)
+app.register(getEmployeeBirthdays)
 app.register(getEmployee)
 app.register(updateEmployee)
 app.register(updateEmployeePhoto)

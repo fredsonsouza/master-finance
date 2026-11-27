@@ -235,6 +235,25 @@ describe('PBAC Auth Permissions Test', () => {
     )
   })
 
+  test('birthdays:manage grants Birthday management and Unit read without exposing full Employee or User records', () => {
+    const commsUser = {
+      id: userId,
+      role: 'EMPLOYEE' as const,
+      unitId: unitA,
+      permissions: ['birthdays:manage' as const],
+    }
+
+    const ability = defineAbilityFor(commsUser)
+
+    expect(ability.can('get', 'Birthday')).toBe(true)
+    expect(ability.can('manage', 'Birthday')).toBe(true)
+    expect(ability.can('get', 'Unit')).toBe(true)
+    expect(ability.can('get', 'Department')).toBe(true)
+    expect(ability.can('get', 'Employee')).toBe(false)
+    expect(ability.can('get', 'User')).toBe(false)
+    expect(getDefaultHomeRoute(commsUser)).toBe('/birthdays')
+  })
+
   test('canGrantAccess prevents privilege escalation while allowing HR onboarding', () => {
     const hrActor = {
       role: 'EMPLOYEE' as const,
